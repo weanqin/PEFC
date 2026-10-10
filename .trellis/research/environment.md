@@ -23,5 +23,5 @@
 
 - 长跑后台化：nohup（tmux 不可用）
 - 日志落点：未定（建议随任务落在 `outputs/<variant>/logs/`，待用户确认）
-- 版本快照：`/root/npi` 已于 2026-10-10 `git init`（分支 `main`）；`.gitignore` 默认排除 outputs/、checkpoint 与 Python 缓存；git 身份已配置在本仓库（`--local`：weanqin / 1984536775@qq.com）
-- 代码/数据同步：未定（用户本地经 SSH 访问本机目录，未见 rsync/scp 常规配置；新同步方式出现时当次回填）
+- 版本快照：`/root/npi` 已于 2026-10-10 `git init`（分支 `main`）；`.gitignore` 默认排除 outputs/、checkpoint 与 Python 缓存；git 身份已配置在本仓库（`--local`：weanqin / 1984536775@qq.com）；远端 `github.com/weanqin/PEFC`（HTTPS，2026-10-10 首推 main）。推送凭据一次性注入命令行，不落盘、不入库；令牌失效时由用户提供新的
+- 代码/数据同步：代码可经远端仓库 `github.com/weanqin/PEFC`（git push/pull）同步；数据仍在 `/root/autodl-tmp`、不经 git，跨机数据同步方式未定
