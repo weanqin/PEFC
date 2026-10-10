@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+.ipynb_checkpoints/
+
+# 研究产物（checkpoint/日志等大文件默认不入库；如需纳管再调整）
+outputs/
+*.ckpt
+*.pt
+*.pth
+
+# 系统/编辑器
+.DS_Store
+*.swp

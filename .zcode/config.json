@@ -1,0 +1,57 @@
+{
+  "hooks": {
+    "enabled": true,
+    "events": {
+      "SessionStart": [
+        {
+          "matcher": "startup|clear|compact",
+          "hooks": [
+            {
+              "type": "command",
+              "command": "python3 \"/root/npi/.zcode/hooks/session-start.py\"",
+              "timeout": 30
+            },
+            {
+              "type": "command",
+              "command": "python3 \"/root/npi/.zcode/hooks/inject-research-context.py\"",
+              "timeout": 15
+            }
+          ]
+        }
+      ],
+      "UserPromptSubmit": [
+        {
+          "hooks": [
+            {
+              "type": "command",
+              "command": "python3 \"/root/npi/.zcode/hooks/inject-workflow-state.py\"",
+              "timeout": 15
+            }
+          ]
+        }
+      ],
+      "PreToolUse": [
+        {
+          "matcher": "Agent|Task",
+          "hooks": [
+            {
+              "type": "command",
+              "command": "python3 \"/root/npi/.zcode/hooks/inject-subagent-context.py\"",
+              "timeout": 30
+            }
+          ]
+        },
+        {
+          "matcher": "Bash",
+          "hooks": [
+            {
+              "type": "command",
+              "command": "python3 \"/root/npi/.zcode/hooks/inject-shell-session-context.py\"",
+              "timeout": 5
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
