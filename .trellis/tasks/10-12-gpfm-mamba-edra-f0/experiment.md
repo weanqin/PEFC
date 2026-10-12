@@ -216,7 +216,7 @@
 - **Pass A（Q1 预测质量，主指标 test-MAE=ODE 终点样本均值口径，13210 窗 × K=16）**：model **0.7109** | persistence 0.9527 | **gpr_mean 0.6873**；CRPS(model) 0.5293；逐通道 Pearson r：model 0.1421 / gpr_mean 0.1678 / persistence 0。——模型显著优于持久性，但 MAE 与 r 均略逊于 GPR 后验均值基线（差 3.4%）；与适配研究预期一致（EEG 线性可预测上限低，GP 先验=结构化基分布）。单 seed 初步观察。
 - **R1 触发检查（§6.2 口径）**：高/中 t 桶比 0.377（阈值 1.5）、终点/训练末期比 1.248（阈值 1.5）→ **未触发**。
 - **指标 1（GC 一致性，future-only，BIC 选 p*=4 两组共用，受试者级 bootstrap 1000 次 seed=2026）**：Pearson r=**0.2820**（95%CI 0.193–0.336）| Spearman ρ=**0.1932**（0.130–0.248）；显著边（BH-FDR q<0.05）真实 3782/3782 vs 生成 3777（Jaccard 0.999，该维度判别力弱）；生成 GC 幅值范围约为真实一半（max 0.0124 vs 0.0306）。
-- **指标 3（PSD，future 拼接 Welch nperseg=512，0.98 Hz，两组同分段）**：峰频率一致（均 0.98 Hz）；全通道平均谱分频段 |Δlog10|：delta 0.09 / alpha 0.15（主节律段高度相似）/ theta 0.30 / beta 0.34 / 30–60 Hz 2.86 / >60 Hz 9.0——**低频段谱形匹配良好，>30 Hz 生成功率显著偏高**（真实信号高频已被 v4 滤波压至近零，log 地板放大高段差异；白噪地板来自先验 iso 与网络未完全去噪）。
+- **指标 3（PSD，future 拼接 Welch nperseg=512，0.98 Hz，两组同分段）**：峰频率一致（均 0.98 Hz）；全通道平均谱分频段 |Δlog10|：delta 0.09 / alpha 0.15（主节律段高度相似）/ theta 0.30 / beta 0.34 / 30–60 Hz 2.86 / 60–120 Hz 9.0（60–250 Hz 全带 10.4；勘误：原记「>60 Hz」，未定义上界，据质检复算补边界）——**低频段谱形匹配良好，>30 Hz 生成功率显著偏高**（真实信号高频已被 v4 滤波压至近零，log 地板放大高段差异；白噪地板来自先验 iso 与网络未完全去噪）。
 - **指标 4（空间结构归因）**：R̂~R r=**0.952** > K_s~R 0.891 > R̂~K_s 0.809；Frobenius R̂−R 10.79 < K_s−R 11.11——生成的零滞后空间相关比先验 K_s **更接近**真实 R：网络在先验基础上把空间结构向真实重塑（非先验复读；K_s 与 R 本身 0.891 相关，归因部分共享）。
 - **指标 2（人工视觉检验）**：轨迹图 `figs/eval_trajectories_main-01.png`（多窗真实 vs 生成多轨迹叠加）——**待用户判定，AI 不代判**。
 - 图产物（统一 visualizer，300 dpi）：eval_trajectories / eval_training_curves / eval_gc_matrix / eval_psd / eval_spatial_corr；数值 json+npy 落 eval/；eval.log + eval_metrics.jsonl 落 logs/。

@@ -130,13 +130,21 @@ def r1_monitor(run_dir, endpoint_mae: float, log) -> Dict:
         return {"available": False}
     recs: List[Dict] = [json.loads(l) for l in mpath.read_text().splitlines() if l.strip()]
     late = recs[-LATE_EPOCHS:]
-    hi_s = sum(r["t_bucket_mae"]["b8"] * r["t_bucket_count"][8] +
-               r["t_bucket_mae"]["b9"] * r["t_bucket_count"][9] for r in late if
-               r["t_bucket_mae"]["b8"] is not None and r["t_bucket_mae"]["b9"] is not None)
-    hi_n = sum(r["t_bucket_count"][8] + r["t_bucket_count"][9] for r in late)
-    mid_s = sum(r["t_bucket_mae"]["b4"] * r["t_bucket_count"][4] +
-                r["t_bucket_mae"]["b5"] * r["t_bucket_count"][5] for r in late)
-    mid_n = sum(r["t_bucket_count"][4] + r["t_bucket_count"][5] for r in late)
+    # 分子分母同条件聚合：每个桶仅在非 None 时计入（b9 样本偶发为 0 时避免压低比值 → R1 漏报偏置）
+    hi_s = hi_n = 0
+    for r in late:
+        for b in (8, 9):
+            v = r["t_bucket_mae"][f"b{b}"]
+            if v is not None:
+                hi_s += v * r["t_bucket_count"][b]
+                hi_n += r["t_bucket_count"][b]
+    mid_s = mid_n = 0
+    for r in late:
+        for b in (4, 5):
+            v = r["t_bucket_mae"][f"b{b}"]
+            if v is not None:
+                mid_s += v * r["t_bucket_count"][b]
+                mid_n += r["t_bucket_count"][b]
     train_mae_late = float(np.mean([r["train"]["mae"] for r in late]))
     out = {"available": True, "late_epochs": [r["epoch"] for r in late],
            "train_mae_late": round(train_mae_late, 5)}
