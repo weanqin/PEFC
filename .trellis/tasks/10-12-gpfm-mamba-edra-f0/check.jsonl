@@ -1,0 +1,9 @@
+{"file": ".trellis/spec/research/surrogate-brain-qualification.md", "reason": "核对三检验是否按规范执行落盘"}
+{"file": ".trellis/spec/research/data-pipeline.md", "reason": "核对无泄漏/预处理全在 dataloader"}
+{"file": ".trellis/spec/data/edra.md", "reason": "核对数据消费口径与契约一致"}
+{"file": ".trellis/spec/research/evaluation-calibers.md", "reason": "核对指标口径登记与主指标唯一"}
+{"file": ".trellis/spec/research/artifacts-management.md", "reason": "核对产物落点与 checkpoint 纪律"}
+{"file": ".trellis/spec/research/reproducibility.md", "reason": "核对 seed/复现要素"}
+{"file": ".trellis/spec/research/path-isolation.md", "reason": "核对无跨变体写入"}
+{"file": ".trellis/spec/research/visualization.md", "reason": "核对接统一 visualizer 出图"}
+{"file": ".trellis/tasks/10-12-gpfm-mamba-edra-f0/research/gpfm-mamba-adaptation.md", "reason": "对照适配结论核查实现与口径"}

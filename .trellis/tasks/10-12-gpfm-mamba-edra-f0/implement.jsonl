@@ -1,0 +1,10 @@
+{"file": ".trellis/spec/research/surrogate-brain-qualification.md", "reason": "study1 门禁：前置验证三指标口径与 5-fold 启动纪律"}
+{"file": ".trellis/spec/research/data-pipeline.md", "reason": "dataloader 统一接口与 fold0 划分纪律"}
+{"file": ".trellis/spec/data/edra.md", "reason": "edra 数据契约（字段/窗长/采样率）"}
+{"file": ".trellis/spec/research/path-isolation.md", "reason": "变体目录与 outputs 隔离契约"}
+{"file": ".trellis/spec/research/reproducibility.md", "reason": "seed/环境快照/复现三要素"}
+{"file": ".trellis/spec/research/evaluation-calibers.md", "reason": "指标三要素与主指标唯一纪律"}
+{"file": ".trellis/spec/research/artifacts-management.md", "reason": "outputs 组织与 checkpoint 命名/保留"}
+{"file": ".trellis/spec/research/visualization.md", "reason": "全部产图走统一 visualizer"}
+{"file": ".trellis/spec/research/experiment-log.md", "reason": "Run 块四要素登记格式"}
+{"file": ".trellis/tasks/10-12-gpfm-mamba-edra-f0/research/gpfm-mamba-adaptation.md", "reason": "GP-FM×Mamba 适配结论（核诊断/Mamba路线事实/损失风险）"}
