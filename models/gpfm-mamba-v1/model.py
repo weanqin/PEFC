@@ -4,7 +4,7 @@
 - 逐时间步输入 = 62 通道值 + 段类型嵌入（past/future 可学习标量）+（future 位置）全局 t 的正弦嵌入（dim 16 广播）
 - 投影 Linear(→16) → 4×MambaBlock(d_model=16, d_state=16, d_conv=4, expand=2) → 输出头 RMSNorm+Linear(16→62)
 - 仅取 future 128 位置 → v_θ (B,62,128)（return_all=True 供因果性单测取全部位置）
-- EMA（decay 0.9999）封装，推理/评估用 EMA 权重
+- EMA 封装（decay 由 config 传入，默认 0.999），推理/评估用 EMA 权重
 """
 
 from __future__ import annotations
@@ -86,9 +86,9 @@ class VelocityNetwork(nn.Module):
 
 
 class EMA:
-    """指数滑动平均权重（论文口径 decay=0.9999）；评估经 swap 上下文使用 EMA 权重。"""
+    """指数滑动平均权重（decay 由 config 传入，默认 0.999——短程训练口径）；评估经 swap 上下文使用 EMA 权重。"""
 
-    def __init__(self, model: nn.Module, decay: float = 0.9999):
+    def __init__(self, model: nn.Module, decay: float = 0.999):
         self.decay = decay
         self.shadow: Dict[str, torch.Tensor] = {
             k: v.detach().clone() for k, v in model.state_dict().items()

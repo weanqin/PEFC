@@ -3,19 +3,20 @@
 > 每次「跑批/训练/评估/统计」追加一个 Run 块：跑前先写「目的+配置」，跑后同会话补「结果+结论」，不留空块。
 > 格式契约见 `.trellis/spec/research/experiment-log.md`；产物只落本任务声明的变体目录（`.trellis/spec/research/path-isolation.md`）。
 
-## Run 000 —— fold0 单 seed 完整训练（预登记 · 未启动 · 用户门禁）
+## Run 000 —— fold0 单 seed 完整训练（用户门禁已放行 · 2026-10-12 启动）
 
-- **状态**：未启动。implement.md §5 完整训练须待 4.5 基准摘要经用户确认放行后方可执行；本块为 Run-0 预登记（implement.md 0.2），启动时在本块补齐 resolved config 全量要素与 run_id。
+- **状态**：**已放行启动**（Run 004 门禁决策：进入 §5；数据口径 **(b) status_ok**；划分**固化**；EMA 0.999——AI 建议值，向用户解释后默认采纳，如需 0.9999 改一行 config 重跑）。run_id=`main-01`（nohup 后台），跑后在本块补结果。
 - 目的：fold0 单 seed 前置验证训练（Study I 代理脑，gpfm-mamba-v1 变体）。
-- 配置（已定，跑前 dump resolved config 到 run 目录）：
-  - 划分：受试者级 5-fold 分层（MDD/HC）split_seed=42，fold0；qc_pass=True 过滤（实测 **13 例：HC 5 / MDD 8**）；内部验证 2 例（HC 1 / MDD 1，val_subject_seed=42）；训练折 8 例 10568 窗 / 内部验证 2 例 2642 窗 / 测试 3 例 3963 窗（stride=64，每例 1321 窗）
-  - z-score：逐通道，仅训练折 8 例估计
+- 配置（已定，resolved config 随 run 落盘；config_hash 05f7a30c448d）：
+  - 划分：受试者级 5-fold 分层（MDD/HC）split_seed=42，fold0；**subject_filter=status_ok（46 例：HC 24 / MDD 22，用户 2026-10-12 拍板 b；33 例 s7_interp_carry 软门失败者保留——管线作者标 ok）**；内部验证 2 例（25,40）；**训练折 34 例 44914 窗 / 内部验证 2642 窗 / 测试折 10 例（HC5/MDD5）13210 窗**（stride=64，每例 1321 窗）；**划分固化 manifest：`models/gpfm-mamba-v1/splits/fold0_status_ok_seed42.json`（此后漂移即报错）**
+  - z-score：逐通道，仅训练折 34 例估计
   - 先验：K_t=OU γ=1 τ=i·π/p p=50 iso=1e-2（折叠进时间核）pp_jitter=1e-4；K_s=Ricker3D σ=0.080 m + jitter_s=1e-3
-  - 模型：Mamba d_model=16 d_state=16 d_conv=4 expand=2 ×4 层 + 预 RMSNorm 残差；EMA 0.9999
+  - 模型：Mamba d_model=16 d_state=16 d_conv=4 expand=2 ×4 层 + 预 RMSNorm 残差；**EMA 0.999**（口径变更登记：论文 0.9999 的 τ≈10⁴ 步在本程 17.5k 步下前半程影子权重严重滞后，0.999 的 τ≈10³ 步≈5.7 epoch 匹配短程训练；观察项见 Run 002/004）
   - 损失：1·mae+1·cons+0.1·tv+0.1·corr（future 128 列，一步生成 x̂1=x_t+(1−t)v_θ）
   - 训练：seed=1234、AdamW lr=1e-3 wd=1e-4 cosine、clip 0.5、batch 256、epochs 100；t=sigmoid(N(−0.8,0.8²)) clamp [1e-4,1−1e-4]
-  - best 判据：内部验证总 loss（固定 t 网格 {0.1,0.3,0.5,0.7,0.9}+固定 eps=seed 2026 确定性复算）
+  - best 判据：内部验证总 loss（固定 t 网格 {0.1,0.3,0.5,0.7,0.9}+固定 eps=seed 2026 确定性复算，均值口径）
   - 主指标（§6）：测试折 MAE（ODE 终点样本均值口径）
+  - 命令：`nohup python3 models/gpfm-mamba-v1/train.py --run-id main-01 > /root/npi/outputs/gpfm-mamba-f0/main-01/logs/train.log 2>&1 &`（run 目录由脚本先建，日志重定向）
 
 ## Run 001 —— 训练折核诊断复跑（2026-10-12）
 
@@ -135,7 +136,7 @@
 
 - **基准通过，建议直接进入 §5 fold0 单 seed 完整训练**：显存占用 0.73/32 GB（2.3%）、100 epoch 总时长 ~5 min——资源与时长均无瓶颈，无优化必要性的证据。
 - 观察项（不阻塞，完整训练时验证）：①EMA 0.9999 时间常数 ~1e4 步 > 全程 4100 步，val-best 前期主要反映 EMA 追赶（Run 002/004 的 val≫train 即此机制）；②高 t 桶样本极少（设计使然），高 t 欠约束监控交给 §6 采样终点误差口径。
-- **用户门禁决策：待用户确认**（本摘要已转呈用户：确认进入完整训练 / 先优化模型——未确认不启动 §5，决策后补记本块）。
+- **用户门禁决策（2026-10-12）**：**进入 §5 完整训练**；数据口径选 **(b) status_ok（46 例）**并**固化划分**；EMA 经解释后由 AI 定为 0.999（如用户后续要求 0.9999，属口径变更、重跑登记）。决策依据：Run 004 摘要 + manifest QC 勘察（33 例挂 s7_interp_carry 软门但 status=ok）+ 13 例口径测试折仅 3 例统计力弱。
 
 > **勘误（2026-10-12，质检 Major-1）**：Run 002/003/004 的内部验证 total 为「t 网格求和」口径（×5）——Run 002 的 5.5964 与 Run 004 的 5.5782 对应登记口径（网格均值）≈1.119 / ≈1.116；同因子单调，best 选取与 A/B resume 一致性结论不受影响。修复（train.py 除以网格长度）与复验见 Run 005；本块原数值保留不改。
 
@@ -159,3 +160,26 @@
 ### 结论
 
 - **通过**：质检 Major-1（网格均值）、Minor-2（EMA 幅度监控）、Minor-4（死变量）修复确认；Minor-3（implement.md σ 陈旧值）已勘误。新口径 val 数值自本 Run 起生效，与 Run 002–004 的 val 不可直接比较（见 Run 004 勘误注）。
+
+## Run 006 —— 46 例口径 1-epoch 基准（2026-10-12）
+
+### 目的与假设
+
+- 用户门禁决策 (b)（status_ok 46 例）+ 划分固化 + EMA 0.999 落地后，重跑 1-epoch 基准锁定新口径数字（窗数/步数/时长/显存/外推），作为 Run 000 启动前提。
+
+### 配置
+
+- 代码：`models/gpfm-mamba-v1/{config,data,train}.py`（subject_filter='status_ok'、fixate_split=True、ema_decay=0.999；commit 见结论）
+- 命令：`python3 models/gpfm-mamba-v1/train.py --epochs 1 --bench --run-id bench-1ep-46subj`
+- 环境：base conda @ 本地云服务器
+
+### 结果
+
+- 划分（固化 manifest `splits/fold0_status_ok_seed42.json`）：train **34 例 44914 窗**（175 step/epoch）/ val 2 例 2642 窗 / test **10 例（HC5/MDD5）** 13210 窗；数据加载 4.2 s；z-score 仅训练折 34 例。
+- epoch 墙钟 **8.78 s**、19.9 it/s、5117 窗/s；peak 显存 **0.728 GiB**；**100-epoch 外推 0.244 h ≈ 14.6 min**。
+- 1 epoch 后：val total（均值口径）1.1320（mae 0.5816 / cons 0.4911 / tv 0.1916 / corr 0.4011）；x̂1 std(EMA) 0.741 vs x1 std 0.837；无 NaN。
+- config_hash 05f7a30c448d；test_data.py 新口径断言全过（46/24/22、fold 平衡 [4,5,5,5,5]/[4,4,4,5,5]、固化 manifest 二次构建一致）。
+
+### 结论
+
+- **通过，Run 000（main-01）按此口径启动**。相对 13 例口径：窗数 ×4.25、步数 4100→17500（EMA 0.999 τ≈5.7 epoch 匹配）、时长 5.2→14.6 min，资源仍极宽裕（显存 2.3%）。

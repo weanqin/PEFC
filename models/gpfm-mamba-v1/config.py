@@ -8,6 +8,11 @@
 - t ~ sigmoid(N(-0.8, 0.8^2)) 逐窗，clamp [1e-4, 1-1e-4]；一步生成 x_hat1 = x_t + (1-t) v_theta
 - best 判据 = 内部验证总 loss（固定 t 网格 {0.1,0.3,0.5,0.7,0.9} + 固定 eps 确定性复算）
 - identity-K_s 消融臂不跑（需要归因时另建薄变体 gpfm-mamba-v1-ksid）
+- 受试者过滤（2026-10-12 用户门禁拍板 b）：manifest status=='ok'（46 例 HC24/MDD22；
+  qc_pass=True 仅 13 例——33 例挂 s7_interp_carry 软门但管线作者标 ok）
+- 划分固化（用户要求）：fold0 划分 manifest 落 splits/ 目录，后续运行校验一致、漂移即报错
+- EMA 0.999（登记偏离论文 0.9999：全程约 1.8 万步，tau=1/(1-decay)≈1000 步≈5.5 epoch 匹配短程训练；
+  论文 0.9999 的 tau=1 万步在本程会让影子权重全程滞后）
 """
 
 from __future__ import annotations
@@ -34,9 +39,10 @@ class Config:
     n_folds: int = 5
     fold: int = 0                 # study1 前置验证固定 fold0
     split_seed: int = 42          # 受试者级 5-fold 分层（MDD/HC）划分 seed
-    qc_pass_only: bool = True     # manifest qc_pass=True 过滤（数量登记 experiment.md）
+    subject_filter: str = "status_ok"  # 受试者过滤口径（2026-10-12 用户拍板 b）：'status_ok'（46 例）| 'qc_pass'（13 例）
     n_val_subjects: int = 2       # 训练折内内部验证受试者（每类 1 例）
     val_subject_seed: int = 42
+    fixate_split: bool = True     # 划分固化：首次落 manifest 到 splits/，此后校验一致、漂移报错
     num_workers: int = 4
 
     # ---- GPR 条件先验（design §2.1，时空可分 K_s x K_t）----
@@ -71,7 +77,7 @@ class Config:
     lr: float = 1e-3
     weight_decay: float = 1e-4
     grad_clip: float = 0.5
-    ema_decay: float = 0.9999
+    ema_decay: float = 0.999      # 2026-10-12 调整（论文 0.9999；理由见文件头注释）
     sigma_min: float = 1e-4
     t_loc: float = -0.8           # t = sigmoid(z), z ~ N(t_loc, t_scale^2)（logit-normal，不用 U[0,1]）
     t_scale: float = 0.8

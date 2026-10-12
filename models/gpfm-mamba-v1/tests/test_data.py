@@ -24,11 +24,11 @@ import data as D  # noqa: E402
 
 def main() -> None:
     cfg = C.Config()
-    entries = D.load_manifest(cfg.data_root, qc_pass_only=True)
+    entries = D.load_manifest(cfg.data_root, subject_filter="status_ok")
     n_hc = sum(1 for e in entries if e["group"] == "HC")
     n_mdd = sum(1 for e in entries if e["group"] == "MDD")
-    print(f"[qc_pass=True 过滤] 总受试者 {len(entries)}（HC {n_hc} / MDD {n_mdd}）")
-    assert len(entries) == 13 and n_hc == 5 and n_mdd == 8, "qc 过滤数量与 2026-10-12 实测不符"
+    print(f"[status_ok 过滤（用户 2026-10-12 拍板 b）] 总受试者 {len(entries)}（HC {n_hc} / MDD {n_mdd}）")
+    assert len(entries) == 46 and n_hc == 24 and n_mdd == 22, "status_ok 过滤数量与 manifest 实测不符"
 
     # ① 受试者级分层划分：不跨折、平衡、可复现
     folds = D.stratified_subject_folds(entries, n_folds=5, seed=cfg.split_seed)
@@ -39,7 +39,7 @@ def main() -> None:
         print(f"  fold{fi}: {len(f)} 受试者 (HC {gs.count('HC')} / MDD {gs.count('MDD')})")
     hc_counts = sorted(sum(1 for e in f if e["group"] == "HC") for f in folds)
     mdd_counts = sorted(sum(1 for e in f if e["group"] == "MDD") for f in folds)
-    assert hc_counts == [1, 1, 1, 1, 1] and mdd_counts == [1, 1, 2, 2, 2], "分层不平衡"
+    assert hc_counts == [4, 5, 5, 5, 5] and mdd_counts == [4, 4, 4, 5, 5], "分层不平衡"
     folds2 = D.stratified_subject_folds(entries, n_folds=5, seed=cfg.split_seed)
     assert [[e["subject_id"] for e in f] for f in folds] == [
         [e["subject_id"] for e in f] for f in folds2
@@ -85,8 +85,18 @@ def main() -> None:
     assert not np.allclose(mean, mean_v, rtol=1e-6), "统计疑似包含非训练折受试者"
     print(f"  z-score 统计：mean∈[{mean.min():.4f},{mean.max():.4f}] std∈[{std.min():.4f},{std.max():.4f}]（仅训练折 {len(train)} 例）")
 
-    # ③ 数据集与形状
+    # ③ 数据集与形状（含划分固化校验）
     ds = D.build_datasets(cfg)
+    mpath = ds["split_manifest"]
+    assert mpath and os.path.exists(mpath), "划分固化 manifest 未落盘"
+    import json as _json
+    with open(mpath, encoding="utf-8") as f:
+        man = _json.load(f)
+    assert man["train"] == sorted(ids_train) and man["val"] == sorted(ids_val) and man["test"] == sorted(ids_test), \
+        "固化 manifest 与实际划分不一致"
+    ds2 = D.build_datasets(cfg)  # 二次构建：与固化 manifest 校验一致（不报错）
+    assert [e["subject_id"] for e in ds2["train_entries"]] == [e["subject_id"] for e in ds["train_entries"]]
+    print(f"  划分已固化: {mpath}")
     tr, va, te = ds["train"], ds["val"], ds["test"]
     win = cfg.past_len + cfg.future_len
     n_exp = (85000 - win) // cfg.stride + 1

@@ -74,18 +74,18 @@ npz (edra v4, 62ch×85000×受试者)
 - 输入特征（逐时间步）：62 通道值 + 段类型嵌入（past/future 可学习标量）；future token 额外加全局 t 的正弦嵌入（dim 16，广播到所有 future 位置）。投影 Linear(→16)。
 - 骨干：`n_layers=4` 个 Mamba 块（预 RMSNorm + 残差）：`d_model=16`（用户定）、`d_state=16`、`d_conv=4`、`expand=2`（d_inner=32）。因果（单向）——past 前缀天然作为条件被 future 位置通过递归看到。
 - 输出头：RMSNorm + Linear(16→62)，仅取 future 128 位置 → `v_θ ∈ R^{B×62×128}`。
-- EMA（decay 0.9999，论文口径），推理/评估用 EMA 权重（可配置）。
+- EMA（**decay 0.999**，2026-10-12 口径变更：论文 0.9999 的 τ≈10⁴ 步 > 本程 17.5k 步的前半程；默认经 config 传入），推理/评估用 EMA 权重（可配置）。
 - **实现路线（已定）**：官方 mamba-ssm——**已安装并验证（2026-10-12 用户通知）：mamba_ssm 2.3.1 + causal_conv1d 1.7.0，GPU 前向冒烟通过（d_model=16/L=512），triton 3.4.0 未被动**；安装由用户委派另一会话完成，本任务侧全程未安装。代码按官方 API（`mamba_ssm.Mamba`）编写。单测要求：前向形状、因果性（扰动 future 输入不改 past 位置输出）、梯度有限。
 
 ## 4. 数据模块
 
-- `EdraWindowsDataset`：受试者级 5-fold 分层（MDD/HC，划分 seed=42 登记后固定），fold0；默认 `qc_pass=True` 过滤（数量登记）；窗切分 stride=64（≈每受试者 1320 窗，fold0 训练折 ~4–5 万窗；可配置）；训练折内再按受试者切 ~2 例作内部验证（模型选择用，登记）。
+- `EdraWindowsDataset`：受试者级 5-fold 分层（MDD/HC，划分 seed=42 登记后固定），fold0；**受试者过滤（2026-10-12 用户门禁拍板 b）：manifest `status=='ok'`（46 例 HC24/MDD22；qc_pass=True 仅 13 例——33 例挂 s7_interp_carry 软门但管线标 ok）**；**划分固化**：fold0 划分 manifest 落 `models/gpfm-mamba-v1/splits/fold0_status_ok_seed42.json`，此后每次构建校验一致、漂移即报错；窗切分 stride=64（fold0 训练折 34 例 44914 窗）；训练折内切 2 例（25,40）作内部验证（模型选择用，登记）。
 - z-score：逐通道均值/方差，**仅训练折（不含内部验证/测试）估计**，在 dataloader 内应用；统计量随 Run 登记。
 - 输出张量：`X_past (B,62,384)`、`X_future (B,62,128)`，float32；`group` 标签随 batch（分层核对用）。模型侧零变换（spec 纪律）。
 
 ## 5. 训练与采样
 
-- 优化：AdamW（lr=1e-3, wd=1e-4, cosine 退火），grad clip 0.5、EMA 0.9999（论文值起步），batch=256（4080S 32GB 足够，参数量 ~10⁵ 级），epochs=100（固定训练，不做早停；**best 按内部验证总 loss（固定 t 网格确定性复算，§2.3）每 epoch 评估更新**，last 每 epoch 覆写）；官方 Mamba CUDA kernel 下训练时长以 1-epoch 基准实测外推为准（nohup 后台）。
+- 优化：AdamW（lr=1e-3, wd=1e-4, cosine 退火），grad clip 0.5、**EMA 0.999**（2026-10-12 口径变更登记：论文 0.9999 的 τ≈10⁴ 步在本程 17.5k 步下前半程影子权重严重滞后，0.999 的 τ≈10³ 步≈5.7 epoch 匹配短程；评估/采样用 EMA 权重），batch=256（4080S 32GB 足够，参数量 ~10⁵ 级），epochs=100（固定训练，不做早停；**best 按内部验证总 loss（固定 t 网格确定性复算，§2.3）每 epoch 评估更新**，last 每 epoch 覆写）；46 例口径实测 8.78 s/epoch、100-epoch ≈ 14.6 min（nohup 后台）。
 - **1-epoch 基准测试（用户要求，含确认门禁）**：全量训练折数据跑 1 epoch，记录 peak 显存（`torch.cuda.max_memory_allocated`）、epoch 墙钟时间、it/s、样本吞吐、四项损失走势与按 t 分桶 sanity，外推 100 epoch 总时长并登记 experiment.md 与 run 目录；**基准摘要汇报用户 → 用户确认后方可进入完整训练，或先据结果优化模型（未确认不启动 §5 完整训练）**。
 - 每 epoch 记录：train 四项损失/总损失、内部验证总 loss（+四项）、按 t 十分桶的 mae、‖v_θ‖ 均值、生成幅度监控（EMA 权重下 x̂1 的 std_t 均值）。
 - **监控 / checkpoint / 断点续传（R9，用户 2026-10-12 新增）**：

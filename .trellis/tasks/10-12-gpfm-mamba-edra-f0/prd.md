@@ -13,7 +13,7 @@
 
 ## Requirements
 
-- **R1 数据与划分**：edra v4（`/root/autodl-tmp/edra_process_v4/`，62 通道 500 Hz），5-fold 受试者级分层划分（MDD/HC），固定 fold 标识与划分 seed，全程沿用 fold0；窗口 `[past=384, future=128]`；全部预处理（受试者筛选、z-score、窗切分）在 dataloader 内完成，z-score 统计仅用训练折估计；筛选口径（如 `qc_pass`）登记 experiment.md。
+- **R1 数据与划分**：edra v4（`/root/autodl-tmp/edra_process_v4/`，62 通道 500 Hz），5-fold 受试者级分层划分（MDD/HC），固定 fold 标识与划分 seed，全程沿用 fold0；**受试者过滤口径（2026-10-12 用户门禁拍板 b）：manifest `status=='ok'`（46 例 HC24/MDD22）**；**划分固化**（用户要求）：fold0 划分 manifest 落 `models/gpfm-mamba-v1/splits/fold0_status_ok_seed42.json`，此后构建校验一致、漂移即报错；窗口 `[past=384, future=128]`；全部预处理（受试者筛选、z-score、窗切分）在 dataloader 内完成，z-score 统计仅用训练折估计；筛选口径登记 experiment.md。
 - **R2 GPR 条件先验（时空可分核，用户 2026-10-12 指定）**：联合先验 `Cov(x0[c,t], x0[c',t']) = K_s(c,c')·K_t(t,t')`；GPR 条件后验按闭式解实现（后验均值算子 A 与逐通道情形一致、后验协方差保持可分 `K_s ⊗ K'_{t,f|p}`）；K_t 默认 OU（γ=1，τ_i=i·π/p，p=50，iso=1e-2 折叠进时间核）；**K_s 已定：Mexican-hat 的 Ricker 形式——采用三维正定形式 `(1−d²/(3σ²))e^{−d²/2σ²}`（严格 1D Ricker 在实测电极点集上非 PSD，已数值否决）**，σ 默认 **0.080 m**（用户定；邻位 +0.89、过零 0.139 m 在阵列内、负瓣 −0.05、有效秩 7.5/62）+ jitter_s=1e-3，σ 扫描 {0.045, 0.080, 0.137} 入诊断步；past 全观测 ⇒ A、L_s、L_t 均为固定算子预计算；偏离论文逐通道独立口径之处显式登记。
 - **R3 模型**：Mamba 骨干，`d_model=16`（其余超参在 design.md 定并登记）；条件信息（过去 384 点序列）以序列前缀方式输入；模型输出未来段的速度场 `v_θ(x_t, t, X_past)`，时间嵌入采用正弦编码。**官方 mamba-ssm 路线（已定并完成：mamba_ssm 2.3.1 + causal_conv1d 1.7.0，2026-10-12 用户委派安装、本机验证通过）。**
 - **R4 训练目标（用户定稿口径）**：FM 路径 `x_t = t·x1 + (1−t)·x0 + σ_min·η`（σ_min=1e-4），**t ~ logit-normal：t = sigmoid(z)，z~N(−0.8, 0.8²)**（不用 U[0,1]；中位 t≈0.31，clamp [1e-4, 1−1e-4]），`x0 ~ 时空可分 GPR 条件先验`；**训练期生成=一步映射** `x̂1 = x_t + (1−t)·v_θ`（训练全程不做 ODE 积分；多步 Euler 仅用于训练后采样）；**不使用显式速度预测损失项**；`loss = 1·mae + 1·cons + 0.1·tv + 0.1·corr`（权重可配置），四项均作用于 x̂1，定义域为未来 128 列：
@@ -50,7 +50,7 @@
 4. ~~GC/PSD 口径~~ **已定**：future-only
 5. ~~outputs 根~~ **已定**：`/root/npi/outputs/<任务名>/`
 6. （默认口径确认）tv 为纯平滑惩罚、corr 逐通道口径、`x̂1 = x_t+(1−t)v_θ` 参数化、σ_s=0.080 默认值——如需调整请在启动确认时一并提出
-7. **唯一剩余：启动确认**（「确认启动」后执行 task.py start 进入实施）
+7. ~~启动确认~~ **已确认（2026-10-12 门禁决策）**：进入 §5 完整训练；数据口径 (b) status_ok 46 例；划分固化；EMA 0.999（AI 建议值，向用户解释后默认采纳，如需 0.9999 属口径变更重跑登记）
 
 ## 子研究路由（1.0b / 1.0c）
 

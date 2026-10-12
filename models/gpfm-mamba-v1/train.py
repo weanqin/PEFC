@@ -206,7 +206,7 @@ def main() -> None:
     tr_ds, va_ds = ds["train"], ds["val"]
     np.save(run_dir / "channel_mean.npy", ds["channel_mean"])
     np.save(run_dir / "channel_std.npy", ds["channel_std"])
-    log(f"[data] qc_pass 过滤后 fold0：train {len(ds['train_entries'])} 例 {len(tr_ds)} 窗 | "
+    log(f"[data] subject_filter={cfg.subject_filter} 过滤后 fold0：train {len(ds['train_entries'])} 例 {len(tr_ds)} 窗 | "
         f"val {len(ds['val_entries'])} 例 {len(va_ds)} 窗 | z-score 仅训练折 | 加载 {data_load_s:.1f}s")
 
     # ---- 先验 / 模型 / 优化 ----

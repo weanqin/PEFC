@@ -66,7 +66,7 @@ def main() -> None:
         "# 核诊断复跑（fold0 训练折正式 z-score 口径）",
         "",
         "- 日期：2026-10-12；脚本 `models/gpfm-mamba-v1/diagnose_kernel.py`；Run 001（experiment.md）",
-        f"- 数据：qc_pass=True 过滤后 fold0 训练折 {n_subj} 例受试者（z-score 仅训练折），诊断窗 {n}（每例等距 {N_WIN_PER_SUBJ}）",
+        f"- 数据：subject_filter=status_ok 过滤后 fold0 训练折 {n_subj} 例受试者（z-score 仅训练折），诊断窗 {n}（每例等距 {N_WIN_PER_SUBJ}）",
         f"- 时间核：OU γ={cfg.gamma} τ=i·π/p p={cfg.period_p} iso={cfg.iso}（折叠进 K'_t）pp_jitter={cfg.pp_jitter}",
         "",
         "## 时间侧（OU，与 σ_s 无关）",
