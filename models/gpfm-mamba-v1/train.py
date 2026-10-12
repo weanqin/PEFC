@@ -96,8 +96,7 @@ def evaluate_internal_val(
 
     with (use_ema_ctx or nullcontext()):
         loader = D.make_loader(val_ds, cfg.batch_size, shuffle=False, seed=cfg.seed, epoch=0, num_workers=0)
-        sums = {k: 0.0 for k in ("mae", "cons", "tv", "corr", "total")}
-        n_eval = 0
+        sums = {k: 0.0 for k in ("mae", "cons", "tv", "corr", "total", "xhat1_std_ema", "x1_std")}
         with torch.no_grad():
             for xp, x1 in loader:
                 xp = xp.to(device, non_blocking=True)
@@ -117,15 +116,18 @@ def evaluate_internal_val(
                     parts = composite_loss(
                         xhat1, x1, cfg.w_mae, cfg.w_cons, cfg.w_tv, cfg.w_corr, cfg.corr_eps
                     )
-                    w = B / len(val_ds)
-                    for k in sums:
+                    # 网格均值口径（design §2.3）：对 t 网格与验证集双重平均
+                    w = B / (len(val_ds) * len(cfg.val_t_grid))
+                    for k in ("mae", "cons", "tv", "corr", "total"):
                         sums[k] += float(parts[k]) * w
-                    n_eval += 1
+                    sums["xhat1_std_ema"] += float(xhat1.std(dim=-1, unbiased=True).mean()) * w
+                    sums["x1_std"] += float(x1.std(dim=-1, unbiased=True).mean()) * w
     if was_training:
         model.train()
-    log(f"[val] 内部验证（EMA={cfg.use_ema_for_val}，t 网格 {list(cfg.val_t_grid)}，确定性 eps seed={cfg.val_eps_seed}）"
+    log(f"[val] 内部验证（EMA={cfg.use_ema_for_val}，t 网格 {list(cfg.val_t_grid)}（均值口径），确定性 eps seed={cfg.val_eps_seed}）"
         f" total {sums['total']:.4f} | mae {sums['mae']:.4f} cons {sums['cons']:.4f} "
-        f"tv {sums['tv']:.4f} corr {sums['corr']:.4f}")
+        f"tv {sums['tv']:.4f} corr {sums['corr']:.4f}"
+        f" | x̂1 std(EMA) {sums['xhat1_std_ema']:.4f} vs x1 std {sums['x1_std']:.4f}")
     return sums
 
 

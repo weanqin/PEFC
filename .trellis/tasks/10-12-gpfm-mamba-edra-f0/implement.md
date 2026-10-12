@@ -1,6 +1,6 @@
 # Implement — GP先验流匹配 Mamba 代理脑（edra fold0）
 
-> 前置条件（0. 完成前不得写任何代码）：① 用户「确认启动」（**唯一剩余门禁**，四项设计决策已全部落定：核=时空可分 K_s⊗K_t、K_s=Ricker 三维正定形式 σ=0.045、Mamba=官方 mamba_ssm 2.3.1（已装已验证）、GC/PSD=future-only、outputs=`/root/npi/outputs/gpfm-mamba-f0/`）；② `task.py start` 已执行。
+> 前置条件（0. 完成前不得写任何代码）：① 用户「确认启动」（**唯一剩余门禁**，四项设计决策已全部落定：核=时空可分 K_s⊗K_t、K_s=Ricker 三维正定形式 σ=0.080、Mamba=官方 mamba_ssm 2.3.1（已装已验证）、GC/PSD=future-only、outputs=`/root/npi/outputs/gpfm-mamba-f0/`）；② `task.py start` 已执行。
 > 每步完成即勾选；跑任何训练/评估前先在 `{TASK_DIR}/experiment.md` 登记 Run（目的/配置/seed/指标口径）。
 
 ## 0. 决策与登记（gate）

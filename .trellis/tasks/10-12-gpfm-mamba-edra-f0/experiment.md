@@ -136,3 +136,26 @@
 - **基准通过，建议直接进入 §5 fold0 单 seed 完整训练**：显存占用 0.73/32 GB（2.3%）、100 epoch 总时长 ~5 min——资源与时长均无瓶颈，无优化必要性的证据。
 - 观察项（不阻塞，完整训练时验证）：①EMA 0.9999 时间常数 ~1e4 步 > 全程 4100 步，val-best 前期主要反映 EMA 追赶（Run 002/004 的 val≫train 即此机制）；②高 t 桶样本极少（设计使然），高 t 欠约束监控交给 §6 采样终点误差口径。
 - **用户门禁决策：待用户确认**（本摘要已转呈用户：确认进入完整训练 / 先优化模型——未确认不启动 §5，决策后补记本块）。
+
+> **勘误（2026-10-12，质检 Major-1）**：Run 002/003/004 的内部验证 total 为「t 网格求和」口径（×5）——Run 002 的 5.5964 与 Run 004 的 5.5782 对应登记口径（网格均值）≈1.119 / ≈1.116；同因子单调，best 选取与 A/B resume 一致性结论不受影响。修复（train.py 除以网格长度）与复验见 Run 005；本块原数值保留不改。
+
+## Run 005 —— 质检修复复验（2026-10-12）
+
+### 目的与假设
+
+- trellis-check Major-1/Minor-2/Minor-4 修复后复验：①内部验证改「网格均值」口径（val total 应回到 ~1.1 量级）②EMA 权重下 x̂1 std 幅度监控字段生效 ③四组单测不受影响。
+
+### 配置
+
+- 代码：`models/gpfm-mamba-v1/train.py`（修复 commit 见结论）；单测 4 脚本
+- 命令：单测逐个实跑 + `python3 models/gpfm-mamba-v1/train.py --epochs 1 --bench --run-id bench-1ep-fix`
+- 环境：base conda @ 本地云服务器
+
+### 结果
+
+- 单测 4/4 PASS（test_data / test_gpr / test_model / test_losses 逐个实跑，退出码 0）。
+- `bench-1ep-fix`：val **total 1.1156**（网格均值口径；= Run 004 的 5.5782 / 5 ✓），mae 0.5873 / cons 0.4678 / tv 0.2040 / corr 0.4010；**EMA 幅度监控字段生效**：xhat1_std_ema 0.7546 vs x1_std 0.8381；epoch 3.07 s / peak 0.728 GiB / 13.35 it/s，与 Run 004 一致（修复无性能影响）；config_hash 339a75571462 不变。
+
+### 结论
+
+- **通过**：质检 Major-1（网格均值）、Minor-2（EMA 幅度监控）、Minor-4（死变量）修复确认；Minor-3（implement.md σ 陈旧值）已勘误。新口径 val 数值自本 Run 起生效，与 Run 002–004 的 val 不可直接比较（见 Run 004 勘误注）。
