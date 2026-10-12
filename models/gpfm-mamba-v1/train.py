@@ -325,7 +325,7 @@ def main() -> None:
                     f"corr {pf['corr']:.4f} | {its:.1f} it/s ETA {eta:.0f}s "
                     f"lr {sched.get_last_lr()[0]:.2e}")
             if step % TREND_EVERY == 0:
-                trend.append({"step": gs, **{k: float(parts[k]) for k in ("mae", "cons", "tv", "corr", "total")}})
+                trend.append({"step": gs, **{k: float(parts[k].detach()) for k in ("mae", "cons", "tv", "corr", "total")}})
         sched.step()
         epoch_time = time.time() - te0
         epoch_times.append(epoch_time)
