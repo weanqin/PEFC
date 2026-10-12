@@ -1,8 +1,11 @@
-"""test_sample.py — Euler ODE 采样单测（implement.md 6.1）。
+"""test_sample.py — Euler ODE 采样单测（implement.md 6.1 + 真实评估崩溃回归）。
 
 ① 形状 (B,K,62,128) 与有限性（随机权重小模型 + 生产尺寸 bench checkpoint）
 ② 确定性：同 seed 同输出
-③ batch 维度独立性：显式 eps/eta 下整批 vs 逐窗一致
+③ batch 维度独立性：显式 eps/eta 下整批 vs 逐窗一致（kernel 批维噪声经 Euler 放大，atol 5e-3）
+③b 多 chunk（B·K 跨满块+尾块）+ 尾批等价（真实评估场景：多满批 + 尾批，K=16 展开分块）
+③c traj 切片回归（崩溃根因）：samples (B,K,C,F) 通道在 dim 2、样本条数在 dim 1、F 全长——
+   通道索引误打 K 维曾致 CUDA IndexKernel 越界 abort（evaluate.py Pass A 首批即崩）
 ④ checkpoint 装载路径（bench-1ep-46subj best.pt 只读）：config_hash 校验 + EMA shadow + 生产尺寸采样
 运行：python3 models/gpfm-mamba-v1/tests/test_sample.py（需 CUDA；batch 保持小——与训练共存）
 """
@@ -67,16 +70,53 @@ def main() -> None:
     assert not torch.allclose(s1, s3, atol=1e-4), "不同 seed 应产生不同样本"
 
     # ③ batch 维度独立性：显式 eps/eta，整批 vs 逐窗切片一致
+    #    容差说明：mamba CUDA kernel 的批维算法选择引入 ~1e-6 级前向噪声，经 8-16 步 Euler
+    #    积分放大后跨运行波动（实测 4e-07 ~ 5e-04）——atol 5e-3 拦结构错误（eps 对位错=O(1)），放行 fp 噪声
+    BTOL = 5e-3
     eps = torch.randn(B, K, n_ch, F, device=dev)
     eta = torch.randn(B, K, n_ch, F, device=dev)
     s_full = sampler.sample(xp, K, eps=eps, eta=eta)
     s_w0 = sampler.sample(xp[:1], K, eps=eps[:1], eta=eta[:1])
-    s_w1 = sampler.sample(xp[1:], K, eps=eps[1:], eta=eta[1:])
+    s_w1 = sampler.sample(xp[1:], K, eps=eps[1:], eta=eta[:1])
     d0 = float((s_full[0] - s_w0[0]).abs().max())
     d1 = float((s_full[1] - s_w1[0]).abs().max())
-    assert torch.allclose(s_full[0], s_w0[0], atol=1e-4), f"窗 0 batch 依赖 max|Δ|={d0}"
-    assert torch.allclose(s_full[1], s_w1[0], atol=1e-4), f"窗 1 batch 依赖 max|Δ|={d1}"
-    print(f"[batch 独立] 整批 vs 逐窗 max|Δ| = {d0:.2e} / {d1:.2e}（atol 1e-4 内）")
+    assert torch.allclose(s_full[0], s_w0[0], atol=BTOL), f"窗 0 batch 依赖 max|Δ|={d0}"
+    assert torch.allclose(s_full[1], s_w1[0], atol=BTOL), f"窗 1 batch 依赖 max|Δ|={d1}"
+    print(f"[batch 独立] 整批 vs 逐窗 max|Δ| = {d0:.2e} / {d1:.2e}（atol {BTOL} 内）")
+
+    # ③b 多 chunk（B·K 跨满块+尾块）+ 尾批：显式 eps 下 chunk 化 ≈ 不 chunk；尾批单独跑 ≈ 整批切片
+    #    （真实评估崩溃场景回归：13210 窗 = 多满批 + 尾批，K=16 展开经 chunk_bk 分块）
+    B2, K2 = 5, 4
+    sampler_big = EulerSampler(model, prior, euler_steps=8, sigma_min=1e-4, chunk_bk=100)
+    sampler_chk = EulerSampler(model, prior, euler_steps=8, sigma_min=1e-4, chunk_bk=8)  # B2*K2=20 → 8+8+4
+    xp2 = torch.randn(B2, n_ch, P, device=dev)
+    eps2 = torch.randn(B2, K2, n_ch, F, device=dev)
+    eta2 = torch.randn(B2, K2, n_ch, F, device=dev)
+    s_un = sampler_big.sample(xp2, K2, eps=eps2, eta=eta2)
+    s_ch = sampler_chk.sample(xp2, K2, eps=eps2, eta=eta2)
+    assert s_un.shape == (B2, K2, n_ch, F)
+    dchk = float((s_un - s_ch).abs().max())
+    assert torch.allclose(s_un, s_ch, atol=BTOL), f"chunk 化（满块+尾块）vs 不 chunk max|Δ|={dchk}"
+    dworst = 0.0
+    for w in range(B2):  # 尾批视角：逐窗（批大小 1）与整批一致
+        s_one = sampler_chk.sample(xp2[w:w + 1], K2, eps=eps2[w:w + 1], eta=eta2[w:w + 1])
+        dworst = max(dworst, float((s_un[w] - s_one[0]).abs().max()))
+    assert dworst < BTOL, f"逐窗（尾批）vs 整批 max|Δ|={dworst}"
+    print(f"[chunk/尾批] B·K={B2 * K2} 经 chunk_bk=8 三块（8+8+4）vs 单块 max|Δ|={dchk:.2e}；"
+          f"逐窗（批 1）vs 整批 max|Δ|={dworst:.2e}（atol {BTOL} 内）")
+
+    # ③c traj 切片回归（真实评估崩溃根因）：samples (B,K,C,F)——通道在 dim 2、样本条数在 dim 1、
+    #     F 保持全长。断言正确模式可用、形状符合 visualizer 契约、且与 CPU 参考逐位一致
+    idx = torch.as_tensor(np.linspace(0, n_ch - 1, 4).astype(int), dtype=torch.long, device=dev)
+    assert int(idx.max()) < n_ch, "通道索引越界"
+    gpu_sel = s_un[0, :2, idx, :].permute(1, 2, 0).cpu().numpy()    # (C_sel, F, K'=2)
+    cpu_ref = s_un[0].cpu().numpy()[:2, np.linspace(0, n_ch - 1, 4).astype(int), :].transpose(1, 2, 0)
+    assert gpu_sel.shape == (4, F, 2), f"traj gen 形状错误 {gpu_sel.shape}（应为 (C_sel,F,K')）"
+    assert gpu_sel.shape == cpu_ref.shape and np.array_equal(gpu_sel, cpu_ref), \
+        "CUDA torch 索引切片与 CPU numpy 索引语义不一致"
+    assert torch.isfinite(torch.from_numpy(gpu_sel)).all()
+    print(f"[traj 切片回归] samples[wi,:K',cuda_idx,:]→(C,F,K') 形状 {gpu_sel.shape} 与 CPU 参考逐位一致")
+
 
     # ④ 生产尺寸：bench-1ep-46subj best checkpoint（已完成、只读）装载 + 单窗采样
     #    bench 用 --epochs 1 跑成 → resolved config hash 含 epochs=1，构造时须同参

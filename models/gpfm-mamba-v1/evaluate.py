@@ -218,8 +218,11 @@ def main() -> None:
     acc = MetricAcc(cfg.n_channels)
 
     # 选定人工视觉检验窗/通道（确定性等距）
+    # 注意：samples 布局为 (B, K, C, F)——通道在 dim 2；此前误将通道索引打在 K 维（大小 16）
+    # 导致 CUDA IndexKernel 越界断言 abort（真实评估崩溃根因）。索引统一用同设备 long 张量。
     traj_w = np.linspace(0, n_win - 1, TRAJ_WINDOWS).astype(int)
     traj_c = np.linspace(0, cfg.n_channels - 1, TRAJ_CHANNELS).astype(int)
+    traj_c_idx = torch.as_tensor(traj_c, dtype=torch.long, device=device)
     traj_store = {"past": [], "real": [], "gen": []}
     traj_set = set(int(i) for i in traj_w)
 
@@ -241,9 +244,11 @@ def main() -> None:
             n_done += xp.shape[0]
             for wi, gidx in enumerate(range(gidx0, n_done)):
                 if gidx in traj_set:
-                    traj_store["past"].append(xp[wi, traj_c, -TRAJ_CONTEXT:].cpu().numpy())
-                    traj_store["real"].append(x1[wi, traj_c].cpu().numpy())
-                    traj_store["gen"].append(samples[wi, traj_c, :, :TRAJ_SAMPLES].cpu().numpy())
+                    traj_store["past"].append(xp[wi, traj_c_idx, -TRAJ_CONTEXT:].cpu().numpy())
+                    traj_store["real"].append(x1[wi, traj_c_idx].cpu().numpy())
+                    traj_store["gen"].append(
+                        samples[wi, :TRAJ_SAMPLES, traj_c_idx, :].permute(1, 2, 0).cpu().numpy()
+                    )  # (K',C_sel,F) -> (C_sel,F,K')，匹配 visualizer gen[w,c,:,k] 契约（F 全长、K' 条样本）
             el = time.time() - t0
             eta = el / n_done * (n_win - n_done)
             log(f"[pass-A] batch {bi + 1}/{len(loader)} | 窗 {n_done}/{n_win} | {el:.0f}s | "
