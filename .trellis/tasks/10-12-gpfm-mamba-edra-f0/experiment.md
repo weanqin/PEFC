@@ -210,3 +210,18 @@
   - 空间归因（指标 4）：R̂（生成单样本全折零滞后相关）vs K_s（Ricker3D σ=0.080 加 jitter 前原始核）vs 真实 R：Frobenius ×3 + 上三角 Pearson/Spearman ×3 + 数值表
   - 产物：`outputs/gpfm-mamba-f0/main-01/` 下 `logs/eval.log` + `logs/eval_metrics.jsonl`（R9 留存）+ `eval/`（summary.json、gc_input.npz（gen/real (N,62,128) f32+窗元数据）、gc_{real,gen}.npy、gc_F_p_*.npz、psd.npz、spatial_corr.npz、gc_psd_results.json）+ `figs/`（轨迹叠加/PSD/GC 矩阵/训练曲线/空间三方共 5 类，统一 visualizer）
   - 命令：`python3 models/gpfm-mamba-v1/evaluate.py --run-id main-01`
+
+### Run 007 结果（2026-10-12 评估完成；checkpoint=main-01 best（ep100，EMA））
+
+- **Pass A（Q1 预测质量，主指标 test-MAE=ODE 终点样本均值口径，13210 窗 × K=16）**：model **0.7109** | persistence 0.9527 | **gpr_mean 0.6873**；CRPS(model) 0.5293；逐通道 Pearson r：model 0.1421 / gpr_mean 0.1678 / persistence 0。——模型显著优于持久性，但 MAE 与 r 均略逊于 GPR 后验均值基线（差 3.4%）；与适配研究预期一致（EEG 线性可预测上限低，GP 先验=结构化基分布）。单 seed 初步观察。
+- **R1 触发检查（§6.2 口径）**：高/中 t 桶比 0.377（阈值 1.5）、终点/训练末期比 1.248（阈值 1.5）→ **未触发**。
+- **指标 1（GC 一致性，future-only，BIC 选 p*=4 两组共用，受试者级 bootstrap 1000 次 seed=2026）**：Pearson r=**0.2820**（95%CI 0.193–0.336）| Spearman ρ=**0.1932**（0.130–0.248）；显著边（BH-FDR q<0.05）真实 3782/3782 vs 生成 3777（Jaccard 0.999，该维度判别力弱）；生成 GC 幅值范围约为真实一半（max 0.0124 vs 0.0306）。
+- **指标 3（PSD，future 拼接 Welch nperseg=512，0.98 Hz，两组同分段）**：峰频率一致（均 0.98 Hz）；全通道平均谱分频段 |Δlog10|：delta 0.09 / alpha 0.15（主节律段高度相似）/ theta 0.30 / beta 0.34 / 30–60 Hz 2.86 / >60 Hz 9.0——**低频段谱形匹配良好，>30 Hz 生成功率显著偏高**（真实信号高频已被 v4 滤波压至近零，log 地板放大高段差异；白噪地板来自先验 iso 与网络未完全去噪）。
+- **指标 4（空间结构归因）**：R̂~R r=**0.952** > K_s~R 0.891 > R̂~K_s 0.809；Frobenius R̂−R 10.79 < K_s−R 11.11——生成的零滞后空间相关比先验 K_s **更接近**真实 R：网络在先验基础上把空间结构向真实重塑（非先验复读；K_s 与 R 本身 0.891 相关，归因部分共享）。
+- **指标 2（人工视觉检验）**：轨迹图 `figs/eval_trajectories_main-01.png`（多窗真实 vs 生成多轨迹叠加）——**待用户判定，AI 不代判**。
+- 图产物（统一 visualizer，300 dpi）：eval_trajectories / eval_training_curves / eval_gc_matrix / eval_psd / eval_spatial_corr；数值 json+npy 落 eval/；eval.log + eval_metrics.jsonl 落 logs/。
+
+### Run 007 结论
+
+- **前置验证数值与图全部落盘**（fold0 单 seed）；Q1 与 Q2 分开陈述：Q1 模型可预测性中等（优于持久性、未超线性 GPR 基线）；Q2 指标 1 中等正相关（r≈0.28）、指标 3 低频相似/高频偏高、指标 4 显示网络重塑空间结构、指标 2 待人工检验。**指标 1/3 通过标准为占位，由用户结合数值与图判定；未通过判定前不宣称「代理脑合格」，不进入 5-fold、不固定 θ\***（门禁：surrogate-brain-qualification.md §判定流程 2/3）。
+- 已知局限（下一轮候选优化项，均须新变体/新 Run 登记）：生成高频功率偏高（tv 权重/先验 iso/网络去噪）；GC 幅值整体偏低约一半（生成动态平滑）；Q1 未超 GPR 基线（采样均值口径 vs 确定性线性外推）。
