@@ -183,3 +183,30 @@
 ### 结论
 
 - **通过，Run 000（main-01）按此口径启动**。相对 13 例口径：窗数 ×4.25、步数 4100→17500（EMA 0.999 τ≈5.7 epoch 匹配）、时长 5.2→14.6 min，资源仍极宽裕（显存 2.3%）。
+
+### Run 000 结果（2026-10-12 训练完成，评估见 Run 007）
+
+- 100 epoch 全程无 NaN；mean 8.06 s/epoch，总时长 ~13.4 min；peak 显存 0.728 GiB；21.7 it/s；复现三要素齐备（config_hash c6ff80ac1c43、commit 45791bd、env_snapshot/pip freeze、启动命令在块首）。
+- 训练曲线：train total 1.3254（ep1）→ 0.9918（ep100）；**val total（EMA、网格均值口径）1.1320 → 0.80226，best=epoch 100（cosine 末端）**；四项 val：mae 0.458 / cons 0.298 / tv 0.152 / corr 0.315。
+- 幅度监控：x̂1 std(EMA) 0.757 vs x1 std 0.837（90.4%，tv 平滑压制轻微）。
+- **R1 触发检查：高 t 桶 [0.8,1] mae / 中 t 桶 [0.4,0.7] mae = 0.33（阈值 1.5）→ 未触发**；分桶 mae 随 t 单调降（b0 0.764 → b9 0.098），高 t 段无欠约束迹象（logit-normal t 采样 + 一步生成的预期行为）。
+- checkpoints：gpfm-mamba-f0-best.pt（ep100）+ gpfm-mamba-f0-last.pt；metrics.jsonl 100 行无缺口。
+
+### Run 000 结论（训练部分）
+
+- **训练收敛通过**：损失单调下降、best 判据工作正常（末 epoch 最优）、R1/幅度监控无异常、无 NaN。模型质量与代理脑有效性结论待 Run 007 采样评估与前置验证三指标（分开陈述）。
+
+## Run 007 —— 前置验证评估（采样/MAE/GC/PSD/空间归因 · **待主会话执行**）
+
+- **状态**：评估管线已实现并通过单测（tests/test_sample.py、tests/test_gc_psd.py 实跑退出码 0；既有 4 组单测回归通过；visualizer 5 类图合成数据渲染冒烟 + gc_psd.run_all 合成迷你数据端到端冒烟通过）；**未启动真实评估**（implement 6.1–6.4 实现完成即停止，真实评估由主会话执行下述命令，跑后在本块补结果/结论）。
+- 目的：fold0 单 seed 前置验证（design §6）——Q1 预测质量（test-MAE 主指标 + CRPS/逐通道 r 次指标 + 持久性/GPR 均值双基线 + R1 触发监控）与 Q2 三检验（GC 连接一致性 / 人工视觉检验 / PSD 相似性）+ 指标 4 空间结构归因（R̂ vs K_s vs R），Q1/Q2 结论分开陈述。
+- 配置：
+  - 代码：`models/gpfm-mamba-v1/{sample,evaluate,gc_psd}.py` + 共享 `common/visualizer.py`（仓库共享区首建，nature-figure 契约风格、300 dpi PNG；实验代码内无散落绘图）；commit 见本 Run 结论补记
+  - 采样：EMA 权重（best ckpt 的 `ema` state + config_hash 严格校验），Euler ODE t:0→1 共 16 步（cfg.euler_steps），从 GPR 条件先验 x0（+σ_min·ε）出发；每窗 K=16 条独立样本（seed=cfg.seed=1234）；GC/PSD 生成侧 = 每窗固定 seed 单样本（seed=1235，K=1 独立确定性 pass，顺序由测试折 loader 决定）
+  - 主指标：test-MAE（**ODE 终点样本 x̂(1) 口径**：每窗 16 样本均值作点预测，非训练期 x̂1 公式）；次指标：CRPS（NRG 成对近似 mean|x−y| − 0.5·mean|x−x′|，分母 K² 含对角零，排序恒等式向量化已对 brute-force 逐点核验 max|Δ|≈9e-16）+ 逐通道 Pearson r 均值（近平坦守护与训练 corr 同口径）；基线同口径：持久性（past 末值复制 128）与 GPR 后验均值 μ=A·y^p
+  - R1 触发：高 t 桶 [0.8,1]/中 t 桶 [0.4,0.6] mae ≥1.5（metrics.jsonl 末期 5 epoch 计数加权），或终点 MAE ≥ 训练末期 x̂1-MAE ×1.5（口径注记：test vs train 折不同数据，按 design §9.1 执行并如实标注）→ eval.log 告警行
+  - GC：future-only，两组参数完全一致；全模型 VAR(p) OLS（受试者级 Gram 聚合，避免整折设计矩阵物化）；**BIC 真实组选 p∈{1..10} 两组共用**（对齐行集 t∈[p_max,F) 嵌套子矩阵口径）；成对条件 GC = 删列额外平方和（块 Schur 补：SSR_r[i,i] = SSR_full[i,i] + B[cols_j,i]ᵀ(G⁻¹)[cols_j,cols_j]⁻¹B[cols_j,i]，不做 3782 次全量重拟合）；GC 量 = ln(SSR_r/SSR_full)，F 检验 raw p（numpy 手写 betainc，已对 7 个教科书 F/t 临界值核验 |Δ|<5e-3）→ BH-FDR（numpy 排序实现；各组 3782 有向边 q<0.05 数 + 两组 Jaccard）；矩阵一致性 Pearson r + Spearman ρ（秩变换后 Pearson）+ raw p + 95% CI——**bootstrap 单元 = 受试者级**（1000 次、seed 2026、两组配对同重采样索引；对 design「对窗 bootstrap」的登记偏离：逐窗 Gram 存储需 ~20 GB 不可行，且 stride=64 相邻窗高度相关、受试者才是独立单元）
+  - PSD：两组完全相同分段与拼接——互不重叠 future 段（窗 start ≡ 0 mod 2·stride）逐受试者拼接、丢前导残段对齐绝对 512 点网格 → Welch（Hann，nperseg=512，fs=500 → 0.977 Hz≈0.98 Hz）
+  - 空间归因（指标 4）：R̂（生成单样本全折零滞后相关）vs K_s（Ricker3D σ=0.080 加 jitter 前原始核）vs 真实 R：Frobenius ×3 + 上三角 Pearson/Spearman ×3 + 数值表
+  - 产物：`outputs/gpfm-mamba-f0/main-01/` 下 `logs/eval.log` + `logs/eval_metrics.jsonl`（R9 留存）+ `eval/`（summary.json、gc_input.npz（gen/real (N,62,128) f32+窗元数据）、gc_{real,gen}.npy、gc_F_p_*.npz、psd.npz、spatial_corr.npz、gc_psd_results.json）+ `figs/`（轨迹叠加/PSD/GC 矩阵/训练曲线/空间三方共 5 类，统一 visualizer）
+  - 命令：`python3 models/gpfm-mamba-v1/evaluate.py --run-id main-01`
