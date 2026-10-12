@@ -99,9 +99,13 @@ class EMA:
         for k, v in model.state_dict().items():
             s = self.shadow[k]
             if v.dtype.is_floating_point:
-                s.mul_(self.decay).add_(v.detach(), alpha=1.0 - self.decay)
+                s.mul_(self.decay).add_(v.detach().to(s.device), alpha=1.0 - self.decay)
             else:
                 s.copy_(v)
+
+    def to(self, device) -> "EMA":
+        self.shadow = {k: v.to(device) for k, v in self.shadow.items()}
+        return self
 
     def state_dict(self) -> Dict:
         return {"decay": self.decay, "shadow": self.shadow}

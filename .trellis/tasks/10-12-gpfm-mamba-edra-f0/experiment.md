@@ -50,3 +50,80 @@
 - 三档语义确证：0.045 强中心-周边（77% 负对）、0.080 平衡、0.137 全局相干（无负瓣、过零出阵列、有效秩 ~2–4）。
 - 口径备注：design 所引「有效秩 7.5/62」定义未注明；本次报告 exp(H)=10.1 与 Σλ/λmax=4.5 两口径，排序与定性结论不变（已记入诊断 md）。
 - 派生事项：无（无推翻默认档证据）。
+
+## Run 002 —— 小子集冒烟（2026-10-12）
+
+### 目的与假设
+
+- implement.md 4.4：~4 受试者小子集 1 epoch，验证训练循环机械正确性——四项损失均有限且下降、吞吐（it/s）记录、metrics.jsonl/best/last checkpoint 就位。
+
+### 配置
+
+- 代码：`models/gpfm-mamba-v1/train.py`（commit 见结论补记）
+- 参数：`--smoke`（训练折每类取前 2 例 = 4 例，z-score 统计随子集重算——冒烟口径；epochs=1）；其余全默认（batch 256、lr 1e-3、权重 {1,1,0.1,0.1}、t=sigmoid(N(−0.8,0.8²))、seed=1234）
+- 环境：base conda @ 本地云服务器
+- 数据：`/root/autodl-tmp/edra_process_v4/` fold0（只读）
+- 命令：`python3 models/gpfm-mamba-v1/train.py --smoke --run-id smoke-a`
+- 产物：`/root/npi/outputs/gpfm-mamba-f0/smoke-a/`（config.yaml / env_snapshot.txt / logs/{train.log,metrics.jsonl,summary.json} / checkpoints/{gpfm-mamba-f0-best.pt,last.pt} / channel_{mean,std}.npy）
+
+### 结果
+
+- 训练折小子集 4 例（每类前 2：HC 27,39 / MDD 1,7）5284 窗，20 step/epoch；四项损失全程有限且下降：step1→step20 total 1.5128→1.3262；epoch 均值 mae 0.7365 / cons 0.5776 / tv 0.2150 / corr 0.5581 / total 1.3914。
+- 内部验证（EMA 权重、固定 t 网格 {0.1,0.3,0.5,0.7,0.9}+固定 eps=2026 确定性复算）total 5.5964——EMA decay 0.9999 在 20 步下影子权重仍≈初始化（0.9999²⁰≈99.8% 初始权重），val≫train 属该机制的预期表现而非缺陷。
+- t 分桶 sanity：桶计数 [195,932,1326,1033,817,487,227,92,11,0]（logit-normal 集中低中段、t>0.9 零样本，符合设计）；分桶 mae b0 1.057 → b8 0.202 随 t 单调降（初始化时 (1−t) 缩放效应，符合预期）。
+- 吞吐：9.2 it/s（含首 step kernel 预热，稳态 ~23 it/s）、2437 窗/s；epoch 墙钟 2.2 s；peak 显存 0.728 GiB；‖v‖ 42.7；x̂1 std_t 0.695。
+- 产物齐备：metrics.jsonl 1 行全字段、best/last checkpoint 各 341 KB、resolved config + pip freeze 快照落盘。代码 commit 3f02d36。
+
+### 结论
+
+- **通过**：训练循环机械正确（四项损失有限下降、checkpoint/metrics/复现三要素就位）。冒烟口径（小子集 z-score、EMA 滞后）不用于科学结论。
+- 观察项（完整训练关注）：EMA 0.9999 时间常数 ~10⁴ 步 > 100 epoch×41 step=4100 步，val-best 判据在前期将主要反映 EMA 追赶过程——基准摘要（Run 004）向用户一并汇报。
+
+## Run 003 —— 断点续传冒烟（2026-10-12）
+
+### 目的与假设
+
+- implement.md 4.4：kill -9 中断 → `--resume` 续跑，验证 R9 断点续传——metrics.jsonl 无缺口、loss 连续、epoch 计数/RNG/optimizer/scheduler 状态恢复正确（对照不间断同配置运行的 epoch 指标一致性）。
+
+### 配置
+
+- 代码：同 Run 002
+- 参数：`--smoke --epochs 6`（冒烟口径 4 受试者）；B 组中途 kill -9（epoch 0 完成后、后续 epoch 进行中）→ `--resume <last.pt>` 续至 6 epoch；A 组不间断跑完 6 epoch 作对照
+- 环境：同 Run 002
+- 命令：A `python3 models/gpfm-mamba-v1/train.py --smoke --epochs 6 --run-id resume-ref`；B `python3 models/gpfm-mamba-v1/train.py --smoke --epochs 6 --run-id resume-kill` → kill -9 → `python3 models/gpfm-mamba-v1/train.py --smoke --epochs 6 --run-id resume-kill --resume /root/npi/outputs/gpfm-mamba-f0/resume-kill/checkpoints/gpfm-mamba-f0-last.pt`
+- 产物：`/root/npi/outputs/gpfm-mamba-f0/{resume-ref,resume-kill}/`
+
+### 结果
+
+- B 组 kill -9 时机：epoch 2（0-based 1）step 19/20（last.pt 为 epoch 0 产物，metrics.jsonl 仅 epoch 0 一行——真实中断场景）。
+- 首次 resume 尝试暴露并修复一处缺陷：EMA 影子权重随 checkpoint 以 map_location='cpu' 载入后未回 GPU，`ema.update` 设备不匹配报错（修复：`EMA.to(device)` + update 内部 cast，commit 见 Run 004 前的 train 提交）。
+- 修复后 resume 成功：epoch 0→1、global_step 20、best_val 5.5964、RNG(python/numpy/torch/cuda)+optimizer+scheduler 恢复、metrics.jsonl 截齐至 epoch 0。
+- **A/B 对照（6 epoch 全程）**：train total 逐 epoch 相对差 **0.0**（1.3914/1.3291/1.3040/1.3011/1.2947/1.2898 完全一致）；val total 最大相对差 1.8e-6（float 打印舍入级）；lr 轨迹逐 epoch 一致（9.3e-4→7.5e-4→…→0）；epoch 5 四项损失逐一相同；metrics.jsonl 0..5 无缺口。
+- 结论性事实：当前配置（cudnn.deterministic + epoch 种子化 dataloader + 全量 RNG 状态保存）下，kill -9 中断→resume 与不间断运行**逐位一致**（Mamba CUDA kernel 在本规模下未观测到非确定性）。
+
+### 结论
+
+- **通过**：R9 断点续传全部验证点满足——metrics 无缺口、loss 连续、epoch 计数/RNG/optimizer/scheduler 状态恢复正确；续跑按同一 Run 延续登记（本块，不另开 Run）。
+- 派生事项：无（EMA 设备缺陷已在冒烟阶段拦截，正式 Run 不受影响）。
+
+## Run 004 —— 全量 1-epoch 基准测试（2026-10-12）
+
+### 目的与假设
+
+- implement.md 4.5（用户要求，含确认门禁）：全量训练折 1 epoch——peak 显存、epoch 墙钟、it/s、样本吞吐、100-epoch 外推、四项损失走势、t 分桶 sanity；**基准摘要汇报用户，未确认不得启动 §5 完整训练**。
+
+### 配置
+
+- 代码：同 Run 002
+- 参数：`--epochs 1 --bench`（全量训练折 8 例 10568 窗，正式 z-score 口径；batch 256；seed=1234）
+- 环境：同 Run 002
+- 命令：`python3 models/gpfm-mamba-v1/train.py --epochs 1 --bench --run-id bench-1ep`
+- 产物：`/root/npi/outputs/gpfm-mamba-f0/bench-1ep/`
+
+### 结果
+
+（跑后同会话补齐）
+
+### 结论
+
+（跑后同会话补齐；用户门禁决策留痕于此）

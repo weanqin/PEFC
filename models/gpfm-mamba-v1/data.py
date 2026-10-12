@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import csv
 import os
-from typing import Dict, List, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 import torch
@@ -171,8 +171,13 @@ class EdraWindowsDataset(Dataset):
         return past, fut
 
 
-def build_datasets(cfg) -> Dict[str, EdraWindowsDataset]:
-    """fold0 完整管道：manifest -> qc 过滤 -> 分层划分 -> 内部验证切分 -> z-score(仅训练折)。"""
+def build_datasets(cfg, limit_train_per_group: Optional[int] = None,
+                   include_test: bool = True) -> Dict[str, EdraWindowsDataset]:
+    """fold0 完整管道：manifest -> qc 过滤 -> 分层划分 -> 内部验证切分 -> z-score(仅训练折)。
+
+    limit_train_per_group：冒烟用——训练折每类仅取前 N 例（受试者升序，确定性）；
+    z-score 统计随子集重算（冒烟口径，正式 Run 不传该参数）。
+    """
     entries = load_manifest(cfg.data_root, qc_pass_only=cfg.qc_pass_only)
     train, val, test = split_fold(
         entries,
@@ -182,15 +187,26 @@ def build_datasets(cfg) -> Dict[str, EdraWindowsDataset]:
         n_val_subjects=cfg.n_val_subjects,
         val_subject_seed=cfg.val_subject_seed,
     )
+    if limit_train_per_group is not None:
+        sub = []
+        for g in sorted({e["group"] for e in train}):
+            sub.extend([e for e in train if e["group"] == g][:limit_train_per_group])
+        sub.sort(key=lambda e: e["subject_id"])
+        train = sub
     mean, std = compute_channel_stats(train)  # 仅训练折（已剔除内部验证）
     kw = dict(past_len=cfg.past_len, future_len=cfg.future_len, stride=cfg.stride)
-    return {
+    out: Dict[str, EdraWindowsDataset] = {
         "train": EdraWindowsDataset(train, mean, std, **kw),
         "val": EdraWindowsDataset(val, mean, std, **kw),
-        "test": EdraWindowsDataset(test, mean, std, **kw),
         "channel_mean": mean,
         "channel_std": std,
+        "train_entries": train,
+        "val_entries": val,
     }
+    if include_test:
+        out["test"] = EdraWindowsDataset(test, mean, std, **kw)
+        out["test_entries"] = test
+    return out
 
 
 def make_loader(
