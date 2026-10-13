@@ -1,6 +1,7 @@
 # 科研方向档案（长期记忆）
 
 > **维护规则**：SessionStart hook 把本文件完整注入每个新对话；重大节点/决策后当场更新；保持 ≤80 行，细节写入「关键文档地图」指向的文档。
+> **双重身份**：「技术路线（当前活跃）」表同时是任务路由（workflow 1.0b）与新路径/方法检测（1.0c）的对照 registry；新方法经 research 采纳后须在 3.3 回填此表。
 > **初始化**：2026-10-10，依据用户提供的《基于 EEG 数据的虚拟扰动推断研究框架》定稿填写。
 
 ## 研究主题
@@ -13,7 +14,7 @@
 
 | 路线 | 一句话方法 | 代码位置 | 状态 |
 |---|---|---|---|
-| Study I：EEG Conditional Future Generation | 训练代理脑 X_past→X_future（时序预测/条件生成/时间修补三视角），含 EEG 表征、未来生成、代理脑有效性三层次 | 尚无（待建） | 框架已定，模型/数据选型未开始 |
+| Study I：EEG Conditional Future Generation | 训练代理脑 X_past→X_future（时序预测/条件生成/时间修补三视角），含 EEG 表征、未来生成、代理脑有效性三层次 | `models/gpfm-mamba-v1/`（+v2 d62 消融薄变体） | gpfm-mamba 已实现，fold0 单 seed 前置验证完成（v1+v2，Run 007–010）；三检验判定与 5-fold 待用户 |
 | Study II：Critical Perturbation Connectivity Inference | 固定 θ* 后扰动源节点 A→测目标节点 B 响应→搜临界强度 r*_A→B=inf{r:Δ(r)≥τ}→临界扰动矩阵→连接强度 | 依赖 Study I | 四要素均未定义 |
 
 Study I 是 Study II 的前置（先建立可信代理脑，再做虚拟扰动）。注意：**预测质量 ≠ Surrogate Brain Validity**，须作为两个独立问题评价。
@@ -22,9 +23,12 @@ Study I 是 Study II 的前置（先建立可信代理脑，再做虚拟扰动�
 
 尚无实验结论。已定案的是框架层事实（见框架文档）：两阶段流程（Stage I 训练并固定 → Stage II 扰动推断）、14 步完整流程、核心四问 Q1–Q4、术语表。
 
+2026-10-12 定案：数据集为 **edra**（`/root/autodl-tmp/edra_process_v4/`，HC 24 / MDD 22 受试者级 npz，62 通道、500 Hz，契约 `.trellis/spec/data/edra.md`）；时间窗统一 `[past=384, future=128]`；5-fold 分层划分与 dataloader 统一接口见 `.trellis/spec/research/data-pipeline.md`，可视化统一 visualizer 见 `.trellis/spec/research/visualization.md`。
+
+2026-10-13 消融结论（fold0 单 seed，Run 010）：**「d_model=16 跨通道瓶颈是 GC 偏弱主因」不成立**——d_model 16→62（参数 ×8.4 单变量）后 GC 一致性反降（r 0.282→0.231）、生成 GC 幅值更低（真实 40%→25%）；Q1 改善边际（MAE 0.704，未超 GPR 基线 0.687）；FC 一致性 0.976、空间 R̂~R 0.969 略优。GC 偏弱指向损失/训练目标（无跨通道时序监督）或数据，为下一消融方向。
+
 ## 待用户拍板
 
-- EEG 数据集选择与预处理口径（存放位置已定：`/root/autodl-tmp/`；具体数据集待定）
 - 代理脑模型选型（Study I 结构与训练方案）
 - 扰动算子 P(X,A,r)：加性/其他形式、输入层或中间表示、单时刻或时间段、正负方向、强度 r 定义
 - 输出变化度量 D（未来波形差异 → 响应强度）
@@ -35,7 +39,8 @@ Study I 是 Study II 的前置（先建立可信代理脑，再做虚拟扰动�
 ## 关键文档地图
 
 - `docs/research/research-direction.md` — 研究框架权威文档（主题/两任务/方法框架/两子研究/术语表/核心逻辑）
-- `.trellis/spec/research/` — 科研工作流规范六份（实验日志、路径隔离、可复现性、产物管理、评估口径、实验模板）
+- `.trellis/spec/research/` — 科研工作流规范九份（实验日志、路径隔离、可复现性、产物管理、评估口径、实验模板、代理脑合格性检验、数据管道、可视化）
+- `.trellis/spec/research/surrogate-brain-qualification.md` — Study I 代理脑合格性检验规范（任务路由到 `study1` 时经 1.0b/1.3 调用；固定 θ\* 前须完成三项检验）
 - `.trellis/research/environment.md` — 环境契约（写/跑代码前必读）
 - **实验笔记目录与命名惯例**：随 Trellis 任务走 —— 每任务 `{TASK_DIR}/experiment.md`（创建任务时自动播种，格式见 spec/research/experiment-template.md）；跨任务独立实验记录目录未设立，如需要由用户指定
 

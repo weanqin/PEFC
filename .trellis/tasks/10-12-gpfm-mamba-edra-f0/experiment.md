@@ -301,3 +301,27 @@
 - 续跑：`--resume` 自 epoch 55 续至 100（同一 Run 延续；metrics.jsonl 由脚本截齐至 epoch 54 后续写；train.log **追加**不覆盖）。预计 ~8 min（45 epoch × 9.45 s + 启动/内部验证）。
 - 命令：`nohup python3 models/gpfm-mamba-v2/train.py --run-id v2d62-main-01 --resume /root/npi/outputs/gpfm-mamba-f0/v2d62-main-01/checkpoints/gpfm-mamba-v2d62-last.pt >> /root/npi/outputs/gpfm-mamba-f0/v2d62-main-01/logs/train.log 2>&1 &`
 - 跑后流程（本块补齐）：训练检查（loss/无 NaN/best 判据/R1）→ `python3 models/gpfm-mamba-v2/evaluate.py --run-id v2d62-main-01` → `python3 models/gpfm-mamba-v1/fc_metric.py --run-id v2d62-main-01`（与 Run 007/009 完全同口径）→ v1/v2 对比结论。
+
+### Run 010 结果（训练 · 2026-10-13 续跑完成）
+
+- 续跑 45 epoch（ep55–99，1-based 56–100）无中断：mean 8.27 s/epoch（段总 ~6.2 min）、21.16 it/s、peak 显存 1.942 GiB（与基准一致）；无 NaN（guard 未触发）；metrics.jsonl **100 行无缺口**（0–99 连续）；config_hash `fc2a9ce14948`（best/last/checkpoint 三方一致；Run 010 配置块登记的 8a26fb38cc66 为 bench(--epochs 1) 口径 hash，本行为 resolved epochs=100 口径，勘误注记）；code_commit a168d7d。
+- 训练曲线：train total 中止前 ep55 ≈0.79 → ep99 0.7734（微降平台）。
+- **内部验证（EMA、网格均值）在 ep53（0-based）触底 0.74167 → best=epoch 53**；ep54–99 缓慢单调回升至 0.7471（**轻微过拟合拐点**）。与 v1 对照：v1 val 单调下降 best=ep100（0.80226）——v2 收敛更快（早 ~45 epoch 触底）、内部验证 loss 低 7.5%，但 100 epoch 对 v2 已过头（后续若采纳 v2，epochs 可减或加正则，属新变体决策不在此展开）。
+- best/last checkpoint 就位（best=ep53 EMA，评估按 best 口径）。评估见下方 Run 010 评估结果。
+
+### Run 010 评估结果（2026-10-13 · checkpoint=best ep53 EMA；与 Run 007/009 完全同口径）
+
+- **Pass A（Q1，13210 窗 × K=16）**：model test-MAE **0.70375**（v1 0.71089，−1.0%）| persistence 0.95271 | gpr_mean 0.68729；CRPS 0.52947（v1 0.52926，持平）；逐通道 r 0.14885（v1 0.1421，+4.7%；GPR 0.16782）。——Q1 改善边际，**仍未超 GPR 线性基线**。
+- **R1 触发检查：触发**（高/中 t 桶比 0.403<1.5 未触发；**终点/训练末期比 1.532 ≥1.5 触发**，eval.log 告警行已落）。口径注记：分子=test 折 ODE 终点、分母=train 折末期 x̂1-MAE（不同折数据）；触发主因是 v2 大模型（参数 ×8.4）把训练折拟合得更深（train 末期 mae 0.4593 vs v1 0.5698，分母变小），而终点 MAE 本身略优于 v1（分子未变差）——**属「大模型 train 拟合更深」的口径效应，非采样质量劣化证据**；按 §6.2 如实报告并提请用户知悉，不单独构成否决。
+- **指标 1（v2.1）**：Pearson r=**0.97572** / Spearman ρ=**0.97826**（v1 0.95791/0.97033）；逐受试者 r 0.9373±0.0170（v1 0.9163±0.0307，离散更小）；t 检验 p=3.4e-17 / 5.1e-17（v1 8.5e-15/1.5e-14）。
+- **GC（旧口径补充参考，p*=4 两组共用同 v1）**：Pearson r=**0.2314**（95%CI 0.172–0.260）| Spearman ρ=0.1994——**低于 v1 的 0.2820 [0.193,0.336]**；显著边 3782/3781（Jaccard 1.000）；生成 GC 幅值 max 0.0078（真实 0.0306 的 25%；v1 为 40%）——生成动态进一步平滑。
+- **指标 3（PSD 同分段）**：峰频率一致 0.98=0.98 Hz；频段 |Δlog10|（本次与 v1 同口径复算，v1 复算值与 Run 007 登记一致；alpha 单点 0.12 vs 登记 0.15 为频段边界取法差异）：delta 0.121 / theta 0.315 / alpha 0.123 / beta 0.380 / 30–60 Hz 2.949 / 60–120 Hz 9.145 / 60–250 Hz 10.422——与 v1（0.090/0.297/0.124/0.349/2.901/9.023/10.356）**各频段几乎一致**：低频谱形匹配良好、>30 Hz 生成功率偏高的问题 d_model 不敏感。
+- **指标 4（空间归因）**：R̂~R r=**0.969**（v1 0.952）、Frobenius R̂−R **6.712**（v1 10.79）——空间结构显著更贴近真实；R̂~K_s 0.860（v1 0.809）同步升高（大容量下先验印记与真实结构更难区分，归因共享不变）。
+- **指标 2（人工视觉检验）**：轨迹图 `figs/eval_trajectories_v2d62-main-01.png`——**待用户判定，AI 不代判**（v1 对照图 `main-01/figs/eval_trajectories_main-01.png`）。
+- 产物：`eval/summary.json、gc_input.npz、gc_{real,gen}.npy、psd.npz、spatial_corr.npz、fc_metric.json、gc_psd_results.json` + `figs/` 5 类图；`logs/eval.log`（含 R1 告警行）+ `eval_metrics.jsonl`（8 行）。
+
+### Run 010 结论
+
+- **瓶颈假说不成立（本消融的单变量证据）**：d_model 16→62（参数 ×8.4，其余逐字段不变）后，GC 一致性不升反降（r 0.282→0.231，CI 不重叠）、生成 GC 幅值进一步压低（真实幅值的 40%→25%）——「16 维跨通道瓶颈是 GC 偏弱主因」被否定；GC 偏弱更可能源于**损失/训练目标**（四项损失逐通道分解、无跨通道时序监督）或数据本身（design §9.7 备择解释，未检验）。
+- 次要发现：①Q1 改善边际（MAE −1%、逐通道 r +4.7%，未超 GPR 基线）；②FC（指标 1）与空间结构（指标 4）略优且更稳；③v2 收敛更快但 100 epoch 过头（best ep53 后轻微过拟合）；④R1 触发属 train 拟合加深的口径效应（见上方注记）。
+- 单 seed fold0 初步结论，不外推；指标 1/3/4 的通过标准与「v1 还是 v2 进 5-fold（或均不进、先改损失）」由用户判定——**未判定前不宣称代理脑合格、不进入 5-fold、不固定 θ\***。
