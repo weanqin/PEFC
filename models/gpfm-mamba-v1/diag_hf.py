@@ -103,7 +103,8 @@ def main() -> None:
     t0 = time.time()
     with ema.swap(model), torch.no_grad():
         sampler = EulerSampler(model, prior, euler_steps=cfg.euler_steps,
-                               sigma_min=cfg.sigma_min)
+                               sigma_min=cfg.sigma_min,
+                               gen_lowpass_hz=getattr(cfg, "gen_lowpass_hz", 40.0))  # 正式产物口径
         for xp, x1 in loader:
             xp = xp.to(device); x1 = x1.to(device)
             mu = prior.posterior_mean(xp)
@@ -137,7 +138,8 @@ def main() -> None:
     steps_out = {}
     with ema.swap(model), torch.no_grad():
         for nst in (8, 32, 64):
-            s = EulerSampler(model, prior, euler_steps=nst, sigma_min=cfg.sigma_min)
+            s = EulerSampler(model, prior, euler_steps=nst, sigma_min=cfg.sigma_min,
+                             gen_lowpass_hz=getattr(cfg, "gen_lowpass_hz", 40.0))
             g1.manual_seed(DIAG_SEED)
             steps_out[f"ep{nst}"] = s.sample(xp_sub, 1, generator=g1)[:, 0].cpu().numpy()
     print(f"[diag] 步数敏感性 {sorted(steps_out)} 完成", flush=True)

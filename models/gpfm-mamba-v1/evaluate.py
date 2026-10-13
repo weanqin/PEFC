@@ -171,17 +171,10 @@ def r1_monitor(run_dir, endpoint_mae: float, log) -> Dict:
 
 def lowpass_last_dim(x: torch.Tensor, cut_hz: float, fs: float = 500.0,
                      pad: int = 64) -> torch.Tensor:
-    """末维砖墙低通（>cut_hz 置零），reflect 填充后滤波再裁剪（Run 013 口径）。
+    """兼容委托：正典实现已上移至 gpr_prior.brickwall_lowpass（正式产物口径单一实现契约）。"""
+    from gpr_prior import brickwall_lowpass  # noqa: PLC0415（兼容层，新代码勿再引用）
 
-    反射填充抑制 DFT 循环卷积的段边界振铃（实测边缘/中段偏差比 1.56→1.09）；
-    仅作用于轨迹图生成侧样本（medoid/分位之前滤波）；默认不启用，不影响任何已登记指标。
-    """
-    n = x.shape[-1]
-    xp = torch.nn.functional.pad(x, (pad, pad), mode="reflect")
-    freqs = torch.fft.rfftfreq(xp.shape[-1], d=1.0 / fs, device=xp.device)
-    spec = torch.fft.rfft(xp, dim=-1)
-    spec[..., freqs > cut_hz] = 0
-    return torch.fft.irfft(spec, n=xp.shape[-1], dim=-1)[..., pad:pad + n]
+    return brickwall_lowpass(x, cut_hz, fs=fs, pad=pad)
 
 
 def trajectory_summary(samples_win: torch.Tensor, chan_idx: torch.Tensor) -> Dict:
@@ -227,9 +220,9 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--figures-only", action="store_true",
                    help="仅确定性重采样并重渲染轨迹图（medoid+90%%PI 口径）；"
                         "不写 eval_metrics.jsonl/summary（不触碰已登记评估记录）")
-    p.add_argument("--gen-lowpass", type=float, default=None,
-                   help="轨迹图生成侧样本砖墙低通截止 Hz（如 40；滤波后再选 medoid/算分位带，"
-                        "仅影响轨迹图，不改变任何数值指标口径）")
+    p.add_argument("--gen-lowpass-hz", type=float, default=None,
+                   help="生成样本砖墙低通截止 Hz——正式产物口径默认 40（evaluation-calibers.md）；"
+                        "0=关闭（旧口径复现，须 Run 登记）；影响全部下游指标与图")
     return p.parse_args()
 
 
@@ -259,6 +252,12 @@ def main() -> None:
     (run_dir / "figs").mkdir(parents=True, exist_ok=True)
     K = args.n_samples or cfg.n_samples
     sample_seed = args.sample_seed if args.sample_seed is not None else cfg.seed
+    # 正式产物口径：生成侧 40 Hz 低通（evaluation-calibers.md）；--gen-lowpass-hz 0=旧口径复现
+    gen_lp = args.gen_lowpass_hz
+    if gen_lp is None:
+        gen_lp = getattr(cfg, "gen_lowpass_hz", 40.0)
+    elif gen_lp == 0:
+        gen_lp = None
 
     log(f"=== evaluate | run {run_dir} | ckpt {ckpt_path} | K={K} euler={cfg.euler_steps} "
         f"seed={sample_seed}（GC 单样本 seed={sample_seed + 1}）===")
@@ -271,7 +270,8 @@ def main() -> None:
     log(f"[data] 测试折 {len(test_ds.subjects)} 例 {n_win} 窗 | z-score = run 目录训练折统计"
         f"（与重算 allclose 校验通过）")
 
-    sampler = EulerSampler(model, prior, euler_steps=cfg.euler_steps, sigma_min=cfg.sigma_min)
+    sampler = EulerSampler(model, prior, euler_steps=cfg.euler_steps,
+                           sigma_min=cfg.sigma_min, gen_lowpass_hz=gen_lp)
     acc = MetricAcc(cfg.n_channels)
 
     # 选定人工视觉检验窗/通道（确定性等距）
@@ -291,8 +291,8 @@ def main() -> None:
             "window_ids": [int(i) for i in traj_w], "channel_ids": [int(c) for c in traj_c],
             "fs": 500, "K": K,
         }
-        if args.gen_lowpass:
-            d["note"] = f"lowpass {args.gen_lowpass:g} Hz"
+        if gen_lp:
+            d["note"] = f"lowpass {gen_lp:g} Hz"
         return d
 
     if args.figures_only:
@@ -311,10 +311,7 @@ def main() -> None:
                 n_done += xp.shape[0]
                 for wi, gidx in enumerate(range(gidx0, n_done)):
                     if gidx in traj_set:
-                        sw = samples[wi]
-                        if args.gen_lowpass:
-                            sw = lowpass_last_dim(sw, args.gen_lowpass)
-                        summ = trajectory_summary(sw, traj_c_idx)
+                        summ = trajectory_summary(samples[wi], traj_c_idx)  # 已含正式口径低通
                         traj_store["past"].append(
                             xp[wi, traj_c_idx, -TRAJ_CONTEXT:].cpu().numpy())
                         traj_store["real"].append(x1[wi, traj_c_idx].cpu().numpy())
@@ -351,10 +348,7 @@ def main() -> None:
                 if gidx in traj_set:
                     traj_store["past"].append(xp[wi, traj_c_idx, -TRAJ_CONTEXT:].cpu().numpy())
                     traj_store["real"].append(x1[wi, traj_c_idx].cpu().numpy())
-                    sw = samples[wi]
-                    if args.gen_lowpass:
-                        sw = lowpass_last_dim(sw, args.gen_lowpass)
-                    summ = trajectory_summary(sw, traj_c_idx)  # 全 K 样本·全通道轨迹
+                    summ = trajectory_summary(samples[wi], traj_c_idx)  # 已含正式口径低通
                     traj_store["medoid"].append(summ["medoid"])
                     traj_store["q05"].append(summ["q05"])
                     traj_store["q95"].append(summ["q95"])

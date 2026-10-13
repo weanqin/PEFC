@@ -39,6 +39,27 @@ def ricker3d_kernel(coords: np.ndarray, sigma: float) -> np.ndarray:
     return (1.0 - d2 / (3.0 * sigma ** 2)) * np.exp(-d2 / (2.0 * sigma ** 2))
 
 
+def brickwall_lowpass(x: torch.Tensor, cut_hz: float, fs: float = 500.0,
+                      pad: int = 64) -> torch.Tensor:
+    """**正典砖墙低通**（evaluation-calibers.md「gpfm-mamba 生成产物口径」，2026-10-13 拍板）。
+
+    末维 reflect-pad(±pad) + rFFT >cut_hz 置零；任意 ndim≥2（内部折叠 3-D——F.pad reflect
+    长度 2 padding 仅支持 3-D）；pad 自动钳制到 < n（reflect 要求 padding 严格小于输入长度，
+    小尺度测试先验如 F=32 时 pad=64 会越界）。reflect 填充抑制 DFT 循环卷积段边界振铃
+    （边缘/中段偏差比 1.56→1.09，Run 013 实测）。置于本模块因 gpr_prior 已被全部消费方
+    import，避免循环依赖；生成侧（EulerSampler 终点）与先验侧（GPRPrior.bandlimit）共用。
+    """
+    lead, n = x.shape[:-1], x.shape[-1]
+    pad = min(pad, n - 1)
+    x3 = x.reshape(-1, 1, n)
+    xp = torch.nn.functional.pad(x3, (pad, pad), mode="reflect")
+    freqs = torch.fft.rfftfreq(xp.shape[-1], d=1.0 / fs, device=xp.device)
+    spec = torch.fft.rfft(xp, dim=-1)
+    spec[..., freqs > cut_hz] = 0
+    out = torch.fft.irfft(spec, n=xp.shape[-1], dim=-1)[..., pad:pad + n]
+    return out.reshape(lead + (n,))
+
+
 class GPRPrior(nn.Module):
     """全观测可分 GPR 条件先验（past 62×384 全观测 ⇒ A/L_t/L_s 均为固定算子预计算）。
 
@@ -110,24 +131,13 @@ class GPRPrior(nn.Module):
         self.register_buffer("L_s", L_s.float())
 
     def bandlimit(self, x: torch.Tensor) -> torch.Tensor:
-        """末维 reflect-pad 砖墙低通（self.bandlimit_hz=None 时原样返回），任意 ndim ≥2 通用。
+        """先验侧带限入口（bandlimit_hz=None 时原样返回）；实现委托正典 brickwall_lowpass。
 
-        内部统一 reshape 成 3-D 再 pad（F.pad reflect 的长度 2 padding 仅支持 3-D——
-        训练路径 (B,C,F) 天然 3-D，EulerSampler 的 (B,K,C,F) 4-D 须先折叠）。
-        reflect 填充抑制 DFT 循环卷积段边界振铃（Run 013 实测边缘/中段偏差比 1.56→1.09）。
-        训练（prior.sample 末端）与推理（EulerSampler x0 装配末端）共用本方法，保证同滤一致。
+        训练（prior.sample 末端）与推理出发点（EulerSampler x0 装配）共用，保证同滤一致。
         """
         if self.bandlimit_hz is None:
             return x
-        lead, n = x.shape[:-1], x.shape[-1]
-        pad = self.bandlimit_pad
-        x3 = x.reshape(-1, 1, n)
-        xp = torch.nn.functional.pad(x3, (pad, pad), mode="reflect")
-        freqs = torch.fft.rfftfreq(xp.shape[-1], d=1.0 / self.fs, device=xp.device)
-        spec = torch.fft.rfft(xp, dim=-1)
-        spec[..., freqs > self.bandlimit_hz] = 0
-        out = torch.fft.irfft(spec, n=xp.shape[-1], dim=-1)[..., pad:pad + n]
-        return out.reshape(lead + (n,))
+        return brickwall_lowpass(x, self.bandlimit_hz, fs=self.fs, pad=self.bandlimit_pad)
 
     @torch.no_grad()
     def posterior_mean(self, x_past: torch.Tensor) -> torch.Tensor:

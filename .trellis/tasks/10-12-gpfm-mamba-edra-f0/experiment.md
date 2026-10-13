@@ -489,3 +489,13 @@
 - **代价**：GC 一致性塌缩（0.231→0.022）、幅度校准劣化（欠冲→过冲）、FC/MAE/CRPS 边际变差——v3 各指标不优于 v2，**不作为 5-fold 候选**。
 - **对缓解路线的裁决**：Run 013（输出侧后处理低通）仍是唯一已验证有效的高频缓解（MAE −5%、谱归零、零训练成本）；训练侧出路在损失加频带项（H3 方向，未测）。Run 014/015/016 三条先验侧/核侧路线现已全部证伪或不达预期——**高频问题的可行解在评估侧后处理或损失侧，不在先验侧**。
 - 单 seed fold0 结论；指标 1/3/4 判定与 5-fold 决定仍待用户（候选回到 v1/v2）。
+
+## Run 017 —— 正式产物口径落地：输出侧 40 Hz 低通 + v1/v2 重评（2026-10-13 用户拍板）
+
+### 目的与配置（跑前登记）
+
+- **口径采纳**（用户 2026-10-13 拍板，spec 已回填 evaluation-calibers.md）：gpfm-mamba 路径生成样本一律先经 reflect-pad(±64) 砖墙 >40 Hz 置零低通再进一切下游（K 条逐条、聚合前；GC/PSD/FC/空间/图同源；真实侧不滤）。
+- 代码统一（单一正典实现）：`gpr_prior.py::brickwall_lowpass`（任意 ndim、pad 自动钳制 <n）；`EulerSampler` 增 `gen_lowpass_hz` 终点滤波（默认 40.0，经 `getattr(cfg,"gen_lowpass_hz",40.0)` 透传——**v1/v2/v3 config 零改动、hash 逐位不变已验证（c6ff80ac1c43）**）；evaluate 的 `--gen-lowpass`（图专用）废止，改 `--gen-lowpass-hz`（默认正式 40，0=旧口径复现须登记）；`lowpass_last_dim` 降级为兼容委托；diag_hf 采样同口径。
+- 测试：7/7 PASS（test_sample 的 F=32 小先验暴露 pad 越界——已钳制修复）。
+- 重评对象：v1 `main-01`、v2 `v2d62-main-01`（5-fold 候选；v3 已出局）。命令：`python3 models/gpfm-mamba-v1/evaluate.py --run-id main-01`、`python3 models/gpfm-mamba-v2/evaluate.py --run-id v2d62-main-01` + 各自 `fc_metric.py`。
+- 口径纪律：Run 007/010/016 数值保持旧口径不动；本 Run 为新口径首个登记；轨迹图 canonical 重渲染（内容≈Run 013 滤波版），.unfiltered/.k-overlay 存档不动。

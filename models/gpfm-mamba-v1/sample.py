@@ -30,7 +30,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import config as C  # noqa: E402
 import data as D  # noqa: E402
-from gpr_prior import GPRPrior  # noqa: E402
+from gpr_prior import GPRPrior, brickwall_lowpass  # noqa: E402
 from model import EMA, VelocityNetwork  # noqa: E402
 
 
@@ -76,16 +76,20 @@ class EulerSampler:
     - eps 显式传入则完全确定（单测：batch 维独立性 / 确定性）；
     - K 条样本按 (B*K) 展平批积分，chunk_bk 控制单次前向的展平批量上限（显存）。
     - 逐窗 t 同步：同一窗的 K 条样本共享同一 t 网格（每步一个 t 标量广播）。
+    - **终点 40 Hz 低通（正式产物口径，evaluation-calibers.md 2026-10-13）**：gen_lowpass_hz
+      默认 40.0，ODE 终点返回前逐条砖墙低通（正典实现 gpr_prior.brickwall_lowpass）——
+      Pass A 指标 / Pass B GC/PSD 输入 / 图全部消费方同源；None=关闭（旧口径复现，须登记）。
     """
 
     def __init__(self, model: VelocityNetwork, prior: GPRPrior,
                  euler_steps: int = 16, sigma_min: float = 1e-4,
-                 chunk_bk: int = 1024):
+                 chunk_bk: int = 1024, gen_lowpass_hz: Optional[float] = 40.0):
         self.model = model
         self.prior = prior
         self.steps = euler_steps
         self.sigma_min = sigma_min
         self.chunk_bk = chunk_bk
+        self.gen_lowpass_hz = gen_lowpass_hz
 
     @torch.no_grad()
     def sample(
@@ -125,7 +129,10 @@ class EulerSampler:
                 v = self.model(xp, x, t)                             # v_θ(x, t, X_past)
                 x = x + dt * v
             outs.append(x)
-        return torch.cat(outs, dim=0).reshape(B, K, Cn, F_)
+        out = torch.cat(outs, dim=0).reshape(B, K, Cn, F_)
+        if self.gen_lowpass_hz is not None:                          # 正式产物口径（逐条滤波）
+            out = brickwall_lowpass(out, self.gen_lowpass_hz)
+        return out
 
 
 def iterate_test_batches(cfg: C.Config, run_dir: Path, batch_size: int,
@@ -188,7 +195,8 @@ def main() -> None:
     loader, test_ds = iterate_test_batches(cfg, run_dir, args.batch_size)
     K = args.n_samples or cfg.n_samples
     sampler = EulerSampler(model, prior, euler_steps=cfg.euler_steps,
-                           sigma_min=cfg.sigma_min)
+                           sigma_min=cfg.sigma_min,
+                           gen_lowpass_hz=getattr(cfg, "gen_lowpass_hz", 40.0))
     g = torch.Generator(device=device)
     g.manual_seed(cfg.seed)
     n_total = min(len(test_ds), args.limit_windows) if args.limit_windows else len(test_ds)
