@@ -23,7 +23,7 @@
 ## Run 002 —— 全量：46 被试参考 EC + 比较器联调 + split-half（状态：已完成 2026-10-13）
 
 - **目的与假设**：产出 GC/gPDC 两参考的逐被试矩阵与 split-half 天花板；比较器以合成 EC_pert 全链联调。假设：两法 split-half 天花板 >0.5；GC↔gPDC 原始值秩相关显著为正（共享 VAR 构造性一致，sanity 非科学问题）。
-- **配置**：commit `4641373`（代码+任务+spec 同步提交）；46 例（HC 24/MDD 22，status_ok，filter/ref_chain 全例断言通过）；口径与 Run 001 定标一致（p=8、ridge λ_rel=1e-2、mne-c 全量 46 例）；同机并行进程：`gpfm-mamba-v3/evaluate.py v3lp-main-01`（非本任务，负载挤占致 2 例耗时 275/347 s，其余 ~33 s/例）。启动命令：`run.py --stage resample/refs/split-half/compare --run-id main-01`（refs --mnec all）。
+- **配置**：代码+任务+spec 主体提交 `d951ed9`（本行为其后补记的小提交）；46 例（HC 24/MDD 22，status_ok，filter/ref_chain 全例断言通过）；口径与 Run 001 定标一致（p=8、ridge λ_rel=1e-2、mne-c 全量 46 例）；同机并行进程：`gpfm-mamba-v3/evaluate.py v3lp-main-01`（非本任务，负载挤占致 2 例耗时 275/347 s，其余 ~33 s/例）。启动命令：`run.py --stage resample/refs/split-half/compare --run-id main-01`（refs --mnec all）。
 - **结果**（产物 `outputs/baseline-ec-v1/main-01/`：data/ 46 例 125 Hz z-scored、eval/refs_all.npz + refs/{sid}.npz（含 mnec）+ refs_summary.json + split_half.json + comparison.json、figs/ec_matrix_main-01.png）：
   - **split-half 噪声天花板（n=46）**：gc **0.900 ± 0.030**、gpdc **0.734 ± 0.039** → 两参考逐被试高度可靠；后续 EC_pert 一致性若低，可排除「参考侧噪声」解释（对应用户要求的失败归因分解）。
   - 量级健全性：gc_max 全体 0.047–0.210（Run 007 真实 GC 量级 ~0.03 邻域）；gpdc_max 0.69–0.95（值域 [0,1] ✓）；BIC 存档 46/46 p*=1（高维惩罚，佐证固定 p=8 决定）。
