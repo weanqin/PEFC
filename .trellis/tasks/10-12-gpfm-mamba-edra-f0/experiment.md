@@ -269,3 +269,35 @@
 ### 结论
 
 - **指标 1（v2.1 口径）：r=0.958 / ρ=0.970，t 检验高度显著（p≈1e-14/1e-15，df=9）**——10 例受试者逐例一致性均强正，结论稳健。v2 的 bootstrap CI 数值保留于 Run 008 原口径不动。口径变更已回填 spec（指标 1 v2.1 注记）与 design §6。通过标准仍由用户判定。
+
+## Run 010 —— v2 d_model=62 消融（薄变体 · 2026-10-12 用户指定）
+
+### 目的与假设
+
+- **单变量消融**：d_model 16→62（=通道数），验证「16 维跨通道瓶颈是否为 GC 偏弱主因」（Run 007：GC r=0.282 [0.193,0.336]、生成 GC 幅值约为真实一半；design §9.7 / adaptation R6 预案）。假设：若瓶颈是主因，v2 的 GC 一致性（补充参考）与有向幅值应显著改善；若 GC 仍偏弱，则瓶颈假说不成立，原因在损失/训练目标（四项损失均逐通道分解、无跨通道时序监督）或数据本身。
+- **单变量原则**：唯一变化 = d_model=62（config 其余字段与 v1 逐字段一致：n_layers=4、d_state=16、d_conv=4、expand=2、time_emb_dim=16、初始化方式、EMA 0.999、损失权重 {1,1,0.1,0.1}、t~logit-normal(−0.8,0.8)、训练超参、评估口径）；不做恒等初始化等额外变量。参数量 15,856 → 132,682（×8.4）。
+
+### 配置（跑前登记；结果见下方 Run 010 结果）
+
+- 代码：`models/gpfm-mamba-v2/`（薄变体：config.py 完整副本改 d_model=62 与 variant_name/run 命名 + train.py/evaluate.py 入口包装——sys.path 令 v2 config 遮蔽 sys.modules['config']，data/gpr_prior/mamba/model/losses/train/sample/evaluate/gc_psd **只读复用 v1**，v1 代码零改动；design §7 v2 行）；评估侧 config_hash 校验经包装内 build_config（v2 默认=训练落盘 resolved config）严格通过，config_hash `8a26fb38cc66`（v1 默认 05f7a30c448d，不同 ✓）
+- 划分：与 v1 同 subject_filter=status_ok / split_seed=42 / fold0 / 内部验证 (25,40) ⇒ data.fixate_split 校验到 v1 的 `models/gpfm-mamba-v1/splits/fold0_status_ok_seed42.json`（跨变体共享只读，不重写）；z-score 仅训练折 34 例（与 v1 同统计量）
+- 训练：seed=1234、AdamW lr 1e-3 wd 1e-4 cosine、clip 0.5、EMA 0.999、batch 256、epochs 100；run 目录前缀强制 `v2d62-`（包装守卫），checkpoint `gpfm-mamba-v2d62-{best,last}.pt`
+- 冒烟（v2d62-smoke-a）：小子集 4 例 1 epoch，四项损失有限下降（total 1.4803→1.2836，20 step），val total 1.2234，无 NaN——机械正确性通过；v1 既有 6 组单测回归全 PASS
+- 1-epoch 基准（v2d62-bench-1ep，全量训练折 34 例 44914 窗 175 step）：epoch 墙钟 **9.45 s**（v1 8.78 s，+7.6%）、**18.53 it/s**（v1 19.9）、**peak 显存 1.942 GiB**（v1 0.728，仍 32 GB 卡的 5.9%）、**100-epoch 外推 0.262 h ≈ 15.7 min**（v1 14.6 min）；1 epoch 后 val total（均值口径）1.1075（v1 同期 1.1320）
+- 环境：base conda @ 本地云服务器（4080S 单卡独占）
+- 数据：`/root/autodl-tmp/edra_process_v4/`（只读）
+- 命令：`nohup python3 models/gpfm-mamba-v2/train.py --run-id v2d62-main-01 > /root/npi/outputs/gpfm-mamba-f0/v2d62-main-01/logs/train.log 2>&1 &`
+- 评估（训练完成后同口径）：`python3 models/gpfm-mamba-v2/evaluate.py --run-id v2d62-main-01`（Pass A/B + GC + PSD + 空间归因 + 全部图）+ `python3 models/gpfm-mamba-v1/fc_metric.py --run-id v2d62-main-01`（指标 1 v2.1；fc_metric 硬编码共享 outputs 根 + run_id 形参，天然兼容 v2 run）
+- 指标口径：与 Run 007/009 完全一致——主指标 test-MAE（ODE 终点 K=16 样本均值）、CRPS/逐通道 r、持久性/GPR 均值基线、指标 1 v2.1（FC Pearson r/ρ + 逐受试者单样本 t 检验）、GC 旧口径补充参考、PSD future-only Welch、空间归因三方对比；Q1 与 Q2 分开陈述
+
+### Run 010 中止记录（2026-10-12）
+
+- 完整训练 `v2d62-main-01` 进行至 **epoch 56/100 时被用户指令中止**（进程已终止、GPU 已释放）。中止时 train total ≈0.79（v1 同期 ep56 ≈1.02）、无 NaN、metrics.jsonl 无缺口；`gpfm-mamba-v2d62-{best,last}.pt` 保留在 epoch 55 附近，**可随时 `--resume` 续跑**（R9 断点续传已验证）。
+- 本块结果/结论留空待续：若后续恢复训练则在本块补齐（同一 Run 延续）；若放弃 v2 消融，则在本块补记放弃决定与理由后关闭。评估未执行。
+
+### Run 010 续跑登记（2026-10-13 · 用户指令「继续当前任务」）
+
+- 断点核对：last.pt = epoch 54 末（global_step 9625、best_val 0.7417），metrics.jsonl 完整至 epoch 54、无缺口；epoch 55 step 131/175 处被 kill（train.log 尾行佐证）。
+- 续跑：`--resume` 自 epoch 55 续至 100（同一 Run 延续；metrics.jsonl 由脚本截齐至 epoch 54 后续写；train.log **追加**不覆盖）。预计 ~8 min（45 epoch × 9.45 s + 启动/内部验证）。
+- 命令：`nohup python3 models/gpfm-mamba-v2/train.py --run-id v2d62-main-01 --resume /root/npi/outputs/gpfm-mamba-f0/v2d62-main-01/checkpoints/gpfm-mamba-v2d62-last.pt >> /root/npi/outputs/gpfm-mamba-f0/v2d62-main-01/logs/train.log 2>&1 &`
+- 跑后流程（本块补齐）：训练检查（loss/无 NaN/best 判据/R1）→ `python3 models/gpfm-mamba-v2/evaluate.py --run-id v2d62-main-01` → `python3 models/gpfm-mamba-v1/fc_metric.py --run-id v2d62-main-01`（与 Run 007/009 完全同口径）→ v1/v2 对比结论。
