@@ -472,3 +472,20 @@
 - 划分/训练：与 v1 完全同（status_ok 46 例、fold0、seed=1234、100ep、EMA 0.999、batch 256）
 - 命令：smoke `--smoke --run-id v3lp-smoke-a`；bench `--epochs 1 --bench --run-id v3lp-bench-1ep`；训练 `nohup python3 models/gpfm-mamba-v3/train.py --run-id v3lp-main-01 > /root/npi/outputs/gpfm-mamba-f0/v3lp-main-01/logs/train.log 2>&1 &`
 - 评估（训练完成后）：`python3 models/gpfm-mamba-v3/evaluate.py --run-id v3lp-main-01` + `python3 models/gpfm-mamba-v1/fc_metric.py --run-id v3lp-main-01` + `python3 models/gpfm-mamba-v1/diag_hf.py --run-id v3lp-main-01`（端点带外回漏测量）——与 Run 007/009/010 完全同口径，Q1/Q2 分开陈述
+
+### Run 016 结果（2026-10-13 训练+评估完成；checkpoint=best ep51 EMA）
+
+- 训练：100ep 无 NaN（best val **0.73664 @ep51**，曲线同 v2 型：ep51 后缓升至 0.7401，轻微过拟合；bench 9.92 s/epoch / 17.6 it/s / 1.95 GiB 正常；期间一过时 d16 版 run 已清理，其 62s/epoch 异常不复现判环境抖动）。中途缺陷两起已修：①`F.pad(reflect)` 长度 2 padding 仅支持 3-D，EulerSampler 的 (B,K,C,F) 4-D 崩溃——bandlimit 内部折叠 3-D 修复（test_bandlimit 5/5）；②diag_hf 经 v1 入口跑 v3 run 会找错 checkpoint 名——补 `models/gpfm-mamba-v3/diag_hf.py` 包装。评估链曾被用户手动中断一次后重跑（eval.log/jsonl 追加日志含一段不完整会话；diag-hf/diag_hf.json 被 v3 会话覆盖，Run 012 数字以本文件登记为准）。
+- **Q1**：test-MAE **0.70485**（v2 0.70375，持平略差；GPR 0.68729 仍未超）；CRPS 0.5316（v2 0.5295，略差）；逐通道 r 0.1453（v2 0.1489，略差）；持久性 0.95271。
+- **幅度异常**：生成 std_t **1.0737** vs 真实 0.7881（**过冲 +36%**；v1/v2 均为轻微欠冲 ~0.9）。R1 触发（终点/训练末期 = 1.555，同 v2 属口径效应）。
+- **指标 1（v2.1）**：r=0.97136 / ρ=0.97400（v2 0.9757/0.9783，略低仍高）；逐受试者 0.9305±0.0267，t p=2.1e-15。
+- **GC（补充参考）**：Pearson r=**0.0221**（raw p=0.174 不显著）——**相对 v2 的 0.2314 塌缩**；生成 GC 幅值 max 0.0423 > 真实 0.0306（**过冲 1.4×**，v2 为 25%）。
+- **指标 3（PSD）**：30–60 Hz |Δlog10|=2.956、60–250 Hz=10.001——**与 v2（2.949/10.42）基本无差**；全量生成侧 >39 Hz 方差占比 6.65%（v2 6.9%，真实 0.56%）——**未改善**。
+- **diag_hf 关键测量**：v3 先验 x0 >40 Hz 占比 **0.0011**（带限生效，Run 015 预期兑现）→ 但 **ODE 端点 40–100 Hz 占比 0.091**（v2 端点 0.063；>100 Hz 8.2e-4 确实塌缩 ×15）；Euler 8→64 步不敏感（0.103→0.076，同型）。
+
+### Run 016 结论（阴性结果，归因清楚）
+
+- **先验侧带限不解决生成侧高频问题**：网络流把带限 x0 的带外功率重新注入——40–100 Hz 段恢复到与 v2 相同水平（~6.7%），机制为**非线性放大 + 谐波泄漏**（证据三角：幅度过冲 +36%、GC 幅值过冲 1.4×、40–100 Hz 回升而 >100 Hz 塌缩）。流不是带限算子，训练损失（mae/cons/tv/corr 均无频带项）不约束端点带外成分。
+- **代价**：GC 一致性塌缩（0.231→0.022）、幅度校准劣化（欠冲→过冲）、FC/MAE/CRPS 边际变差——v3 各指标不优于 v2，**不作为 5-fold 候选**。
+- **对缓解路线的裁决**：Run 013（输出侧后处理低通）仍是唯一已验证有效的高频缓解（MAE −5%、谱归零、零训练成本）；训练侧出路在损失加频带项（H3 方向，未测）。Run 014/015/016 三条先验侧/核侧路线现已全部证伪或不达预期——**高频问题的可行解在评估侧后处理或损失侧，不在先验侧**。
+- 单 seed fold0 结论；指标 1/3/4 判定与 5-fold 决定仍待用户（候选回到 v1/v2）。
