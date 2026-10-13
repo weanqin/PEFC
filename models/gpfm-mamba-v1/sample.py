@@ -65,6 +65,7 @@ def build_eval_prior(cfg: C.Config, device: str) -> GPRPrior:
         kernel_t=cfg.kernel_t, gamma=cfg.gamma, period_p=cfg.period_p,
         iso=cfg.iso, pp_jitter=cfg.pp_jitter,
         sigma_s=cfg.sigma_s, jitter_s=cfg.jitter_s,
+        bandlimit_hz=getattr(cfg, "prior_bandlimit_hz", None),  # v3 变体；v1/v2 无此字段→None
     ).to(device)
 
 
@@ -101,11 +102,12 @@ class EulerSampler:
         dev = x_past.device
         if eps is None:
             eps = torch.randn(B, K, Cn, F_, device=dev, generator=generator)
-        # GPR 条件先验出发点 x0 = μ + L_s ε L_tᵀ + σ_min·η（路径定义 design §2.2）
+        # GPR 条件先验出发点 x0 = LP(μ + L_s ε L_tᵀ) + σ_min·η（LP=bandlimit_hz 时启用，与训练
+        # prior.sample 末端同滤一致；σ_min·η 不滤——训练路径 x_t=(1−t)·LP(x0)+t·x1+σ_min·η 同口径）
         mu = self.prior.posterior_mean(x_past)                       # (B,C,F)
-        x0 = mu.unsqueeze(1) + torch.einsum(
+        x0 = self.prior.bandlimit(mu.unsqueeze(1) + torch.einsum(
             "ij,bqjk,lk->bqil", self.prior.L_s, eps, self.prior.L_t
-        )                                                             # (B,K,C,F)
+        ))                                                            # (B,K,C,F)
         if self.sigma_min > 0:
             if eta is None:
                 eta = torch.randn(B, K, Cn, F_, device=dev, generator=generator)

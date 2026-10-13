@@ -458,3 +458,17 @@
 - **可行且为三路线最优**：①散布保留 95%（Run 014 带限核塌缩至 0.015–0.17）；②高频功率 ↓100× 且低于真实裙边；③GPR 基线数值不动（跨变体可比性保持）；④数值零风险（无秩亏求逆，纯 FFT）。Run 014 的塌缩根源在「带限过程 + 全观测条件化 ⇒ 解析延拓」；本方案条件化在带限**之前**用 OU 完成，只投影样本，绕开整个问题。
 - 实施面（未实施）：`gpr_prior.py::GPRPrior.sample()` 末端 + `sample.py::EulerSampler.sample()` x0 装配末端各加同一 `bandlimit()` 助手（train.py:112 经 prior.sample 自动覆盖；posterior_mean 不滤，基线口径不动）；config 增 `prior_bandlimit_hz`（v3 薄变体，run 前缀 `v3lp-`）；tests 增滤波谱断言与训练/推理同滤一致性断言；重训 100ep + diag_hf 复跑（测网络端点重新引入的带外残余）+ 全套评估。
 - 预期：生成侧 >40 Hz 随先验归零大幅下降（网络 40–100 Hz 保留主要来自先验，Run 012）；MAE 略降（流不再消耗容量搬运带外方差）；CRPS 略降（带外样本方差是纯惩罚）；指标 3 高频段 |Δlog10| 塌缩。风险：端点或有小量带外回漏（diag_hf 实测定夺，必要时叠加 Run 013 输出滤波作对照）。
+
+## Run 016 —— v3 变体：先验采样后 40 Hz 带限（2026-10-13 用户批准「建立变体并评估」）
+
+### 目的与配置（跑前登记）
+
+- **单变量消融**：相对 v1 唯一变化 = `prior_bandlimit_hz: None → 40.0`（d_model=16、核/损失/训练超参/评估口径与 v1 逐字段一致）。设计依据 Run 015 探针（散布保留 95%、高频 ↓100×、GPR 基线不动、无塌缩）。
+- 代码（共享库扩展 + 薄变体，v1/v2 行为与 config_hash 逐位不变——已验证 v1 默认 hash=c6ff80ac1c43 与 main-01 ckpt 一致）：
+  - `gpr_prior.py`：GPRPrior 增 `bandlimit_hz/fs/bandlimit_pad`（默认关）与 `bandlimit()`（末维 reflect-pad 砖墙，Run 013 实现）；`sample()` 末端启用；`posterior_mean` 不滤
+  - `train.py:213` / `sample.py::build_eval_prior`：`bandlimit_hz=getattr(cfg, "prior_bandlimit_hz", None)` 透传；`EulerSampler` x0 核心装配末端 `prior.bandlimit`（σ_min·η 不滤，与训练路径 t→0 口径一致）
+  - `models/gpfm-mamba-v3/{config,train,evaluate}.py`：薄变体（config 遮蔽 + run 前缀守卫 `v3lp-`，variant_name=gpfm-mamba-v3lp，config_hash `b05544549a60`）；划分读 v1 固化 manifest（只读共享）
+- 测试：新增 `tests/test_bandlimit.py` 4/4 PASS（None 逐位回归 / >40Hz 0.0679→7.42e-04 / 散布保留 95% / posterior_mean 不受开关影响）；既有 6 组单测回归全 PASS
+- 划分/训练：与 v1 完全同（status_ok 46 例、fold0、seed=1234、100ep、EMA 0.999、batch 256）
+- 命令：smoke `--smoke --run-id v3lp-smoke-a`；bench `--epochs 1 --bench --run-id v3lp-bench-1ep`；训练 `nohup python3 models/gpfm-mamba-v3/train.py --run-id v3lp-main-01 > /root/npi/outputs/gpfm-mamba-f0/v3lp-main-01/logs/train.log 2>&1 &`
+- 评估（训练完成后）：`python3 models/gpfm-mamba-v3/evaluate.py --run-id v3lp-main-01` + `python3 models/gpfm-mamba-v1/fc_metric.py --run-id v3lp-main-01` + `python3 models/gpfm-mamba-v1/diag_hf.py --run-id v3lp-main-01`（端点带外回漏测量）——与 Run 007/009/010 完全同口径，Q1/Q2 分开陈述

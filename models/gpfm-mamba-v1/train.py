@@ -216,6 +216,7 @@ def main() -> None:
         kernel_t=cfg.kernel_t, gamma=cfg.gamma, period_p=cfg.period_p,
         iso=cfg.iso, pp_jitter=cfg.pp_jitter,
         sigma_s=cfg.sigma_s, jitter_s=cfg.jitter_s,
+        bandlimit_hz=getattr(cfg, "prior_bandlimit_hz", None),  # v3 变体启用；v1/v2 配置无此字段→None
     ).to(device)
     model = VelocityNetwork(
         n_channels=cfg.n_channels, past_len=cfg.past_len, future_len=cfg.future_len,

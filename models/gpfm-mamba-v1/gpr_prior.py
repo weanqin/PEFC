@@ -40,7 +40,13 @@ def ricker3d_kernel(coords: np.ndarray, sigma: float) -> np.ndarray:
 
 
 class GPRPrior(nn.Module):
-    """全观测可分 GPR 条件先验（past 62×384 全观测 ⇒ A/L_t/L_s 均为固定算子预计算）。"""
+    """全观测可分 GPR 条件先验（past 62×384 全观测 ⇒ A/L_t/L_s 均为固定算子预计算）。
+
+    bandlimit_hz（Run 015 设计，v3 变体启用）：对**采样输出**做末维 reflect-pad 砖墙低通
+    （>bandlimit_hz 置零）——条件化仍用原核完成（满秩、无解析延拓塌缩），等价于把条件
+    先验分布的协方差带限为 B·K_post·Bᵀ。默认 None = 关闭（v1/v2 行为逐位不变）；
+    posterior_mean 不滤（Run 015 探针：μ 本就平滑，滤波不动数值，保基线口径）。
+    """
 
     def __init__(
         self,
@@ -55,6 +61,9 @@ class GPRPrior(nn.Module):
         sigma_s: float = 0.080,
         jitter_s: float = 1e-3,
         spatial: str = "ricker",  # 'ricker' | 'identity'（identity 仅单测/消融口径）
+        bandlimit_hz: Optional[float] = None,
+        fs: float = 500.0,
+        bandlimit_pad: int = 64,
     ):
         super().__init__()
         self.past_len = past_len
@@ -91,10 +100,30 @@ class GPRPrior(nn.Module):
         self.K_s_prejitter = Ks.copy()
         self.K_s = Ks_jit.copy()
         self.sigma_s = sigma_s
+        # ---- 带限（默认关；Run 015）----
+        self.bandlimit_hz = bandlimit_hz
+        self.fs = fs
+        self.bandlimit_pad = bandlimit_pad
         # ---- float32 buffers（训练用）----
         self.register_buffer("A", A_t.float())
         self.register_buffer("L_t", L_t.float())
         self.register_buffer("L_s", L_s.float())
+
+    def bandlimit(self, x: torch.Tensor) -> torch.Tensor:
+        """末维 reflect-pad 砖墙低通（self.bandlimit_hz=None 时原样返回）。
+
+        reflect 填充抑制 DFT 循环卷积段边界振铃（Run 013 实测边缘/中段偏差比 1.56→1.09）。
+        训练（prior.sample 末端）与推理（EulerSampler x0 装配末端）共用本方法，保证同滤一致。
+        """
+        if self.bandlimit_hz is None:
+            return x
+        n = x.shape[-1]
+        pad = self.bandlimit_pad
+        xp = torch.nn.functional.pad(x, (pad, pad), mode="reflect")
+        freqs = torch.fft.rfftfreq(xp.shape[-1], d=1.0 / self.fs, device=xp.device)
+        spec = torch.fft.rfft(xp, dim=-1)
+        spec[..., freqs > self.bandlimit_hz] = 0
+        return torch.fft.irfft(spec, n=xp.shape[-1], dim=-1)[..., pad:pad + n]
 
     @torch.no_grad()
     def posterior_mean(self, x_past: torch.Tensor) -> torch.Tensor:
@@ -107,9 +136,9 @@ class GPRPrior(nn.Module):
         eps: Optional[torch.Tensor] = None,
         generator: Optional[torch.Generator] = None,
     ) -> torch.Tensor:
-        """x0^f = μ + L_s·ε·L_tᵀ ~ N(μ, K_s ⊗ K'_{t,f|p})。"""
+        """x0^f = LP(μ + L_s·ε·L_tᵀ)（bandlimit_hz=None 时 LP=恒等）。"""
         mu = self.posterior_mean(x_past)
         B, C, F = mu.shape
         if eps is None:
             eps = torch.randn(B, C, F, device=mu.device, dtype=mu.dtype, generator=generator)
-        return mu + torch.einsum("ij,bjk,lk->bil", self.L_s, eps, self.L_t)
+        return self.bandlimit(mu + torch.einsum("ij,bjk,lk->bil", self.L_s, eps, self.L_t))
