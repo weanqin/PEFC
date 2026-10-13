@@ -55,3 +55,8 @@
 - 图表与数值产物按 [artifacts-management.md](./artifacts-management.md) 落在本变体目录；检验 Run 的可复现要求（seed、GC/PSD 参数快照）遵循 [reproducibility.md](./reproducibility.md)。
 - 合格性结论（合格 / 不合格 / 部分合格）同步 `.trellis/research/progress.md` 里程碑。
 - 指标增删、口径或通过标准变更：旧 Run 结论保持原口径不动，变更回填本规范（Phase 3.3 spec update 时执行），新 Run 显式声明新口径及与旧口径的不可比部分。
+
+## 附注：Study II 扰动 EC 对比的下游约束（2026-10-13 登记）
+
+- 观测参考侧管线与口径见任务 `10-13-baseline-ec-v1`（GC+gPDC 两参考法，TE 经用户拍板取消）与 [evaluation-calibers.md](./evaluation-calibers.md) 的「Study II 扰动 EC 对比口径」节；术语统一 observational directed-connectivity references，目标是结构收敛性验证。
+- **EC_pert readout 约束**：主 readout=低剂量斜率（r 网格低密度段加密），AUC 次、r* 降级（右删失+τ 敏感性登记）；比较器接口已就绪（`models/baseline-ec-v1/compare.py::load_ec_pert`，契约 orientation='larger_is_stronger'，rstar 须调用方先翻转）。

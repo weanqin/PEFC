@@ -88,7 +88,8 @@ class Visualizer:
     各图类型的数据契约见对应 _draw_* 方法的 docstring。
     """
 
-    FIG_TYPES = ("trajectories", "psd", "gc_matrix", "training_curves", "spatial_corr")
+    FIG_TYPES = ("trajectories", "psd", "gc_matrix", "ec_matrix", "training_curves",
+                 "spatial_corr")
 
     def __init__(self, out_dir: str, dpi: int = 300):
         self.out_dir = out_dir
@@ -233,6 +234,37 @@ class Visualizer:
         ax3.text(0.03, 0.97, txt.strip(), transform=ax3.transAxes, fontsize=6,
                  va="top", color=PALETTE["neutral_dark"])
         add_panel_label(ax3, "c", dx=-0.22)
+        return fig
+
+    # ---- ③b EC 参考矩阵对比（baseline-ec-v1；gc_matrix 的标签参数化泛化）----
+    def _draw_ec_matrix(self, data: Dict, **cfg) -> mpl.figure.Figure:
+        """data: {
+            ec_a/ec_b (C,C) 两种观测参考矩阵（行=源/列=靶，非负幅值），
+            ec_c (C,C) 可选第三面板（EC_pert 等），
+            label_a/label_b/label_c 面板标题，stats dict（散点/文本标注用，可缺省）
+        }；热图 Blues（vmin=0），各面板独立色标（量纲不可比，设计如此）。"""
+        mats = [(data.get("label_a", "EC a"), data["ec_a"]),
+                (data.get("label_b", "EC b"), data["ec_b"])]
+        if "ec_c" in data:
+            mats.append((data.get("label_c", "EC c"), data["ec_c"]))
+        stats = data.get("stats", {})
+        fig, axes = plt.subplots(1, len(mats), figsize=(2.3 * len(mats), 2.5))
+        for ax, (title, m) in zip(axes, mats):
+            m = np.clip(np.asarray(m, dtype=float), 0, None)   # 展示口径：非负幅值
+            im = ax.imshow(m, cmap="Blues", vmin=0, vmax=m.max() if m.max() > 0 else 1,
+                           interpolation="nearest")
+            ax.set_title(title, fontsize=6)
+            ax.set_xlabel("target"); ax.set_ylabel("source")
+            cb = fig.colorbar(im, ax=ax, shrink=0.8, pad=0.03)
+            cb.ax.tick_params(labelsize=5)
+        if stats:
+            txt = "  ".join(f"{k}={v:.3f}" for k, v in stats.items() if isinstance(v, (int, float)))
+            if txt:
+                axes[-1].text(0.02, 0.02, txt, transform=axes[-1].transAxes, fontsize=4.6,
+                              va="bottom", color=PALETTE["neutral_dark"])
+        for ax, lab in zip(axes, "abc"[:len(axes)]):
+            add_panel_label(ax, lab, dx=-0.28)
+        fig.tight_layout()
         return fig
 
     # ---- ④ 训练曲线 ----
