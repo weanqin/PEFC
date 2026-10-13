@@ -59,7 +59,20 @@ def main() -> None:
     assert torch.equal(p0.posterior_mean(xp), p1.posterior_mean(xp)), \
         "posterior_mean 不应随 bandlimit 开关变化"
 
-    print("test_bandlimit: 4/4 PASS")
+    # 5) 任意 ndim 通用（EulerSampler 的 (B,K,C,F) 4-D 路径——曾因 F.pad reflect 维度限制崩溃）
+    #    谱断言用低频主导输入（cumsum 白噪）：白噪输入的平通带谱 + Hann 窗泄漏会遮蔽砖墙效果
+    for shape in ((3, 16, 62, 128), (16, 62, 128), (62, 128)):
+        t = torch.cumsum(torch.randn(*shape, generator=torch.Generator().manual_seed(3)),
+                         dim=-1)
+        out = p1.bandlimit(t)
+        assert out.shape == t.shape and torch.isfinite(out).all()
+        sp = (np.abs(np.fft.rfft(out.numpy() * np.hanning(128), axis=-1)) ** 2) \
+            .mean(axis=tuple(range(out.ndim - 1)))
+        fr = np.fft.rfftfreq(128, d=1.0 / 500.0)
+        assert sp[fr > 40.9].sum() / sp.sum() < 1e-3, f"{shape} 带限失败"
+    print("[5] 4-D/3-D/2-D 带限形状与谱检查 PASS")
+
+    print("test_bandlimit: 5/5 PASS")
 
 
 if __name__ == "__main__":

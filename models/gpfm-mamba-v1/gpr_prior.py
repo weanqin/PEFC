@@ -110,20 +110,24 @@ class GPRPrior(nn.Module):
         self.register_buffer("L_s", L_s.float())
 
     def bandlimit(self, x: torch.Tensor) -> torch.Tensor:
-        """末维 reflect-pad 砖墙低通（self.bandlimit_hz=None 时原样返回）。
+        """末维 reflect-pad 砖墙低通（self.bandlimit_hz=None 时原样返回），任意 ndim ≥2 通用。
 
+        内部统一 reshape 成 3-D 再 pad（F.pad reflect 的长度 2 padding 仅支持 3-D——
+        训练路径 (B,C,F) 天然 3-D，EulerSampler 的 (B,K,C,F) 4-D 须先折叠）。
         reflect 填充抑制 DFT 循环卷积段边界振铃（Run 013 实测边缘/中段偏差比 1.56→1.09）。
         训练（prior.sample 末端）与推理（EulerSampler x0 装配末端）共用本方法，保证同滤一致。
         """
         if self.bandlimit_hz is None:
             return x
-        n = x.shape[-1]
+        lead, n = x.shape[:-1], x.shape[-1]
         pad = self.bandlimit_pad
-        xp = torch.nn.functional.pad(x, (pad, pad), mode="reflect")
+        x3 = x.reshape(-1, 1, n)
+        xp = torch.nn.functional.pad(x3, (pad, pad), mode="reflect")
         freqs = torch.fft.rfftfreq(xp.shape[-1], d=1.0 / self.fs, device=xp.device)
         spec = torch.fft.rfft(xp, dim=-1)
         spec[..., freqs > self.bandlimit_hz] = 0
-        return torch.fft.irfft(spec, n=xp.shape[-1], dim=-1)[..., pad:pad + n]
+        out = torch.fft.irfft(spec, n=xp.shape[-1], dim=-1)[..., pad:pad + n]
+        return out.reshape(lead + (n,))
 
     @torch.no_grad()
     def posterior_mean(self, x_past: torch.Tensor) -> torch.Tensor:
