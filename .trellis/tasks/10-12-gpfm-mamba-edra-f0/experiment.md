@@ -325,3 +325,28 @@
 - **瓶颈假说不成立（本消融的单变量证据）**：d_model 16→62（参数 ×8.4，其余逐字段不变）后，GC 一致性不升反降（r 0.282→0.231，CI 不重叠）、生成 GC 幅值进一步压低（真实幅值的 40%→25%）——「16 维跨通道瓶颈是 GC 偏弱主因」被否定；GC 偏弱更可能源于**损失/训练目标**（四项损失逐通道分解、无跨通道时序监督）或数据本身（design §9.7 备择解释，未检验）。
 - 次要发现：①Q1 改善边际（MAE −1%、逐通道 r +4.7%，未超 GPR 基线）；②FC（指标 1）与空间结构（指标 4）略优且更稳；③v2 收敛更快但 100 epoch 过头（best ep53 后轻微过拟合）；④R1 触发属 train 拟合加深的口径效应（见上方注记）。
 - 单 seed fold0 初步结论，不外推；指标 1/3/4 的通过标准与「v1 还是 v2 进 5-fold（或均不进、先改损失）」由用户判定——**未判定前不宣称代理脑合格、不进入 5-fold、不固定 θ\***。
+
+## Run 011 —— 轨迹图可视化口径变更：medoid 代表轨迹 + 90% 预测区间（2026-10-13 用户指定）
+
+### 目的与假设
+
+- 原 trajectories 图把 K' 条生成轨迹全部叠加（红细线 α=0.45），波形严重重叠，难以观察典型动态与不确定性。用户指定新口径：①**不再画全部 K 条**，也**不用逐时间点均值**当代表——从 K 个实际生成样本中按完整多通道轨迹 pairwise RMSE 选 **medoid** k\*=argmin_k(1/(K−1))Σ_{j≠k}d(x_k,x_j)，只画该实际样本；②**90% predictive interval**：全部 K 样本逐 (通道,时间点) 的 Q05–Q95 半透明阴影带（颜色同 medoid 红、低透明度；不用 min-max envelope）；③ground-truth future 蓝线保留；版式/轴/配色不变。**这是指标 2（人工视觉检验）载体的口径变更，不改变任何数值指标。**
+
+### 配置
+
+- 代码：`common/visualizer.py::_draw_trajectories`（新数据契约 gen_medoid/gen_q05/gen_q95，版式不变）+ `models/gpfm-mamba-v1/evaluate.py`（新增 `trajectory_summary`：全 K=16 样本·**全通道**轨迹 pairwise RMSE 选 medoid（RMSE=Euclidean/√(CF)，argmin 与常数无关）+ 沿 K 维逐点 Q05/Q95；图窗收集改存摘要；新增 `--figures-only` 确定性重采样仅重渲染轨迹图，不写 eval_metrics/summary）；v2 经薄变体包装自动同口径。TRAJ_SAMPLES 常量删除（不再截取 K' 条）
+- 核验（跑前完成）：medoid k\* 与 numpy brute-force 逐例一致；medoid 输出与被选实际样本逐位相等（非重构波形）；q05/q95 与 np.percentile(linear) allclose；合成数据渲染烟雾通过；既有 6 组单测回归全 PASS
+- 重渲染命令（同 seed=1234 同 loader 顺序 → 与 Run 007/010 Pass A 样本逐位一致）：
+  - `python3 models/gpfm-mamba-v1/evaluate.py --run-id main-01 --figures-only`
+  - `python3 models/gpfm-mamba-v2/evaluate.py --run-id v2d62-main-01 --figures-only`
+- 旧图保留：`eval_trajectories_{run}.png` → `eval_trajectories_{run}.k-overlay.png`（旧口径不覆盖销毁，本块结论后以新图为指标 2 判定载体）
+
+### Run 011 结果（2026-10-13）
+
+- v1 `main-01` 与 v2 `v2d62-main-01` 均重渲染完成（同 seed 确定性采样 13210 窗：v1 67 s / v2 233 s，纯采样无指标累积）；eval.log 追加 `[figures-only]` 行，eval_metrics.jsonl/summary 未触碰。
+- 新图：`main-01/figs/eval_trajectories_main-01.png`、`v2d62-main-01/figs/eval_trajectories_v2d62-main-01.png`；旧叠加口径图保留为同目录 `*.k-overlay.png`。
+- 目视 QA（两图逐项）：36 面板 medoid 红线与 90% PI 阴影带全部清晰、蓝色真实曲线可辨、图例 4 项完整（past / real future / generated medoid (K=16) / 90% predictive interval）、ch/win 标签正常、无空白/重叠/缺线缺陷；阴影带宽度随窗变化（不确定性有区分度）。
+
+### Run 011 结论
+
+- **轨迹图口径切换完成**：全部 K 叠加 → medoid 实际样本（全通道 pairwise RMSE 选取）+ 逐点 Q05–Q95 阴影带；数值指标零改动，仅指标 2 判定载体更新。指标 2 人工视觉检验请以两张新图为对象（v2 图可见生成动态与不确定性区分度），判定仍归用户。

@@ -41,7 +41,6 @@ R1_RATIO = 1.5        # R1 触发阈值（design §9.1）
 LATE_EPOCHS = 5       # 「训练末期」= 最后 5 epoch 均值
 TRAJ_WINDOWS = 6      # 人工视觉检验素材：窗数
 TRAJ_CHANNELS = 6     # 通道数
-TRAJ_SAMPLES = 6      # 每窗展示样本条数（<=K）
 TRAJ_CONTEXT = 96     # past 上下文点数
 
 
@@ -168,6 +167,35 @@ def r1_monitor(run_dir, endpoint_mae: float, log) -> Dict:
     return out
 
 
+# ---------------- 轨迹图摘要（medoid + 逐点分位；用户指定口径 Run 011） ----------------
+
+def trajectory_summary(samples_win: torch.Tensor, chan_idx: torch.Tensor) -> Dict:
+    """单窗全部 K 条终点样本 → medoid 代表轨迹 + 逐时间点 5/95 分位。
+
+    - medoid 在**完整多通道轨迹**上按 pairwise RMSE 选取：
+      k* = argmin_k (1/(K-1)) Σ_{j≠k} d(x_k, x_j)，d = RMSE（= Euclidean/sqrt(C·F)，
+      全局常数不改变 argmin）——代表曲线必须是实际生成样本，非逐点统计量重构。
+    - 分位带：q05/q95 沿 K 维逐 (通道, 时间点)（90% predictive interval，非 min-max）。
+    - samples_win (K, C, F) 全通道样本（GPU/CPU 均可）；chan_idx 所选通道索引张量。
+    返回 {"medoid"/"q05"/"q95": (C_sel, F) cpu numpy, "k_star": int}。
+    """
+    full = samples_win.float()
+    K, Cn, F = full.shape
+    flat = full.reshape(K, -1)                                    # (K, C·F)
+    sq = (flat * flat).sum(1)
+    d2 = sq[:, None] + sq[None, :] - 2.0 * (flat @ flat.T)
+    d = torch.clamp(d2, min=0.0).sqrt() / float(Cn * F) ** 0.5    # pairwise RMSE
+    mean_d = (d.sum(1) - torch.diagonal(d)) / (K - 1)             # Σ_{j≠k}/(K−1)
+    k_star = int(mean_d.argmin().item())
+    sel = full[:, chan_idx.to(full.device), :]                    # (K, C_sel, F)
+    return {
+        "medoid": sel[k_star].cpu().numpy(),
+        "q05": torch.quantile(sel, 0.05, dim=0).cpu().numpy(),
+        "q95": torch.quantile(sel, 0.95, dim=0).cpu().numpy(),
+        "k_star": k_star,
+    }
+
+
 # ---------------- 主流程 ----------------
 
 def parse_args() -> argparse.Namespace:
@@ -181,6 +209,9 @@ def parse_args() -> argparse.Namespace:
                    help="采样 seed（默认 cfg.seed=1234；不修改 config 以免 hash 漂移）")
     p.add_argument("--skip-gc", action="store_true", help="跳过 GC/PSD/空间归因（调试用）")
     p.add_argument("--gc-bootstrap", type=int, default=1000, help="GC 相关 CI bootstrap 次数（登记）")
+    p.add_argument("--figures-only", action="store_true",
+                   help="仅确定性重采样并重渲染轨迹图（medoid+90%%PI 口径）；"
+                        "不写 eval_metrics.jsonl/summary（不触碰已登记评估记录）")
     return p.parse_args()
 
 
@@ -231,8 +262,50 @@ def main() -> None:
     traj_w = np.linspace(0, n_win - 1, TRAJ_WINDOWS).astype(int)
     traj_c = np.linspace(0, cfg.n_channels - 1, TRAJ_CHANNELS).astype(int)
     traj_c_idx = torch.as_tensor(traj_c, dtype=torch.long, device=device)
-    traj_store = {"past": [], "real": [], "gen": []}
+    traj_store = {"past": [], "real": [], "medoid": [], "q05": [], "q95": []}
     traj_set = set(int(i) for i in traj_w)
+
+    def _traj_fig_data() -> Dict:
+        return {
+            "past": np.stack(traj_store["past"]), "real": np.stack(traj_store["real"]),
+            "gen_medoid": np.stack(traj_store["medoid"]),
+            "gen_q05": np.stack(traj_store["q05"]), "gen_q95": np.stack(traj_store["q95"]),
+            "window_ids": [int(i) for i in traj_w], "channel_ids": [int(c) for c in traj_c],
+            "fs": 500, "K": K,
+        }
+
+    if args.figures_only:
+        # 确定性重采样（与 Pass A 同 seed、同 loader 顺序 → 样本逐位一致），仅重渲染轨迹图；
+        # 不写 eval_metrics.jsonl / summary.json（不污染已登记的评估记录）。
+        t0 = time.time()
+        g = torch.Generator(device=device)
+        g.manual_seed(sample_seed)
+        n_done = 0
+        with ema.swap(model):
+            for bi, (xp, x1) in enumerate(loader):
+                xp = xp.to(device, non_blocking=True)
+                x1 = x1.to(device, non_blocking=True)
+                samples = sampler.sample(xp, K, generator=g)          # (B,K,C,F)
+                gidx0 = n_done
+                n_done += xp.shape[0]
+                for wi, gidx in enumerate(range(gidx0, n_done)):
+                    if gidx in traj_set:
+                        summ = trajectory_summary(samples[wi], traj_c_idx)
+                        traj_store["past"].append(
+                            xp[wi, traj_c_idx, -TRAJ_CONTEXT:].cpu().numpy())
+                        traj_store["real"].append(x1[wi, traj_c_idx].cpu().numpy())
+                        traj_store["medoid"].append(summ["medoid"])
+                        traj_store["q05"].append(summ["q05"])
+                        traj_store["q95"].append(summ["q95"])
+                if bi % 20 == 0 or bi == len(loader) - 1:
+                    el = time.time() - t0
+                    log(f"[figures-only] batch {bi + 1}/{len(loader)} | 窗 {n_done}/{n_win} | "
+                        f"{el:.0f}s | ETA {el / n_done * (n_win - n_done):.0f}s")
+        viz = Visualizer(str(run_dir / "figs"))
+        traj_path = viz.render("trajectories", _traj_fig_data(),
+                               f"eval_trajectories_{run_id}.png")
+        log(f"[figures-only] 轨迹图重渲染完成（medoid + 90% PI 口径，K={K}）: {traj_path}")
+        return
 
     # ---- Pass A：K 样本 → 主/次指标（流式，不落全量样本）----
     t0 = time.time()
@@ -254,9 +327,10 @@ def main() -> None:
                 if gidx in traj_set:
                     traj_store["past"].append(xp[wi, traj_c_idx, -TRAJ_CONTEXT:].cpu().numpy())
                     traj_store["real"].append(x1[wi, traj_c_idx].cpu().numpy())
-                    traj_store["gen"].append(
-                        samples[wi, :TRAJ_SAMPLES, traj_c_idx, :].permute(1, 2, 0).cpu().numpy()
-                    )  # (K',C_sel,F) -> (C_sel,F,K')，匹配 visualizer gen[w,c,:,k] 契约（F 全长、K' 条样本）
+                    summ = trajectory_summary(samples[wi], traj_c_idx)  # 全 K 样本·全通道轨迹
+                    traj_store["medoid"].append(summ["medoid"])
+                    traj_store["q05"].append(summ["q05"])
+                    traj_store["q95"].append(summ["q95"])
             el = time.time() - t0
             eta = el / n_done * (n_win - n_done)
             log(f"[pass-A] batch {bi + 1}/{len(loader)} | 窗 {n_done}/{n_win} | {el:.0f}s | "
@@ -316,12 +390,8 @@ def main() -> None:
 
     # ---- 图（统一 visualizer）----
     viz = Visualizer(str(run_dir / "figs"))
-    traj_path = viz.render("trajectories", {
-        "past": np.stack(traj_store["past"]), "real": np.stack(traj_store["real"]),
-        "gen": np.stack(traj_store["gen"]),
-        "window_ids": [int(i) for i in traj_w], "channel_ids": [int(c) for c in traj_c],
-        "fs": 500,
-    }, f"eval_trajectories_{run_id}.png")
+    traj_path = viz.render("trajectories", _traj_fig_data(),
+                           f"eval_trajectories_{run_id}.png")
     metrics_recs = [json.loads(l) for l in
                     (run_dir / "logs" / "metrics.jsonl").read_text().splitlines() if l.strip()]
     curve_path = viz.render("training_curves", {"records": metrics_recs},

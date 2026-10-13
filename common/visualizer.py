@@ -10,7 +10,7 @@
 - 输出：300 dpi PNG（评估/诊断产物口径；论文投稿级导出另走 nature-figure 流程）。
 
 图类型（FIG_TYPES）：
-  trajectories     多窗「真实 vs 生成多轨迹叠加」（人工视觉检验素材）
+  trajectories     多窗「真实 vs 生成轨迹」（medoid 代表样本 + 90% 逐点预测区间；人工视觉检验素材）
   psd              逐通道真实/生成 log-log 叠加 + 全通道平均
   gc_matrix        GC 有向矩阵对比（真实/生成热图 + 散点）
   training_curves  训练曲线（四项损失+total / 按 t 分桶 mae / EMA 幅度监控）
@@ -27,6 +27,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib as mpl  # noqa: E402
 import matplotlib.pyplot as plt  # noqa: E402
+from matplotlib.patches import Patch  # noqa: E402
 import numpy as np  # noqa: E402
 
 # ---- nature-figure 契约配色（克制三族：中性 / 真实蓝 / 生成红 + 辅助）----
@@ -107,21 +108,25 @@ class Visualizer:
         plt.close(fig)
         return path
 
-    # ---- ① 真实 vs 生成多轨迹叠加（人工视觉检验）----
+    # ---- ① 真实 vs 生成轨迹（medoid 代表 + 90% 预测区间；人工视觉检验）----
     def _draw_trajectories(self, data: Dict, **cfg) -> mpl.figure.Figure:
         """data: {
             past   (W, C, P) 真实 past（上下文，浅灰），
-            real   (W, C, F) 真实 future（蓝粗线），
-            gen    (W, C, F, K') 生成样本（红细线，K'<=8 条），
+            real   (W, C, F) 真实 future（蓝粗线，独立参考曲线），
+            gen_medoid (W, C, F) 代表生成轨迹（红）——K 个实际生成样本中按完整多通道轨迹
+              pairwise RMSE 选出的 medoid 实际样本（非逐时间点统计量重构的虚拟波形），
+            gen_q05, gen_q95 (W, C, F) 全部 K 样本的逐时间点 5/95 分位
+              （fill_between 阴影 = 90% predictive interval；不用 min-max envelope），
             window_ids (W,), channel_ids (C,)（标题用）,
-            fs 采样率（默认 500）, context 点数（默认 64）
+            fs 采样率（默认 500）, context 点数（默认 64）, K 生成样本数（图例标注）
         }"""
-        past, real, gen = data["past"], data["real"], data["gen"]
+        past, real = data["past"], data["real"]
+        medoid, q05, q95 = data["gen_medoid"], data["gen_q05"], data["gen_q95"]
         W, C, P = past.shape
         F = real.shape[-1]
         fs = data.get("fs", 500)
         ctx = min(data.get("context", 64), P)
-        K = gen.shape[-1]
+        K = data.get("K")
         fig, axes = plt.subplots(W, C, figsize=(1.5 * C, 1.1 * W), squeeze=False,
                                  sharex=True)
         t_ctx = np.arange(-ctx, 0) / fs
@@ -131,11 +136,12 @@ class Visualizer:
                 ax = axes[w][c]
                 ax.plot(t_ctx, past[w, c, -ctx:], color=PALETTE["neutral_light"],
                         lw=0.6, zorder=1)
-                for k in range(K):
-                    ax.plot(t_fut, gen[w, c, :, k], color=PALETTE["red_strong"],
-                            lw=0.4, alpha=0.45, zorder=2)
-                ax.plot(t_fut, real[w, c], color=PALETTE["blue_main"], lw=1.0,
+                ax.fill_between(t_fut, q05[w, c], q95[w, c],
+                                color=PALETTE["red_strong"], alpha=0.18, lw=0, zorder=2)
+                ax.plot(t_fut, medoid[w, c], color=PALETTE["red_strong"], lw=0.8,
                         zorder=3)
+                ax.plot(t_fut, real[w, c], color=PALETTE["blue_main"], lw=1.0,
+                        zorder=4)
                 if w == 0:
                     ax.set_title(f"ch{data['channel_ids'][c]}", fontsize=6)
                 if w == W - 1:
@@ -147,10 +153,12 @@ class Visualizer:
         handles = [
             plt.Line2D([], [], color=PALETTE["neutral_light"], lw=1, label="past (context)"),
             plt.Line2D([], [], color=PALETTE["blue_main"], lw=1, label="real future"),
-            plt.Line2D([], [], color=PALETTE["red_strong"], lw=0.6, alpha=0.7,
-                       label=f"generated (K'={K})"),
+            plt.Line2D([], [], color=PALETTE["red_strong"], lw=1,
+                       label="generated medoid" + (f" (K={K})" if K is not None else "")),
+            Patch(facecolor=PALETTE["red_strong"], alpha=0.25, lw=0,
+                  label="90% predictive interval"),
         ]
-        fig.legend(handles=handles, loc="upper right", ncol=3, bbox_to_anchor=(1.0, 1.02))
+        fig.legend(handles=handles, loc="upper right", ncol=4, bbox_to_anchor=(1.0, 1.02))
         fig.tight_layout(h_pad=0.4, w_pad=0.4)
         return fig
 
