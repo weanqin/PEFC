@@ -1,15 +1,16 @@
 """gpfm-mamba-v3 唯一配置源（薄变体，完整 config 副本）。
 
-**单变量消融（用户 2026-10-13 指定，Run 015/016）：唯一变化 = prior_bandlimit_hz None → 40.0**
-——先验采样后做 40 Hz reflect-pad 砖墙带限（x0 进训练/推理前滤波），修复生成侧 >40 Hz 功率
-偏高（Run 012 根因：OU 时间核 1/ω² 谱尾 + 网络去噪不完全；Run 015 探针：散布保留 95%、
-x0 高频 ↓100×、GPR 基线不动、绕开 Run 014 带限核的条件方差塌缩）。
+**单变量消融（用户 2026-10-13 指定，Run 015/016）：基线 = v2（d_model=62），唯一变化 =
+prior_bandlimit_hz None → 40.0**——先验采样后做 40 Hz reflect-pad 砖墙带限（x0 进训练/推理前
+滤波），修复生成侧 >40 Hz 功率偏高（Run 012 根因：OU 时间核 1/ω² 谱尾 + 网络去噪不完全；
+Run 015 探针：散布保留 95%、x0 高频 ↓100×、GPR 基线不动、绕开 Run 014 带限核的条件方差
+塌缩）。相对 v1 为两处变化（d_model 16→62 + 带限）；**带限效应的归因对照 = v2**。
 
-d_model=16 与 v1 一致（架构不变）；bandlimit 实现在共享 gpr_prior.py（默认 None=关闭，
-v1/v2 行为与 config_hash 逐位不变；本变体经 config 遮蔽在 train/sample 的 GPRPrior 构造处
-启用）。posterior_mean 不滤（μ 平滑，滤波不动数值，保 GPR 基线口径与 v1 可比）。
+bandlimit 实现在共享 gpr_prior.py（默认 None=关闭，v1/v2 行为与 config_hash 逐位不变；
+本变体经 config 遮蔽在 train/sample 的 GPRPrior 构造处启用）。posterior_mean 不滤
+（μ 平滑，滤波不动数值，保 GPR 基线口径与 v1/v2 可比）。
 
-其余一切与 gpfm-mamba-v1 完全一致（核 OU γ=1/p=50/iso=1e-2、损失权重 {1,1,0.1,0.1}、
+其余一切与 v2 完全一致（d_model=62、核 OU γ=1/p=50/iso=1e-2、损失权重 {1,1,0.1,0.1}、
 EMA 0.999、t 分布 logit-normal(−0.8,0.8)、数据口径 status_ok 46 例、划分 split_seed=42
 （读 v1 固化 manifest，跨变体共享只读）、训练超参、评估口径）。
 
@@ -59,8 +60,8 @@ class Config:
     jitter_s: float = 1e-3        # K_s <- K_s + jitter_s*I
     prior_bandlimit_hz: float = 40.0  # ←←← 本变体唯一超参变化（v1/v2 无此字段=关闭）：采样后带限
 
-    # ---- Mamba 速度网络（design §3；与 v1 一致，d_model=16）----
-    d_model: int = 16
+    # ---- Mamba 速度网络（design §3；与 v2 一致，d_model=62）----
+    d_model: int = 62
     n_layers: int = 4
     d_state: int = 16
     d_conv: int = 4

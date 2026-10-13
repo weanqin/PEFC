@@ -461,9 +461,9 @@
 
 ## Run 016 —— v3 变体：先验采样后 40 Hz 带限（2026-10-13 用户批准「建立变体并评估」）
 
-### 目的与配置（跑前登记）
+### 目的与配置（跑前登记；2026-10-13 用户修正：**基线 = v2（d_model=62）**）
 
-- **单变量消融**：相对 v1 唯一变化 = `prior_bandlimit_hz: None → 40.0`（d_model=16、核/损失/训练超参/评估口径与 v1 逐字段一致）。设计依据 Run 015 探针（散布保留 95%、高频 ↓100×、GPR 基线不动、无塌缩）。
+- **单变量消融（基线 v2）**：唯一变化 = `prior_bandlimit_hz: None → 40.0`（d_model=62 与 v2 一致；相对 v1 为两处变化——带限效应归因对照 = v2）。设计依据 Run 015 探针（散布保留 95%、高频 ↓100×、GPR 基线不动、无塌缩）。
 - 代码（共享库扩展 + 薄变体，v1/v2 行为与 config_hash 逐位不变——已验证 v1 默认 hash=c6ff80ac1c43 与 main-01 ckpt 一致）：
   - `gpr_prior.py`：GPRPrior 增 `bandlimit_hz/fs/bandlimit_pad`（默认关）与 `bandlimit()`（末维 reflect-pad 砖墙，Run 013 实现）；`sample()` 末端启用；`posterior_mean` 不滤
   - `train.py:213` / `sample.py::build_eval_prior`：`bandlimit_hz=getattr(cfg, "prior_bandlimit_hz", None)` 透传；`EulerSampler` x0 核心装配末端 `prior.bandlimit`（σ_min·η 不滤，与训练路径 t→0 口径一致）
