@@ -154,7 +154,9 @@ class Visualizer:
             plt.Line2D([], [], color=PALETTE["neutral_light"], lw=1, label="past (context)"),
             plt.Line2D([], [], color=PALETTE["blue_main"], lw=1, label="real future"),
             plt.Line2D([], [], color=PALETTE["red_strong"], lw=1,
-                       label="generated medoid" + (f" (K={K})" if K is not None else "")),
+                       label="generated medoid"
+                             + (f" (K={K})" if K is not None else "")
+                             + (f", {data['note']}" if data.get("note") else "")),
             Patch(facecolor=PALETTE["red_strong"], alpha=0.25, lw=0,
                   label="90% predictive interval"),
         ]

@@ -169,6 +169,21 @@ def r1_monitor(run_dir, endpoint_mae: float, log) -> Dict:
 
 # ---------------- 轨迹图摘要（medoid + 逐点分位；用户指定口径 Run 011） ----------------
 
+def lowpass_last_dim(x: torch.Tensor, cut_hz: float, fs: float = 500.0,
+                     pad: int = 64) -> torch.Tensor:
+    """末维砖墙低通（>cut_hz 置零），reflect 填充后滤波再裁剪（Run 013 口径）。
+
+    反射填充抑制 DFT 循环卷积的段边界振铃（实测边缘/中段偏差比 1.56→1.09）；
+    仅作用于轨迹图生成侧样本（medoid/分位之前滤波）；默认不启用，不影响任何已登记指标。
+    """
+    n = x.shape[-1]
+    xp = torch.nn.functional.pad(x, (pad, pad), mode="reflect")
+    freqs = torch.fft.rfftfreq(xp.shape[-1], d=1.0 / fs, device=xp.device)
+    spec = torch.fft.rfft(xp, dim=-1)
+    spec[..., freqs > cut_hz] = 0
+    return torch.fft.irfft(spec, n=xp.shape[-1], dim=-1)[..., pad:pad + n]
+
+
 def trajectory_summary(samples_win: torch.Tensor, chan_idx: torch.Tensor) -> Dict:
     """单窗全部 K 条终点样本 → medoid 代表轨迹 + 逐时间点 5/95 分位。
 
@@ -212,6 +227,9 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--figures-only", action="store_true",
                    help="仅确定性重采样并重渲染轨迹图（medoid+90%%PI 口径）；"
                         "不写 eval_metrics.jsonl/summary（不触碰已登记评估记录）")
+    p.add_argument("--gen-lowpass", type=float, default=None,
+                   help="轨迹图生成侧样本砖墙低通截止 Hz（如 40；滤波后再选 medoid/算分位带，"
+                        "仅影响轨迹图，不改变任何数值指标口径）")
     return p.parse_args()
 
 
@@ -266,13 +284,16 @@ def main() -> None:
     traj_set = set(int(i) for i in traj_w)
 
     def _traj_fig_data() -> Dict:
-        return {
+        d = {
             "past": np.stack(traj_store["past"]), "real": np.stack(traj_store["real"]),
             "gen_medoid": np.stack(traj_store["medoid"]),
             "gen_q05": np.stack(traj_store["q05"]), "gen_q95": np.stack(traj_store["q95"]),
             "window_ids": [int(i) for i in traj_w], "channel_ids": [int(c) for c in traj_c],
             "fs": 500, "K": K,
         }
+        if args.gen_lowpass:
+            d["note"] = f"lowpass {args.gen_lowpass:g} Hz"
+        return d
 
     if args.figures_only:
         # 确定性重采样（与 Pass A 同 seed、同 loader 顺序 → 样本逐位一致），仅重渲染轨迹图；
@@ -290,7 +311,10 @@ def main() -> None:
                 n_done += xp.shape[0]
                 for wi, gidx in enumerate(range(gidx0, n_done)):
                     if gidx in traj_set:
-                        summ = trajectory_summary(samples[wi], traj_c_idx)
+                        sw = samples[wi]
+                        if args.gen_lowpass:
+                            sw = lowpass_last_dim(sw, args.gen_lowpass)
+                        summ = trajectory_summary(sw, traj_c_idx)
                         traj_store["past"].append(
                             xp[wi, traj_c_idx, -TRAJ_CONTEXT:].cpu().numpy())
                         traj_store["real"].append(x1[wi, traj_c_idx].cpu().numpy())
@@ -327,7 +351,10 @@ def main() -> None:
                 if gidx in traj_set:
                     traj_store["past"].append(xp[wi, traj_c_idx, -TRAJ_CONTEXT:].cpu().numpy())
                     traj_store["real"].append(x1[wi, traj_c_idx].cpu().numpy())
-                    summ = trajectory_summary(samples[wi], traj_c_idx)  # 全 K 样本·全通道轨迹
+                    sw = samples[wi]
+                    if args.gen_lowpass:
+                        sw = lowpass_last_dim(sw, args.gen_lowpass)
+                    summ = trajectory_summary(sw, traj_c_idx)  # 全 K 样本·全通道轨迹
                     traj_store["medoid"].append(summ["medoid"])
                     traj_store["q05"].append(summ["q05"])
                     traj_store["q95"].append(summ["q95"])

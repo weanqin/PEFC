@@ -394,3 +394,24 @@
 4. **μ 无关**；**σ_min=1e-4 端点噪声（1e-8 方差）可忽略**。
 5. **H3（tv 权重 0.1 抑制不足）**：间接证据支持（网络在无数据方差频段仍保留先验底），但严格检验须重训消融，未执行——列为后续变体方向。
 - **缓解方向（供用户决策，均属口径/变体变更须登记）**：①生成侧后处理 40 Hz 低通（立得 MAE −5%，零训练成本）；②先验侧换 Matérn-3/2（尾巴 ω⁻⁴，注册表已备）或频域截止 40 Hz 的带限核（口径对齐数据）；③iso 降至 1e-3（收益 ~1%，小）；④tv 权重↑/显式频带损失（须重训）。
+
+## Run 013 —— 生成侧 40 Hz 低通 + 轨迹图重渲染（2026-10-13 用户指定）
+
+### 目的与配置
+
+- 用户决策采纳 Run 012 缓解方向①：**轨迹图生成侧样本先 40 Hz 低通、再选 medoid/算 90% PI**，重渲染 v1/v2 轨迹图（仅可视化口径，不改数值指标）。
+- 实现：`evaluate.py --gen-lowpass 40`（`lowpass_last_dim`：末维 rFFT 砖墙 >40 Hz 置零，**reflect 填充 ±64 点后滤波再裁剪**——抑制 DFT 循环卷积段边界振铃，实测边缘/中段偏差比 1.56→1.09、移除方差 7.0%；与 Run 012 无填充诊断口径的差异为填充本身）；visualizer 图例 medoid 项追加 ", lowpass 40 Hz" 注记；滤波在 medoid 选取与分位计算**之前**作用于每窗全部 K 条样本。
+- 核验（跑前）：合成信号 >40 Hz 频点相对幅值 3.7e-8（置零生效）；真实 gc_input 子集 MAE 0.9619→0.9389（低通净收益保持）；py_compile 通过。
+- 命令（--figures-only 确定性采样 + 滤波）：
+  - `python3 models/gpfm-mamba-v1/evaluate.py --run-id main-01 --figures-only --gen-lowpass 40`
+  - `python3 models/gpfm-mamba-v2/evaluate.py --run-id v2d62-main-01 --figures-only --gen-lowpass 40`
+- 图产物保全：未滤波 medoid+PI 版保留为 `eval_trajectories_{run}.unfiltered.png`，滤波版写 canonical 名。
+
+### Run 013 结果（2026-10-13）
+
+- v1/v2 均重渲染完成（确定性采样 + 40 Hz 低通，v1 68 s / v2 233 s）；canonical 名 = 滤波版：`main-01/figs/eval_trajectories_main-01.png`、`v2d62-main-01/figs/eval_trajectories_v2d62-main-01.png`；figs/ 内并存三个版本（滤波 / `.unfiltered` / `.k-overlay`），eval.log 追加 `[figures-only]` 行。
+- 目视 QA（两图逐项）：medoid 曲线平滑（与 past 段高频形成可见对比，滤波生效）、位于 90% PI 带内、蓝色真实曲线清晰、**future 段起止处无振铃/突变伪影**（reflect 填充生效）、图例 4 项含 "generated medoid (K=16), lowpass 40 Hz" 注记（大图小字号易读漏，裁剪放大核实）、无空白/缺陷面板。
+
+### Run 013 结论
+
+- 轨迹图（指标 2 判定载体）现为 **40 Hz 低通版**：medoid 展示的是滤波后样本中按滤波轨迹 pairwise RMSE 选出的实际样本，90% PI 带为滤波样本逐点 Q05–Q95；数值指标口径未动。若后续采纳「生成侧低通」为正式产物口径，须按口径变更回填 evaluation-calibers 并重跑全量评估；当前仅为可视化侧变更。
