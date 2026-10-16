@@ -9,19 +9,24 @@
   截取 future 128 位置 + 逐通道 RMSNorm(d_ch) → 同时间步汇聚 h_t∈R^{62·d_ch} →
   每个目标通道 i 一个独立子 MLP：z_{t,i}=σ(Σ_j W^{(i),1}_{:,j} h_{t,j}+b¹_i)、
   v_θ(t,i)=W^{(i),2} z_{t,i}+b²_i；W¹ 按源通道列分块（可辨识有向读出）。
-- 用户拍板超参（2026-10-16）：**d_ch=1（本 config 字段名沿用 `d_model`，语义=逐通道宽度
-  d_ch——特例风险登记 design §9.10：RMSNorm(1) 退化为 sign(x)·w、trunk 容量塌缩）**、
+- 用户拍板超参（2026-10-16）：**d_ch=8（口径变更：初值 1，Run 006/007 后用户拍板升档「方案 B」，
+  本 config 字段名沿用 `d_model`，语义=逐通道宽度 d_ch）**、
   d_z=16、σ=SiLU、CI 权重共享、**不加 group lasso**（损失与 v1/v2 逐字一致；
   训后免费算内部 readout M[j,i]=‖W^{(i),1}_{:,j}‖_F 仅诊断）。
-- 参数量（d_ch=1, d_z=16，design §3.2）：in_proj 19 + trunk 4×121=484 + head 前
-  RMSNorm(1) 1 + head 62×1025=63,550 + seg 嵌入 2 = **64,056**（head 占 99.2%）。
+- **d_ch 口径变更登记（2026-10-16 方案 B）**：Run 006/007（d_ch=1）实测 GC 幅值 3.9%
+  （v1/v2 92%/89%）、gen 峰频偏移（1.95 vs 0.98 Hz）、逐通道 r 塌缩（0.1148，−20~24%）——
+  H3 不可判定（d_ch=1 trunk 容量塌缩为强竞争解释，design §9.10）。用户拍板 d_ch 1→8
+  （batch 256 保持）；显存探针实测 d_ch=8@batch256 = **24.01 GiB**（32 GB 卡可行）。
+  变更流程 = config+model 双处同改 + 参数量/断言更新 + 重跑全部单测（双处一致性防线）。
+- 参数量（d_ch=8, d_z=16）：in_proj 152 + trunk 4×1,304=5,216 + head 前
+  RMSNorm(8) 8 + head 62×7,969=494,078 + seg 嵌入 2 = **499,456**（head 占 98.9%）。
 
 **命名与别名**：目录 v4；用户口头「v3」「v4-B」均指本变体（仓库 v3 已被 v3lp 占用）。
 
 训练/评估口径与 v2 逐字段一致（seed 1234、epochs 100、AdamW lr 1e-3 wd 1e-4、clip 0.5、
 EMA 0.999、t~logit-normal(−0.8,0.8)、损失 {1,1,0.1,0.1}、status_ok 46 例）——结构变化
-（CI 骨干 + cMLP head）之外，2026-10-16 另有三项口径变更登记（划分 32/4/10、早停
-patience=10、lr 恒定，分别见下方各块与字段注释）。
+（CI 骨干 + cMLP head）之外，2026-10-16 另有四项口径变更登记（划分 32/4/10、早停
+patience=10、lr 恒定、**d_ch 1→8（方案 B）**，分别见上方/下方各块与字段注释）。
 **lr 调度口径变更（用户 2026-10-16 拍板：取消 cosine 退火，lr 恒定 1e-3）**：v1/v2 为
 cosine（T_max=epochs）；实现 = v1 train.py default-off 钩子 `lr_schedule`（v1/v2/v3 config
 无此字段 = "cosine"，行为与 config_hash 零漂移；"constant" = LambdaLR 恒 1.0，scheduler
@@ -91,9 +96,12 @@ class Config:
     jitter_s: float = 1e-3        # K_s <- K_s + jitter_s*I
 
     # ---- Mamba 速度网络 v4-B（design §2/§3；结构变化 = CI 骨干 + cMLP head）----
-    d_model: int = 1              # ←←← v4-B 语义 = 逐通道独立宽度 d_ch（用户拍板 2026-10-16；
-                                  #      非 v1/v2 的全局混合宽度。d_ch 升档属口径变更须用户确认，
-                                  #      且须 config+model 双处同改并重跑全部单测）
+    d_model: int = 8              # ←←← v4-B 语义 = 逐通道独立宽度 d_ch。口径变更：初值 1
+                                  #      （用户 2026-10-16 指定）→ 8（用户 2026-10-16 拍板「方案 B」：
+                                  #      Run 006/007 证 d_ch=1 trunk 容量塌缩、H3 不可判定）；
+                                  #      batch 256 保持；显存探针实测 d_ch=8@batch256=24.01 GiB（可行）；
+                                  #      参数 499,456。d_ch 变更属口径变更须用户确认，且须
+                                  #      config+model 双处同改并重跑全部单测（本变更即按此流程执行）
     n_layers: int = 4
     d_state: int = 16
     d_conv: int = 4
@@ -160,7 +168,7 @@ class Config:
 
     def dump_yaml(self, path: str) -> None:
         """零依赖 YAML dump（flat 标量/元组，tuple -> JSON list）。"""
-        lines = ["# gpfm-mamba-v4 (v4-B: CI backbone d_ch=1 + cMLP head d_z=16) resolved config（跑前 dump，reproducibility 契约）"]
+        lines = ["# gpfm-mamba-v4 (v4-B: CI backbone d_ch=8 + cMLP head d_z=16) resolved config（跑前 dump，reproducibility 契约）"]
         for k, v in self.to_dict().items():
             if isinstance(v, bool):
                 lines.append(f"{k}: {str(v)}")

@@ -62,7 +62,8 @@ class VelocityNetwork(nn.Module):
         n_channels: int = 62,
         past_len: int = 384,
         future_len: int = 128,
-        d_model: int = 1,          # v4-B 语义 = 逐通道独立宽度 d_ch（config.d_model=1 同值）
+        d_model: int = 8,          # v4-B 语义 = 逐通道独立宽度 d_ch（config.d_model=8 同值；
+                                   # 口径变更 2026-10-16 方案 B：初值 1 → 8，config+model 双处同改）
         n_layers: int = 4,
         d_state: int = 16,
         d_conv: int = 4,

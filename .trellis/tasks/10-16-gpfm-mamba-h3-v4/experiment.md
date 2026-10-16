@@ -310,3 +310,53 @@
 - **口径差异清单（对 v1/v2 对比必随附）**：① CI trunk + cMLP head 两处变化（非单变量，归因局限——分解变体「CI trunk+原 head」「共享 trunk+cMLP head」为条件后续）；② 训练数据 32 例 vs 34 例（−6%）；③ best 判据 val4 vs val2；④ 早停 27 ep + 恒定 lr 1e-3 vs 固定 100 ep + cosine（训练长度与优化轨迹不同构）。
 - 三检验核算材料齐备（指标 1 数值过线 / 指标 3 低频全段 <0.5 + 高频照登 / 指标 2 图备好）——**判定留用户**；H3 三态判读建议如上，**判定留用户**。
 - 下一步：§5 H3 判读收尾（用户判定留痕）→ trellis-check 全量质量检查 → 3.3 spec 更新与 progress.md 同步。
+
+## d_ch 口径变更登记（2026-10-16 方案 B）
+
+**用户拍板（2026-10-16）：d_ch 1→8（方案 B），batch 256 保持**
+
+- **处置背景（Run 006/007 结论）**：d_ch=1 口径下 H3 不可判定——评估显示 GC 幅值塌缩（gen/real max 比 **3.9%** vs v1/v2 92%/89%，绝对量级 ~25×）、gen 峰频偏移（1.95 vs 0.98 Hz）、逐通道 r 塌缩（0.1148，−20~24%）、α 段 |Δlog10| 0.391（v1/v2 ~0.14）——证据链指向 design §9.10 预登记的「**d_ch=1 trunk 容量塌缩**」强竞争解释，H3 结构假设无法在此口径下裁决。按 R9 预案路径（design §3.3：d_ch 升档 1→8/16 为欠拟合第一预案）走口径变更流程。
+- **变更内容**：d_ch(=config 字段 `d_model`) 1→8；batch 256、d_z=16、SiLU、CI 共享、无 group lasso 及全部训练/评估/划分/早停/lr 口径**不变**。
+- **显存探针（主会话实测，2026-10-16）**：d_ch=8 @ batch 256 训练侧单步 fwd+bwd 峰值 **24.01 GiB**（32 GB 卡可行，余量 ~8 GiB）；v4 单测 ④ GPU 冒烟同口径复测 24.88 GiB（测试进程含先前断言驻留张量，量级一致）。
+- **参数量**：64,056 → **499,456**（7.8×；明细 seg 2 + in_proj 152 + trunk 4×1,304=5,216 + head 前 RMSNorm(8) 8 + head 62×7,969=494,078；head 占 98.9%）；参数/训练窗（42,272）≈ **11.8:1**——过拟合重新列为观察项（design §1 竞争解释），判读材料随附 train/val gap 与 best epoch。
+- **实现流程（design §4.3 双处一致性防线明文流程）**：`config.py` 与 `model.py` 类默认**双处同改** + `test_v4b.py` ⑤ 参数断言（499,456 ±1% 明细逐项）与 ⑥ hash pin 更新 + 全部单测重跑（十项 PASS）+ v1 既有 7 测回归（全 PASS，v1/v2/v3 config_hash 逐位不变：c6ff80ac1c43 / fc2a9ce14948 / 0c2de30a4868）。
+- **config_hash 更新**：默认 **`91dfd211dbc3`**（a965f24e580a 作废）；epochs=1 覆写口径 **`02f0fb271e0f`**（275f6c8fe93b 作废）。此前已落盘 run（Run 001–007）按各自记录 hash 不受影响；**Run 006/007（d_ch=1）产物原样保留，作为 d_ch=1 口径的 H3 判读材料存档**。
+- **readout 诊断兼容**：readout_diag.py 的 d_ch 由 ckpt 形状推断（k_head//62），d_ch=8 主路径（(i,d_z,j,d_ch) 分块 Frobenius 范数）自动生效；d_ch=1 专用双路径 allclose 断言不触发，无碍。
+- **不可比注记**：① d_ch=8 的 Run 008+ 与 Run 004–007（d_ch=1）不直接可比；② 对 v1/v2 对比的口径差异清单在原四条（CI+cMLP 结构 / 32 例训练 / val4 判据 / 早停+恒定 lr）上增加第五条——**d_ch=8 仍低于 v1 的 d_model=16**（若 GC 仍不回升，容量解释未穷尽，判读时随附）。
+
+## Run 008 — v4b d_ch=8 口径 1-epoch 基准（bench，R9 硬门禁复跑）（2026-10-16）
+
+### 目的与配置（跑前登记）
+
+- 目的：d_ch 1→8 口径变更（上块）后的 1-epoch 基准复跑——peak 显存（预期 ≈24 GiB，对照探针；**若 OOM 立即停止并汇报**）/ epoch 墙钟 / it/s / 四项损失走势 / 100-epoch 外推，作为新口径主 Run 启动前（待用户确认）的门禁材料；对照 d_ch=1 的 Run 004（12.70 GiB / 30.6 s/ep / 5.39 it/s / 外推 0.85 h）。
+- 代码：`models/gpfm-mamba-v4/`（d_ch=8 双处同改增量：config.py + model.py + tests/test_v4b.py）；git commit ad1bb64 工作树增量。
+- 参数：`--epochs 1 --bench`（train 32 / val 4 / test 10，batch 256，seed=1234，AdamW lr 1e-3 wd 1e-4 **恒定**（无 cosine），EMA 0.999，损失 {1,1,0.1,0.1}，早停 patience=10（1 epoch 不触发））；结构 **d_ch=8**/d_z=16/silu；resolved config_hash `02f0fb271e0f`（epochs=1 覆写口径）。
+- 环境：同 Run 001（base @ AutoDL，RTX 4080 SUPER 32 GB，16 核 cgroup BLAS 上限 8 线程）。
+- 数据：同 Run 004（status_ok 46 例 fold0 + v4 自备 val4 固化 manifest 只读校验）。
+- 命令：`python3 models/gpfm-mamba-v4/train.py --epochs 1 --bench --run-id v4b-d8-bench-1ep`
+
+### 结果（2026-10-16 跑完，exit 0 无 OOM）
+
+- 指标（对照 Run 004 = d_ch=1 同口径 bench（32/4/10、batch 256、恒定 lr、EMA、val4 判据），同 seed/数据）：
+
+| 项 | **Run 008 d_ch=8** | Run 004 d_ch=1 | 备注 |
+|---|---|---|---|
+| peak 显存 | **24.042 GiB** | 12.697 GiB | 与主会话探针 24.01 GiB 一致；32 GB 卡余量 ~8.6 GiB，无 OOM |
+| epoch 墙钟 | **119.8 s**（train 循环） | 30.59 s | 3.9× 慢（×62 scan 批 × d_ch=8 激活） |
+| it/s | **1.38** | 5.39 | |
+| 100-epoch 外推 | **3.33 h**（train 循环；早停口径下为上界） | 0.85 h | |
+| train total（epoch 均值） | **1.27398**（mae 0.65948/cons 0.54338/tv 0.18615/corr 0.525） | 1.34453（mae 0.70863） | **d_ch=8 同期拟合优 5.2%**（容量提升方向正确） |
+| val total（EMA，val4） | **1.09372**（mae 0.55154/cons 0.48610/tv 0.17848/corr 0.38235） | 1.10607（mae 0.55871） | 1 epoch 即优 1.1% |
+| 损失走势 | 1.3912→1.2270（step 1→165） | 1.3831→1.2902（step 1→161） | 下降更快且更深 |
+| t 分桶 mae | 0.86853→0.12937 单调降 | 0.966→0.131 单调降 | sanity 通过，形状一致 |
+| v_norm_mean / x̂1_std(EMA) | 42.19 / 0.70775 | 13.52 / 0.7152 | v_norm 量级回到 v2（52.52）邻域——trunk 供给恢复 |
+
+- `[model] params 499456`（与单测/口径变更登记精确一致）；全程有限无 NaN；best（=唯一 epoch，EMA val total 1.09372）/last 就位；lr 恒 1e-3 核验。
+- 产物：`/root/npi/outputs/gpfm-mamba-f0/v4b-d8-bench-1ep/`（config.yaml（resolved，hash `02f0fb271e0f`，d_model: 8）、env_snapshot.txt、channel_mean/std.npy、logs/{train.log, metrics.jsonl, summary.json}、checkpoints/gpfm-mamba-v4b-{best,last}.pt）。
+- 图表：无（bench 不出图）。
+
+### 结论
+
+- 支持（d_ch=8 口径机械正确 + 资源可行，可进入主 Run，**待用户确认门禁**）：① 显存 24.04 GiB 与探针一致，32 GB 卡内稳定运行无 OOM；② 时长上界 3.33 h（100 epoch 满跑口径；早停 patience=10 下为上界，参照 d_ch=1 主 Run 27 epoch 即停则可能显著缩短）；③ t 分桶 sanity 通过；④ 1-epoch 拟合能力证据积极——train/val 同期均优于 d_ch=1（−5.2%/−1.1%），v_norm 量级恢复，与「d_ch=1 容量不足」的 Run 006/007 竞争解释处置方向一致。
+- 观察项预登记：参数/训练窗 11.8:1（过拟合观察项重启）——主 Run 监控 train/val gap 与 best epoch（design §1）；d_ch=8 仍低于 v1 的 d_model=16，判读时随附。
+- 下一步：摘要汇报用户确认 → 确认后启动 d_ch=8 主 Run（run_id `v4b-d8-main-01`，100-epoch 上限 + 早停 patience=10 + 恒定 lr；**主会话接续，本实现会话不启动**）；预案（均口径变更须确认）：显存侧 batch 256→128（若主 Run 期间与评估并行触发紧张）、时长侧接受或降 d_z。

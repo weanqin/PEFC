@@ -6,7 +6,7 @@
 ② 因果性：扰动 future 输入不改 past 位置输出；future 后段扰动不改前段；past 前缀条件生效
 ③ head 结构：W¹ 形状/列组 reshape 视图正确、einsum == 62 个独立子 MLP、子 MLP 梯度独立
 ④ 前向形状 (B,62,128) / return_all (B,62,512) / 梯度有限 + EMA swap + GPU B=256 冒烟
-⑤ 参数量断言：64,056（d_ch=1, d_z=16 口径，±1%；design §3.2）
+⑤ 参数量断言：499,456（d_ch=8, d_z=16 口径，±1%；2026-10-16 方案 B 口径变更 1→8 后重算）
 ⑥ config↔model 一致性：cfg.d_z/head_act/d_model 与类默认同值；config_hash 稳定 + 对 d_z 敏感；
    v1/v2/v3 config_hash 零漂移（子进程口径，基准值取自已落盘 run）；v4 hash 因口径变更登记新值
 ⑦ 双遮蔽命中 v4 + `v4b-` 前缀守卫正反例 + d_z/head_act 运行时断言正反例
@@ -20,7 +20,10 @@
    build_lr_scheduler——constant 构建 LambdaLR 且 10 步 step 后 lr 仍精确 1e-3（含
    state_dict/load_state_dict round-trip，ckpt/resume 状态契约）；cosine 构建 T_max=epochs 且
    step 后 lr 严格下降；未知值 ValueError；v1/v2/v3 config 无字段 getattr→"cosine"（零漂移）；
-   v4="constant"（config_hash 新 pin 见 ⑥：a965f24e580a；v1/v2/v3 hash 逐位不变亦在 ⑥ 断言）
+   v4="constant"（config_hash 新 pin 见 ⑥：91dfd211dbc3；v1/v2/v3 hash 逐位不变亦在 ⑥ 断言）
+
+口径变更史（d_ch，均经 config+model 双处同改 + 本测试重跑）：1（用户初指定）→ 8（2026-10-16
+方案 B：Run 006/007 证 d_ch=1 trunk 容量塌缩、H3 不可判定；显存探针 d_ch=8@batch256=24.01 GiB）。
 
 运行：python3 models/gpfm-mamba-v4/tests/test_v4b.py（需 CUDA——mamba_ssm 官方 kernel）
 """
@@ -57,15 +60,15 @@ import config as C  # noqa: E402
 import data as D  # noqa: E402  # v1 data.py（只读复用；split_manifest_override 钩子所在）
 import model as M  # noqa: E402
 
-EXPECTED_PARAMS = 64_056          # design §3.2：2+19+484+1+63,550
+EXPECTED_PARAMS = 499_456         # 2026-10-16 方案 B（d_ch=8）：2+152+4×1,304+8+494,078
 V1_HASH_DEFAULT = "c6ff80ac1c43"  # 基准：v1 main-01 落盘 resolved config hash（零漂移守护）
 V2_HASH_DEFAULT = "fc2a9ce14948"  # 基准：v2d62-main-01 落盘 resolved config hash
 V3_HASH_DEFAULT = "0c2de30a4868"  # 基准：v3lp 落盘 resolved config hash
-V4_HASH_VAL4 = "a965f24e580a"     # v4 默认 config hash——2026-10-16 划分口径变更（32/4/10）后
-                                  # f088186dd386 → 早停口径变更（early_stop_patience=10）后 26cd2bb2e43f
-                                  # → lr 调度口径变更（lr_schedule="constant"，取消 cosine）后本值；
-                                  # 更早旧值 251c7be664ea 作废。后续任何口径变更（含 d_z/d_ch/划分/早停/lr）
-                                  # 须重算登记此值
+V4_HASH_VAL4 = "91dfd211dbc3"     # v4 默认 config hash——2026-10-16 口径变更链：251c7be664ea →
+                                  # 划分 32/4/10（f088186dd386）→ 早停 patience=10（26cd2bb2e43f）
+                                  # → lr 恒定（a965f24e580a）→ **d_ch 1→8 方案 B（本值）**；
+                                  # epochs=1 覆写口径 02f0fb271e0f（bench 用，随 Run 008 登记）。
+                                  # 后续任何口径变更（含 d_z/d_ch/划分/早停/lr）须重算登记此值
 
 
 def build_model(cfg: C.Config, dev: str) -> M.VelocityNetwork:
@@ -248,7 +251,7 @@ def test_forward_grad(model, cfg, xp, xf, t) -> None:
 
 
 def test_param_count(model) -> None:
-    """⑤ 参数量断言：64,056 ±1%（d_ch=1, d_z=16，design §3.2 明细逐项核对）。"""
+    """⑤ 参数量断言：499,456 ±1%（d_ch=8, d_z=16，2026-10-16 方案 B 口径，明细逐项核对）。"""
     n = model.num_params()
     assert abs(n - EXPECTED_PARAMS) <= EXPECTED_PARAMS * 0.01, f"参数量 {n} 偏离 {EXPECTED_PARAMS} 超过 ±1%"
     # 明细核对（逐模块）
@@ -258,17 +261,17 @@ def test_param_count(model) -> None:
     blocks = sum(v for k, v in d.items() if k.startswith("blocks."))
     head_norm = d["head_norm.weight"]
     head = d["W1"] + d["b1"] + d["W2"] + d["b2"]
-    assert seg == 2 and in_proj == 19 and blocks == 4 * 121 and head_norm == 1 and head == 63_550, \
-        f"参数明细漂移：seg {seg}（=2） in_proj {in_proj}（=19） blocks {blocks}（=484） " \
-        f"head_norm {head_norm}（=1） head {head}（=63,550）"
+    assert seg == 2 and in_proj == 152 and blocks == 4 * 1_304 and head_norm == 8 and head == 494_078, \
+        f"参数明细漂移：seg {seg}（=2） in_proj {in_proj}（=152） blocks {blocks}（=5,216） " \
+        f"head_norm {head_norm}（=8） head {head}（=494,078）"
     assert n == EXPECTED_PARAMS, f"参数量精确值 {n} != {EXPECTED_PARAMS}"
-    print(f"[参数量] {n} == {EXPECTED_PARAMS}（明细：seg 2 + in_proj 19 + trunk 4×121 + "
-          f"RMSNorm 1 + head 63,550；head 占 {head / n:.1%}）")
+    print(f"[参数量] {n} == {EXPECTED_PARAMS}（明细：seg 2 + in_proj 152 + trunk 4×1,304 + "
+          f"RMSNorm 8 + head 494,078；head 占 {head / n:.1%}）")
 
 
 def test_config_model_consistency(cfg) -> None:
     """⑥ config↔model 一致性 + config_hash 稳定性/敏感性 + v1/v2/v3 基线 hash 零漂移 + v4 新值登记。"""
-    assert cfg.d_model == 1 and cfg.d_z == 16 and cfg.head_act == "silu", \
+    assert cfg.d_model == 8 and cfg.d_z == 16 and cfg.head_act == "silu", \
         f"cfg 超参漂移：d_model {cfg.d_model} d_z {cfg.d_z} head_act {cfg.head_act}"
     sig = inspect.signature(M.VelocityNetwork.__init__)
     assert sig.parameters["d_z"].default == cfg.d_z, "model 类默认 d_z != cfg.d_z"
@@ -379,7 +382,7 @@ def test_masking_and_guard() -> None:
     tr._assert_model_config_consistency()
 
     class _BadCfg:
-        d_z, head_act, d_model = 8, "silu", 1
+        d_z, head_act, d_model = 8, "silu", 8
 
     class _BadConfMod:
         Config = staticmethod(lambda: _BadCfg())
