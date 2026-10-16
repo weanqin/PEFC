@@ -1,0 +1,10 @@
+{"file": ".trellis/spec/research/surrogate-brain-qualification.md", "reason": "study1 路由必读：前置验证三检验口径（指标1 FC r≥0.95/指标3 低频≤0.5+目视/指标2 用户目视）与 5-fold 训练门禁——v4 须按此核算并分开陈述 Q1/Q2"}
+{"file": ".trellis/spec/research/evaluation-calibers.md", "reason": "正式口径：gpfm-mamba 路径生成产物输出侧 40Hz 低通（v4 config 显式 gen_lowpass_hz=40.0）；单 seed 结论标注纪律；R1 触发解读规则（附分子分母）"}
+{"file": ".trellis/spec/research/data-pipeline.md", "reason": "fold0 划分固化与 dataloader 统一接口——v4 与 v1/v2 同参数校验 splits manifest，只读共享"}
+{"file": ".trellis/spec/research/path-isolation.md", "reason": "薄变体契约：v4 目录仅 config+包装+tests，模块只读复用 v1（sys.path 遮蔽）；run_id v4- 前缀与 outputs 隔离"}
+{"file": ".trellis/spec/research/reproducibility.md", "reason": "Run 三要素（命令+快照+resolved config）齐备 Run 才完结；seed 同源固定契约"}
+{"file": ".trellis/spec/research/artifacts-management.md", "reason": "产物落盘结构（config.yaml/env_snapshot/logs/checkpoints/figs/eval）与 checkpoint 命名 gpfm-mamba-v4-{best,last}.pt；断点续传=同一 Run 延续口径"}
+{"file": ".trellis/spec/research/experiment-log.md", "reason": "experiment.md Run 块四要素格式（目的/配置/结果/结论），跑前登记纪律"}
+{"file": ".trellis/spec/research/visualization.md", "reason": "评估产图（轨迹/PSD/GC/空间）统一经 common/visualizer.py"}
+{"file": ".trellis/research/h3-cross-channel-seed.md", "reason": "H3 假设定义、A/B/C 变体设计空间、Tank 2021/Li&Zhou 2025 机制提取（本任务 research 产物，路由区块登记）"}
+{"file": ".trellis/research/environment.md", "reason": "环境契约：base 环境零新增依赖；mamba-ssm 版本锁定；16 核 cgroup BLAS 上限惯例；nohup 后台化"}

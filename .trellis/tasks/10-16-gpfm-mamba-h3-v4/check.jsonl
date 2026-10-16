@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/research/surrogate-brain-qualification.md", "reason": "核查：三检验是否按规范核算落盘、指标2 是否交用户判定（AI 不得代判）、Q1/Q2 是否分开陈述、5-fold 是否未被启动"}
+{"file": ".trellis/spec/research/evaluation-calibers.md", "reason": "核查：评估与 Run 017 正式口径逐项一致（40Hz 低通默认、GC/FC 同输入、七维度）；单 seed 结论标注；R1 报告附分子分母；口径无中途漂移"}
+{"file": ".trellis/spec/research/path-isolation.md", "reason": "核查：产物全部落声明路径（v4- 前缀 run 目录），无跨变体写入；v1 钩子 default-off 且 v1/v2/v3 config_hash 逐位不变有单测证据"}
+{"file": ".trellis/spec/research/reproducibility.md", "reason": "核查：每个 Run 三要素齐备（命令/env snapshot/resolved config）、seed 登记、断点续传口径"}
+{"file": ".trellis/research/h3-cross-channel-seed.md", "reason": "核查：H3 判读是否对照 seed 框架（GC 回升主判据+五维度守护+三态判读），单变量原则未被破坏"}
