@@ -176,7 +176,10 @@ registry:
 # Project is not a git repository: scripts must not touch git.
 session_auto_commit: false
 
-# Seed every new task with the experiment log template (research workflow).
+# Seed every new task with the experiment log template (research workflow)
+# and the 子研究路由 block consumed by Phase 1.0b/1.0c (routing + new-method
+# research trigger; classification itself is done by the AI during planning).
 hooks:
   after_create:
     - 'cp "$(dirname "$TASK_JSON_PATH")/../../spec/research/experiment-template.md" "$(dirname "$TASK_JSON_PATH")/experiment.md"'
+    - 'python3 /root/npi/.zcode/hooks/seed-research-routing.py'

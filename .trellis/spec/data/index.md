@@ -6,6 +6,6 @@
 
 | 数据集 | 契约文件 | 一句话说明 |
 |---|---|---|
-| <待填：数据集名> | <待填：xxx.md> | <待填> |
+| edra | [edra.md](./edra.md) | HC/MDD 静息态 EEG，62 通道 500 Hz，受试者级 npz（HC 24 / MDD 22），时间窗 `[past=384, future=128]` |
 
 新数据集接入：复制 [dataset-contract-template.md](./dataset-contract-template.md) 为 `<数据集名>.md`，据实填写并加入上表。契约只记**实测事实**（跑过验证 / 核对过原始文件），不确定的写「待验证 + 日期」。

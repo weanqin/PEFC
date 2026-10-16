@@ -204,6 +204,8 @@ Preserve existing task fields and artifacts. If the correct status cannot be det
 
 ### Phase 1: Plan
 - 1.0 Create task `[required · once]` (only after task-creation consent)
+- 1.0b 子研究路由 `[required · once]` (classify → `study1` EEG 代理脑 / `study2` EC 推断算法 / `待确认`; fill prd routing block + `task.py set-scope`)
+- 1.0c 新路径/方法检测 → research 触发 `[required · once · design 定稿前复检]` (check vs `.trellis/research/context.md` 技术路线表; new method → dispatch `trellis-research` adaptation study before 1.4)
 - 1.1 Requirement exploration `[required · repeatable]` (`prd.md`; complex tasks also need `design.md` + `implement.md`)
 - 1.2 Research `[optional · repeatable]`
 - 1.3 Configure context `[required · once]` — Claude Code, Cursor, OpenCode, Codex, Kiro, Gemini, Qoder, CodeBuddy, Copilot, Droid, Pi, Oh My Pi, ZCode, Snow, Reasonix, Grok, Kimi Code (sub-agent-dispatch platforms only; inline platforms skip)
@@ -214,6 +216,7 @@ Preserve existing task fields and artifacts. If the correct status cannot be det
 
 [workflow-state:planning]
 Load `trellis-brainstorm`; stay in planning.
+Routing gates (1.0b/1.0c): fill the prd.md 「子研究路由」section — 分类结果 (`study1`/`study2`/`待确认` + 依据, sync via `task.py set-scope`) and 新路径/方法检测 against the `.trellis/research/context.md` 技术路线 registry; a method absent from the registry requires a `trellis-research` adaptation study (`{TASK_DIR}/research/<slug>-adaptation.md`) before 1.4. 待触发 must resolve before start. 分类为 `study1` → 1.3 须把 `.trellis/spec/research/surrogate-brain-qualification.md`（代理脑合格性检验）加入 implement/check jsonl。
 Lightweight: `prd.md` can be enough. Complex: finish `prd.md`, `design.md`, and `implement.md`; ask for review before `task.py start`.
 Multi-deliverable scope: consider a parent task plus independently verifiable child tasks; dependencies must be written in child artifacts, not implied by tree position.
 Sub-agent mode: curate `implement.jsonl` and `check.jsonl` as spec/research manifests before start.
@@ -356,6 +359,37 @@ Run only `create` here — do not also run `start`. `start` flips status to `in_
 
 Skip when `python3 ./.trellis/scripts/task.py current --source` already points to a task.
 
+#### 1.0b 子研究路由 `[required · once]`
+
+`task.py create` 的 `after_create` hook 已在 `prd.md` 末尾播种「子研究路由」区块（默认 `待确认` / `待检测`）。本步骤读取任务描述并填写它：
+
+1. **分类**：依据任务描述判断归属，路由目标只有两个 ——
+   - `study1` — EEG 代理脑（框架 Study I：条件未来生成、表征、模型选型与训练、代理脑有效性）
+   - `study2` — EC 推断算法（框架 Study II：扰动协议、响应度量、阈值、临界强度搜索、连接映射）
+2. **不得强行归类**：描述歧义、跨两个子研究、或属基础设施/文档类任务时，填 `待确认` 并写明歧义点，在下次与用户交互时顺带确认；用户未答复前保持 `待确认`，不阻塞其余规划。
+3. **落盘两处**：
+   - `prd.md`「子研究路由」区块：`分类结果` + `依据`（一句话）
+   - 机器可读字段：`python3 ./.trellis/scripts/task.py set-scope <task-dir> <study1|study2|pending>`
+4. **study1 规范接入**：分类结果为 `study1` 时，1.3 配置 context 必须把 `.trellis/spec/research/surrogate-brain-qualification.md`（代理脑合格性检验规范）加入 `implement.jsonl` 与 `check.jsonl`；涉及代理脑训练/选型/验收的任务，其检验与合格性结论依据该规范执行（含训练顺序门禁：**fold0 单 seed 前置验证经用户同意后方可 5-fold 训练**）。涉及数据加载与产图的任务，同时纳入 `.trellis/spec/research/data-pipeline.md` 与 `.trellis/spec/research/visualization.md`。
+5. 完成判定：区块四项中前两项（分类结果/依据）落定即 1.0b 完成；后两项归 1.0c。
+
+#### 1.0c 新路径/方法检测 → research 触发 `[required · once · design 定稿前复检]`
+
+对照清单（registry）：`.trellis/research/context.md` 的「技术路线（当前活跃）」表。任务计划使用的路径/方法与表中条目（含各路线下已登记的变体）比对，得出三态之一并回填「子研究路由」区块：
+
+- `不涉及` — 纯分析/文档/基础设施任务，直接落定。
+- `已有路径：<名称>` — 方法已在表中，写明对应条目，无需 research。
+- `新路径：<slug>` — 触发 `trellis-research` 适配研究（见下）；允许先记 `待触发`，但 **`task.py start`（1.4）前必须已触发并产出**。
+
+**新路径 research 派发**（sub-agent 平台）：
+
+- **Agent type**: `trellis-research`（Agent/Task 工具，非 Skill）
+- **Prompt 首行**: `Active task: <task path>`，随后给出研究简报：该新路径/方法是什么、要求研究**它如何适配到当前项目**（对照 framework 文档、既有代码位、environment.md 环境、与 Study I/II 的接口）、输出适配结论 / 风险 / 可执行方案
+- **产物**: `{TASK_DIR}/research/<slug>-adaptation.md`（trellis-research 强制落盘到 `research/`）
+- **关联追踪**: 回填「子研究路由」区块的 `research 产物` 字段；1.3 配置 context 时把该文件加入 `implement.jsonl` / `check.jsonl`
+
+`design.md` 定稿前复检一次：若需求探索后方法清单有变，重复本步骤的三态判定并更新区块。研究结论被采纳后，在 3.3 spec-update 时把新方法回填到 context.md 技术路线表，保持 registry 现势性。
+
 #### 1.1 Requirement exploration `[required · repeatable]`
 
 Load the `trellis-brainstorm` skill and explore requirements interactively with the user per the skill's guidance.
@@ -494,6 +528,7 @@ If `task.py start` errors with a session-identity message (no context key from h
 | Condition | Required |
 |------|:---:|
 | `prd.md` exists | ✅ |
+| `prd.md` 「子研究路由」四项落定（1.0b/1.0c；新路径含 research 产物） | ✅ |
 | User confirms task should enter implementation | ✅ |
 | `task.py start` has been run (status = in_progress) | ✅ |
 | `research/` has artifacts (complex tasks) | recommended |
