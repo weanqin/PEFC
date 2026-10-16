@@ -56,3 +56,39 @@
 ### Next Steps
 
 - 下一任务（待用户启动）：H3 跨通道交互假设变体探究（v2 基础 cMLP 式 v4，seed 就绪）；随后 5-fold 候选集拍板（v1/v2/v4）
+
+
+## Session 3: 10-16-gpfm-mamba-h3-v4 全程与收尾：H3 判「不支持」、5-fold 候选集 {v1, v4a} 拍板、任务归档
+<!-- trellis-session: v=2 fp=8c21e5f0b3a4d719 -->
+
+**Date**: 2026-10-16
+**Task**: H3 跨通道交互假设：gpfm-mamba v2 基础跨通道强制变体（v4）探究
+**Branch**: `main`
+
+### Summary
+
+任务 10-16-gpfm-mamba-h3-v4 完成并归档。①v4-B 臂（cMLP 组件式读出头）：实现+主 Run（GC r 0.133）→ d_ch 1→8 剂量变更（用户方案 B）→ d8 主 Run（早停 55ep，GC r 0.163、指标 3 低频 0.519 超线、std_t 过冲 174%）——「容量必要而不充分」。②中途口径变更四次（均用户拍板，default-off 钩子落地）：fold0 内层 7/1/2=32/4/10、早停 patience=10、恒定 lr 1e-3（弃 cosine）、方向 v4-B→v4-A。③v4-A 臂（rank-16 纯线性输入瓶颈 + 共享 trunk d62）：v1 bottleneck_rank 钩子 + v4a 目录（八项单测 + 三变体 hash 零漂移）→ bench 1.95 GiB → 主 Run 早停 73ep（best val 0.77901）→ Run 013 正式口径五列评估：**质量五方最优**（MAE 0.69540 / CRPS 0.52392 / 逐通道 r 0.18317 首超 GPR 均值基线 0.16782）+ 指标 1 FC r 0.97561 过线 + 指标 3 低频 0.3425 过线 + R1 安静；**GC r 0.092 五方最低**（≈v2 CI 重叠）。④H3 判定（用户拍板收尾）：「**不支持**」侧——接口混合（v4a 0.092）与顶层显式读出（v4b 0.133/0.163）两臂均不回升（v1 0.2755），跨通道混合不可局部移植为 GC 载体；缺口共同指向损失侧（无跨通道时序监督）或 v1 优势载体「深度持续混合」（16 维贯穿 trunk 全深，原 C 方案域不追）；瓶颈位置语义=「门口窄」≠「发动机窄」。⑤**5-fold 候选集拍板 {v1, v4a}**（v1=GC 一致性最高构型、v4a=质量最优构型；v2/v4b-d1/d8 落选）；r 扫描 {8,32} 议项不采纳。⑥trellis-check 收尾检查 PASS with minors（收尾数字与落盘 JSON 逐位核对一致、v4a 八测 + v1 七测全数复跑通过；4 条措辞 Minor 已修：掉字/任务归属/32-x-x→7/1/2 口径/钩子链补 split_manifest_override）。spec 回填：data-pipeline fold0 内层 7/1/2 长期口径、reproducibility default-off config 钩子惯例；context/progress 同步。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `84e1dc3` | feat(task-10-16): v4-B 变体实现 + 1-epoch 基准过门禁待批（提交点 A/B） |
+| `ed80e3e` | feat(task-10-16): 划分口径 7/1/2（32/4/10）落地 + Run 004 基准更新（用户 2026-10-16 拍板） |
+| `0e89774` | feat(task-10-16): 早停 patience=10 落地（用户 2026-10-16 拍板，default-off 钩子） |
+| `896fbb6` | feat(task-10-16): 取消 cosine 退火改恒定 lr 1e-3（用户 2026-10-16 拍板，default-off 钩子） |
+| `ad1bb64` | feat(task-10-16): v4b 主 Run + 正式口径评估 + readout 诊断（提交点 C/D） |
+| `acfc899` | feat(task-10-16): d_ch 1→8 口径变更（用户 2026-10-16 方案 B）+ Run 008 基准 |
+| `0c8d0ee` | feat(task-10-16): v4b-d8 主 Run（早停 55ep）+ 正式评估 + readout（提交点 C/D） |
+| `c329013` | feat(task-10-16): 方向变更 v4-B→v4-A（用户拍板）+ v4a 实现与基准（提交点 A'/B'） |
+| `349aedd` | feat(task-10-16): v4a-r16 主 Run（早停 73ep）+ 正式评估（提交点 C'/D'） |
+| `af5c8c1` | docs(task-10-16): H3 判定收尾（用户拍板）+ 5-fold 候选集 {v1, v4a} + spec 回填 |
+| `e7b0406` | chore(task): 归档 10-16-gpfm-mamba-h3-v4 |
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 下一任务（待用户启动）：5-fold 主实验——候选 {v1, v4a} × 5 折（口径：7/1/2 内层切分、早停 10、恒定 lr 1e-3、gen_lowpass 40 Hz；seed 数与评估范围 brainstorm 时定）
