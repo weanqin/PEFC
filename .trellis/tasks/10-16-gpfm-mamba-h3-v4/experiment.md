@@ -237,3 +237,76 @@
 - **不可比注记（对 v1/v2 对比时必随附）**：v4-B 优化轨迹与 v1/v2 不同构（恒定 lr vs cosine 退火到 ~0——后期步长更大，收敛动力学不同），与 32/4 划分、早停 patience=10 一并列入 H3 判读的口径差异清单（prd R3 三条口径变更登记）。
 - **验证**：test_v4b 十项全 PASS（⑩ 新增：constant 10 步 lr 仍精确 1e-3 + state_dict round-trip + cosine T_max=epochs 严格下降 + 未知值 ValueError + v1/v2/v3 无字段 getattr→cosine）；v1 既有 7 测回归全 PASS。资源口径不变（调度钩子零计算开销，Run 004 的 0.85 h 外推仍为上界）。
 - **主 Run**：本变更落地后由主会话启动 `v4b-main-01`（100-epoch 上限 + early_stop_patience=10 + **lr 恒定 1e-3**）；R9 门禁材料（Run 002/003/004）不受影响，无需重跑 bench（调度钩子不改每 epoch 计算形态）。
+
+## Run 006 — v4b 主 Run：fold0 完整训练（100ep 上限 + 早停 patience=10 + 恒定 lr）（2026-10-16）
+
+### 目的与配置（跑前登记）
+
+- 目的：v4-B（CI 骨干 d_ch=1 + cMLP head）fold0 单 seed 完整训练，产出 H3 判读与三检验/5-fold 候选评估对象。
+- 代码：commit `896fbb6`（models/gpfm-mamba-v4 + v1 三处 default-off 钩子）。
+- 配置：d_ch=1/d_z=16/SiLU/CI 共享/无 lasso；划分 **32/4/10**（val4=25,37HC+40,49MDD，test=v1 fold0 同 10 例）；seed 1234（划分 42/val ε 2026/评估 1235）；batch 256；**lr 恒定 1e-3（无 cosine，用户拍板）**；EMA 0.999；损失 {1,1,0.1,0.1}；best=val4 总 loss（固定 t 网格 EMA 复算）；**早停 patience=10**；epochs 上限 100；config_hash `a965f24e580a`。
+- 口径差异清单（vs v1/v2）：CI+cMLP 结构 / 32 例训练（vs 34）/ val4 判据（vs val2）/ 早停+恒定 lr（vs 固定 100ep+cosine）——判读时并列陈述。
+- 命令：`mkdir -p outputs/gpfm-mamba-f0/v4b-main-01/logs && python3 models/gpfm-mamba-v4/train.py --run-id v4b-main-01`（后台，日志 logs/train.log）。
+
+### 结果（2026-10-16 训练完成）
+
+- **早停触发**：epoch 27/100 停止（连续 10 epoch 无新 best，patience=10；触发行附 `"early_stop": true`，先落盘后 break）——**best epoch 17**（metrics 0 起始 epoch 16）| **best val total 1.04405**（val4 口径，EMA，固定 t 网格确定性复算）。
+- 曲线形态：val total 自 ep16 后缓慢单调爬升（1.04405 → 1.04808，+0.4%），train total 同期 1.3076 → 1.3066 持平——**欠拟合无红旗亦无急速过拟合**（d_ch=1 风险 §9.10 未兑现为 train loss 高原）；train/val gap（总 loss）best 处 0.264、末期 0.259，全程稳定。
+- 资源：**peak 12.697 GiB** | **29.77 s/ep 均值**（27 epoch）| 5.54 it/s | 全程无 NaN | lr 恒 1e-3（metrics `lr` 字段逐 epoch 核验）。
+- 产物：`/root/npi/outputs/gpfm-mamba-f0/v4b-main-01/`（config.yaml（resolved，hash `a965f24e580a`）、env_snapshot.txt、channel_mean/std.npy、logs/{train.log, metrics.jsonl（27 行）, summary.json}、checkpoints/gpfm-mamba-v4b-{best,last}.pt（best=epoch 16/0 起始，best_val 1.04405））。
+- 图表：无（训练不出图；训练曲线图随 Run 007 evaluate 产出）。
+
+### 结论
+
+- 支持（主 Run 完成口径内目标）：v4-B fold0 单 seed 训练完整跑通且早停钩子按拍板口径首次实弹触发（27 epoch 即停 vs v1/v2 固定 100 epoch——训练长度不同构，不可比注记③）；best val 1.04405（val4 口径，与 v1/v2 的 val2 best 0.7417/0.7741 带不可直接比——判据集合与数据量均不同）。
+- 观察项登记：val 曲线 27 epoch 内近乎走平（1.044 量级平台）+ train 同步走平 ⇒ d_ch=1 容量疑虑（design §9.10）呈「温和欠拟合」迹象而非红旗——判读材料随附；正式口径评估（Run 007）的五维度实测为最终证据。
+- 下一步：Run 007 正式口径评估（Run 017 同口径）+ 指标 1 v2.1 + readout 诊断副产品。
+
+## Run 007 — v4b-main-01 正式口径评估（Run 017 同口径）+ readout 诊断（2026-10-16）
+
+### 目的与配置（跑前登记）
+
+- 目的：v4b-main-01（best ckpt，EMA 权重）按 **Run 017 完全同口径**正式评估——七维度（test-MAE/CRPS/逐通道 r/R1/指标 1 FC/GC 一致性/GC 幅值 + 空间/低频 PSD）与 v1/v2（Run 017 正式口径数值）并列；三检验核算材料（指标 1 v2.1 / 指标 3 分频段 |Δlog10| / 指标 2 轨迹图备好交用户目视）；R1 附分子分母；std_t 幅度照登；**readout 诊断副产品 M[j,i]=‖W^{(i),1}_{:,j}‖_F 热图 + 与外部 GC 矩阵 Spearman（仅诊断）**。
+- 代码：同 Run 006（commit `896fbb6` 工作树）；评估链只读复用 v1（evaluate/gc_psd/fc_metric/sample/visualizer 经双遮蔽）。
+- 配置/命令（默认参数即正式口径，与 Run 017 对 v2 的重评逐项一致）：
+  - `python3 models/gpfm-mamba-v4/evaluate.py --run-id v4b-main-01`（Pass A K=16 seed=1234、Pass B K=1 seed=1235、GC p_max=10 bootstrap 1000 受试者级 seed=2026、PSD nperseg=512、空间 σ=0.080、**gen_lowpass_hz=40.0 正式口径**（config 显式，无命令行覆写）；评估侧 log/eval_metrics.jsonl 留存）
+  - `python3 models/gpfm-mamba-v1/fc_metric.py --run-id v4b-main-01`（指标 1 v2.1）
+- ckpt：`checkpoints/gpfm-mamba-v4b-best.pt`（epoch 16/0 起始，best_val 1.04405，config_hash `a965f24e580a` 校验）。
+- 环境/数据：同 Run 001（base @ AutoDL，RTX 4080 SUPER 32GB；test 折 = v1 fold0 同 10 例——**test 指标与 v1/v2 可比**）。
+
+### 结果（2026-10-16 评估完成）
+
+- 评估跑通（evaluate ~12 min：Pass A 207 批 + Pass B + GC/PSD/空间 + bootstrap 1000；fc_metric 3.5 s）；无命令行参数偏离（默认参数即正式口径：Pass A K=16 seed=1234、GC 单样本 seed=1235、BIC p\*=4（真实组选定两组共用）、bootstrap 受试者级 1000 seed=2026、gen_lowpass 40 Hz）。
+
+**七维度并列（v1/v2 = Run 017 正式口径；v4b = 本 Run；test 折三方相同）**
+
+| 量 | v1 main-01 | v2 v2d62-main-01 | **v4b v4b-main-01** | 备注 |
+|---|---|---|---|---|
+| test-MAE（主指标） | 0.70834 | **0.70096** | 0.71663 | v4b +1.1%/+2.2% vs v1/v2；GPR 均值基线 0.69297（三方均未超，v1/v2 同定位） |
+| CRPS | 0.52629 | **0.52496** | 0.53461 | v4b +1.6% vs v1 |
+| 逐通道 r | 0.14371 | **0.15053** | 0.11479 | **v4b 塌缩 −20%/−24%** vs v1/v2 |
+| R1 触发 | 未触发（1.2432） | 触发（1.5261，口径效应） | **未触发（1.0386）** | 分子分母见下 |
+| 指标 1 FC r（v2.1） | 0.95856 | 0.97625 | **0.98510（三方最优）** | ρ 0.9844；t=181.9 p=2.3e-17（df=9） |
+| GC r（补充参考） | **0.27549** | 0.12272 | 0.13343 | ρ 0.0620；**未回升至 v1 带**（0.2+），≈ v2 水平 +0.011；bootstrap r CI [0.027, 0.202] |
+| GC 幅值 gen/real（max 比） | 92% | 89% | **3.9%**（0.00119/0.03051） | **生成侧有向动态绝对量级塌缩 ~25×**；显著边 gen 3705/3782、Jaccard 0.980 |
+| 空间 R̂~R / Fro | 0.953 / 10.79 | 0.970 / **6.71** | **0.984** / 9.89 | r 三方最优、Fro 劣于 v2；R̂~K_s 0.893 |
+| 低频 δ（指标 3） | 0.091 | 0.122 | 0.131 | θ 0.296/0.313/**0.244**；α 0.147/0.137/**0.391**；β 0.344/0.381/**0.202**；δ–β(1–30) 整段 **0.233** |
+
+- 指标 3 高频照登：30–60 Hz **2.295**（v1/v2 2.36/2.38）；60–250 Hz **9.594**（9.74/9.76）——量级与 v1/v2 相同（真实侧数值地板主导）；分频段口径 = 全通道平均谱 |Δlog10|（bin [lo,hi)），本会话代码对 v1/v2 复算逐段复现 Run 017 登记值（±0.04 内）。**gen 峰频率 1.95 Hz vs real 0.98 Hz**（v1/v2 均为 0.98=0.98）——v4b 特有偏移。
+- **R1 分子分母（附 v2 对照）**：分子 = 采样终点 test-MAE **0.71663**；分母 = 训练末期（ep 22–26/0 起始）5-epoch 均值 x̂1-MAE **0.690**；比值 **1.0386 < 1.5 未触发**（高/中 t 桶比 0.3396 亦未触发）。v2 对照：0.70096/0.45931=1.5261 触发——按 R1 解读规则（evaluation-calibers.md），v2 触发属「训练折拟合加深使分母收缩」的口径效应；v4b 分母 0.690 未收缩（train 不深拟合），未触发主因在分母侧，非终点劣化。
+- **std_t 幅度**：生成 **0.73684** vs 真实 **0.79459**（本 run z-score 口径）→ 比值 **92.7%（轻微欠冲 −7.3%）**——与 v1/v2 的**过冲**（0.97183/0.78808=+23%、1.01275/0.78808=+29%）方向相反。注记：真实侧 std 逐 run 略异（0.7946 vs 0.7881）因 z-score 统计随训练折（32 vs 34 例）不同，比值（生成/各自真实）为可比口径。样本间展宽 0.81372（v1 0.93065/v2 0.96344）。
+- **readout 诊断副产品（仅诊断，R6）**：从 best ckpt EMA shadow 的 W1(62 i,16 d_z,62 j·d_ch=1) 按 (i,d_z,j,d_ch) 分块 Frobenius 范数（d_ch=1 双路径 allclose 断言通过）得 **M[j,i]（行=源、列=靶）**：mean 0.311，对角（自源）0.460 > 非对角 0.308。与外部 GC 矩阵展平相关（**主口径 = 去对角 3782 有向边**，与 GC 一致性口径同构；全 62×62 辅口径含 M 对角自项、GC 对角恒 0）：
+  - M ~ GC(gen)：Spearman **0.23981** / Pearson 0.38797（全 62×62 Spearman 0.20543）
+  - M ~ GC(real)：Spearman **0.04927** / Pearson 0.11165（全 62×62 0.02180）
+  - 解读：head 内部有向读出与**模型自身生成动态**的 GC 结构中等一致（0.24），与**真实 GC** 几乎不相关（0.05）——显式混合层确实学到了*某种*有向结构，但该结构与真实有向动态不对应。
+- 产物（全部落 `/root/npi/outputs/gpfm-mamba-f0/v4b-main-01/`）：eval/{summary.json, gc_psd_results.json, fc_metric.json, fc_matrices.npz, gc_input.npz, gc_real.npy, gc_gen.npy, gc_F_p_*.npz, psd.npz, spatial_corr.npz, readout_M.npy, readout_diag.json}；figs/{eval_trajectories, eval_training_curves, eval_gc_matrix, eval_psd, eval_spatial_corr, eval_readout_matrix}_v4b-main-01.png；logs/{eval.log, eval_metrics.jsonl（8 stage 齐全）}。readout 计算脚本：`models/gpfm-mamba-v4/readout_diag.py`（本任务新增，仅诊断、不改 v1/common）。
+- 图表：指标 2 素材 = `figs/eval_trajectories_v4b-main-01.png`（medoid + 90% PI、K=16、lowpass 40 Hz 注记）——**交用户目视判定**。
+
+### 结论
+
+- **七维度初判（vs v1/v2，正式口径同 test 折）**：v4b 两项最优（指标 1 FC r 0.9851、空间 R̂~R 0.984）+ R1 安静；三项轻微劣化（MAE +1.1% vs v1、CRPS +1.6%、）；GC r 0.1334 **未回升**（≈ v2 水平 +0.011，未达 0.18 部分支持线，更未达 v1 带 0.2+）；**逐通道 r 0.1148 塌缩 −20~24%** 与 **GC 幅值 3.9%（vs 92%/89%）**两项显著劣化。
+- **H3 三态判读建议（判定权在用户）**：按预注册阈值，GC r 落「**不支持**」侧（≈ v2 水平 ⇒ GC 偏弱主因不在结构侧）——但**不对称守护生效**：不回升 ≠ 结构无关被证伪，且 v4b 存在强竞争解释——**d_ch=1 trunk 容量塌缩**（design §9.10）：证据链 = GC 幅值崩塌 25× + gen 峰频移位（1.95 vs 0.98 Hz）+ α 段 |Δlog10| 0.391（v1/v2 ~0.14）+ 逐通道 r 塌缩 + std_t 欠冲方向反转 + 训练曲线 27 ep 走平（d_ch=1 表达容量上限）。readout 诊断（M~GCgen 0.24 vs M~GCreal 0.05）佐证：显式混合层结构上可表达且可辨识，但 trunk 供给的逐通道表征（每通道 1 标量/时间步）不足以承载真实有向动态。
+- **过拟合竞争解释检查（design §1 预登记）**：不成立——best epoch 17 ≪ 100 但 val 曲线走平非恶化（1.04405→1.04808，+0.4%）、train/val gap 稳定（~0.26）、参数/样本比 1.4:1 低；「五维度不塌缩」条件的失败更可能由 trunk 容量（欠拟合侧）驱动而非过拟合。
+- **口径差异清单（对 v1/v2 对比必随附）**：① CI trunk + cMLP head 两处变化（非单变量，归因局限——分解变体「CI trunk+原 head」「共享 trunk+cMLP head」为条件后续）；② 训练数据 32 例 vs 34 例（−6%）；③ best 判据 val4 vs val2；④ 早停 27 ep + 恒定 lr 1e-3 vs 固定 100 ep + cosine（训练长度与优化轨迹不同构）。
+- 三检验核算材料齐备（指标 1 数值过线 / 指标 3 低频全段 <0.5 + 高频照登 / 指标 2 图备好）——**判定留用户**；H3 三态判读建议如上，**判定留用户**。
+- 下一步：§5 H3 判读收尾（用户判定留痕）→ trellis-check 全量质量检查 → 3.3 spec 更新与 progress.md 同步。
