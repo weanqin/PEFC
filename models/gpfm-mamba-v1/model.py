@@ -44,6 +44,7 @@ class VelocityNetwork(nn.Module):
         expand: int = 2,
         time_emb_dim: int = 16,
         use_fast_path: bool = True,
+        bottleneck_rank: int | None = None,  # v4a 变体启用（低秩输入瓶颈）；None = 原结构逐位不变
     ):
         super().__init__()
         self.n_channels = n_channels
@@ -53,7 +54,18 @@ class VelocityNetwork(nn.Module):
         self.time_emb_dim = time_emb_dim
         self.seg_past = nn.Parameter(torch.zeros(()))   # 段类型嵌入：可学习标量
         self.seg_future = nn.Parameter(torch.zeros(()))
-        self.in_proj = nn.Linear(n_channels + 1 + time_emb_dim, d_model)
+        # 低秩输入瓶颈 default-off 钩子（v4-A，用户 2026-10-16 拍板；先例 prior_bandlimit_hz/
+        # early_stop_patience/lr_schedule）：None 分支与原实现逐位一致（结构/state_dict 键不变，
+        # v1/v2/v3 行为零漂移）；非 None 分支 = 纯线性两层 Sequential(Linear(in→r), Linear(r→d_model))，
+        # 无激活（两层复合 = rank≤r 线性映射——接口强制跨通道混合的干净单变量）、PyTorch 默认初始化，
+        # state_dict 键 in_proj.{0,1}.{weight,bias}。forward 不变（Linear 与 Sequential 同可调用）。
+        if bottleneck_rank is None:
+            self.in_proj = nn.Linear(n_channels + 1 + time_emb_dim, d_model)
+        else:
+            self.in_proj = nn.Sequential(
+                nn.Linear(n_channels + 1 + time_emb_dim, bottleneck_rank),
+                nn.Linear(bottleneck_rank, d_model),
+            )
         self.blocks = build_mamba_backbone(
             n_layers, d_model, d_state, d_conv, expand, use_fast_path
         )

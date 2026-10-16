@@ -442,3 +442,58 @@
 - **口径差异清单（对 v1/v2 对比必随附）**：① CI trunk + cMLP head 两处变化（非单变量，归因局限——分解变体为条件后续）；② 训练数据 32 例 vs 34 例（−6%）；③ best 判据 val4 vs val2；④ 早停 55 ep + 恒定 lr vs 固定 100 ep + cosine；⑤ d_ch=8 仍低于 v1 的 d_model=16。对 d1 对比为单变量剂量差（仅 d_ch 1→8）。
 - 三检验核算：**指标 1 通过**（0.96662 ≥ 0.95；t=106.8 p=2.8e-15 df=9）/ **指标 3 低频数值侧未达标**（δ–β 0.519 > 0.5，超线 +3.8%；主因 β 0.674 + θ 0.497；高频照登 2.618/9.97；PSD 形态目视交用户）/ 指标 2 轨迹图备好——**判定留用户**；H3 三态判读建议如上（含加 seed 决策），**判定留用户**。
 - 下一步：§5 H3 判读收尾（用户判定留痕：三态选择 + 是否加 seed + 指标 2/3 目视）→ trellis-check 全量质量检查 → 3.3 spec 更新与 progress.md 同步。
+
+## 方向变更登记（2026-10-16）：v4-B 放弃存档，v4-A 复活
+
+**用户拍板（2026-10-16）：放弃 v4-B（CI 骨干 + cMLP 读出）方向，回到本任务最初设计 v4-A（低秩输入瓶颈，第一轮 trellis-review 修正版）**：
+
+- **v4b 结论摘要（放弃依据）**：d_ch 1→8 剂量对照（Run 006/007/009/010）证「容量必要而不充分」——容量恢复后 GC 幅值（3.9%→109%）、gen 峰频偏移消失（1.95→0.98 Hz）、逐通道 r（0.1148→0.1464）、readout M~GC(real)（0.049→0.174）俱恢复，但 **GC r 仅 0.133→0.163**（未达部分支持线 0.18，落预注册 0.15–0.22 邻域）；**指标 3 未达标**（δ–β 0.519>0.5）、std_t 过冲 +74%、CRPS +8.2%（生成过散代价）。代码与 Run 记录**存档不删**（`models/gpfm-mamba-v4/`、`outputs/gpfm-mamba-f0/v4b-*`）；不再加 seed、不做 d_ch=16。
+- **v4-A 复活（2×2 缺失格恢复原框架，design §1）**：v2 基础（共享 trunk d_model=62）单变量——in_proj `Linear(79→62)` 满秩分解为 `Linear(79→16)→Linear(16→62)` **纯线性低秩**（两层间无激活，rank≤16；PyTorch 默认初始化——两层复合谱窄为预登记风险项）；trunk/head/其余与 v2 逐字段一致（**容量不变：参数 130,056 = v2 132,682 − 2,626 = 0.9802× v2**；in_proj 4,960→2,334）。检验 H3「接口强制混合 × 容量保持」格；与 v4-B「trunk 零混合 + 顶层显式读出」互为对照臂——若 v4-A GC 回升而 v4-B 未回升，指向接口混合优于顶层读出；若同不回升，缺口共同指向损失侧。别名 v4a（仓库 v4 已被存档的 v4-B 占用）。
+- **口径继承（当前累计口径，均用户 2026-10-16 拍板，v4-A 全量继承）**：划分 **32/4/10**（`n_val_subjects=4` + v4a 自备 manifest `models/gpfm-mamba-v4a/splits/fold0_status_ok_seed42_val4.json`，内容与 v4b 的 val4 manifest**逐字节一致**由单测 ⑧ 断言）、**早停 patience=10**、**lr 恒定 1e-3**、gen_lowpass_hz=40.0 显式入 config。对 v1/v2 对比的口径差异四项清单（32 例训练 / val4 判据 / 早停+恒定 lr / 低秩结构）随判读登记；test 折与 v1 逐 ID 相同 ⇒ test 指标可比。
+- **实现（v1 default-off 钩子 + v4a 薄变体目录）**：v1 `model.py::VelocityNetwork` 增 `bottleneck_rank=None`（None 分支结构与 state_dict 键逐位不变——单测 ① 与**改动前 git ref `0c8d0ee`** 同进程同 seed 前向逐位一致断言；r 分支 `nn.Sequential(Linear(79→r), Linear(r→62))`，键 `in_proj.{0,1}.*`）+ v1 `train.py`/`sample.py::load_eval_model` getattr 透传（先例 prior_bandlimit_hz）；新目录 `models/gpfm-mamba-v4a/{config.py, train.py, evaluate.py, tests/}`（v2 式**单遮蔽** wrapper——v4a 无 model.py，模型经 v1 钩子构建；`RUN_PREFIX="v4a-"`；`--rank {8,16,32}` 运行时改写被遮蔽 config 实例 + run_id `rXX` 标识校验 + resume hash 校验防 r 串用；config.py 文件默认唯一 16）。**v1/v2/v3 零漂移守护**：三变体 config_hash 逐位不变（c6ff80ac1c43 / fc2a9ce14948 / 0c2de30a4868）+ v1 七测回归全 PASS（单测 ⑤⑥）。v4a config_hash 新 pin：默认 r16 `2a456201dc90`、`--rank 8` `a1960979c695`、`--rank 32` `f949f6c63531`、epochs=1 bench 覆写 `eacb763a176a`。
+
+## Run 011 — v4a 冒烟 + 1-epoch 基准（val4 口径 32/4/10）（2026-10-16）
+
+### 目的与假设（跑前登记）
+
+- 目的：① 冒烟（`--smoke`，4 例受试者 1 epoch）验证 v4a 低秩结构经 v1 单遮蔽包装接入训练主流程的全链路机械正确性（数据加载/val4 划分校验、GPR 先验、低秩 in_proj 前向反向、四项损失、R9 监控/checkpoint/config_hash 落盘）；② bench（`--epochs 1 --bench`，全量 train 32 例）实测 peak 显存 / epoch 墙钟 / it/s / 四项损失走势 / 100-epoch 外推，作为主 Run（v4a-r16-main-01）启动门禁材料——**用户已授权方向（「尝试 v4a」）：bench 无异常（无 NaN、显存安全、损失正常下降）即直接进主 Run，不再等待确认**；异常则停下汇报。
+- 预期（design §3）：计算/显存 ≈ v2 量级（v2 实测 9.45 s/ep@34 例、1.94 GiB；v4a@32 例 ~9 s/ep、~2 GiB、100ep 上界 ~15 min，早停 10 可能缩短）；对照 v4b-d8 bench 119.8 s/ep / 24.0 GiB。
+
+### 配置
+
+- 代码：`models/gpfm-mamba-v4a/`（本块新增目录：config.py + train.py/evaluate.py 单遮蔽包装 + tests/test_v4a.py 八项）+ v1 三文件 default-off 钩子增量（model.py bottleneck_rank / train.py / sample.py getattr 透传）；git commit 0c8d0ee 工作树增量
+- 参数：结构 in_proj 79→16→62 纯线性低秩（`bottleneck_rank=16`）、d_model=62 其余与 v2 逐字段一致（参数 130,056）；训练 32/4/10、batch 256、seed=1234、AdamW lr 1e-3 wd 1e-4 **恒定**（无 cosine）、EMA 0.999、损失 {1,1,0.1,0.1}、早停 patience=10（1 epoch 不触发）、best=val4 总 loss；resolved config_hash：smoke/bench 均默认口径 2a456201dc90、bench epochs=1 覆写 eacb763a176a
+- 环境：base @ AutoDL（RTX 4080 SUPER 32GB，16 核 cgroup BLAS 上限 8 线程）
+- 数据：`/root/autodl-tmp/edra_process_v4/`，status_ok 46 例，fold0 split_seed=42 + val_subject_seed=42（校验 v4a 自备 val4 固化 manifest，内容与 v4b 逐字节一致）
+- 命令：
+  - `python3 models/gpfm-mamba-v4a/train.py --smoke --run-id v4a-smoke-a`
+  - `python3 models/gpfm-mamba-v4a/train.py --epochs 1 --bench --run-id v4a-r16-bench-1ep`
+
+### 结果（2026-10-16 跑完，smoke 与 bench 均 exit 0 无 NaN）
+
+- 单测前置：`tests/test_v4a.py` 八项全 PASS（①None 分支与改动前 git ref `0c8d0ee` 同 seed 前向逐位一致 + state_dict 键集/逐值不变 ②r=16 两层纯线性/键形状/复合 rank=16≤16 构造 ③前向 (4,62,128)/return_all/因果三段/49 参数张量梯度有限/EMA/GPU B=256 冒烟 34 ms ④参数 130,056 精确（seg 2 + in_proj 2,334（1,280+1,054）+ trunk 123,752 + head_norm 62 + head 3,906 = v2 132,682 − 2,626）⑤三变体 hash 零漂移 + v4a 四 pin ⑥v1 七测全 PASS ⑦单遮蔽/前缀守卫/--rank 正反例 ⑧32/4/10 + val=[25,37HC,40,49MDD] + test 逐 ID 同 v1 + v4a manifest 与 v4b 逐字节一致）。
+- **冒烟（v4a-smoke-a）**：全链路跑通——train 4 例 5,284 窗 × 1 epoch（20 step）| train total 1.34738（mae 0.71262）| val4 总 loss（EMA）1.27179（新 best）| 7.48 it/s | epoch 2.67 s | peak **1.95 GiB** | `[model] params 130056` | 损失全程有限。注：smoke 落盘 resolved hash = **eacb763a176a**（`--smoke` 强制 epochs=1 ⇒ 与 bench 覆写同口径；预登记「smoke 默认口径 2a456201dc90」表述以此更正）。
+- **基准（v4a-r16-bench-1ep，32/4/10 全量）**：
+
+| 项 | **v4a-r16-bench-1ep** | v2d62-bench-1ep（34/2/10） | v4b-d8-bench-1ep（32/4/10） | 备注 |
+|---|---|---|---|---|
+| train 受试者/窗 | **32 例 42,272 窗**（165 step） | 34 例 44,914 窗（171） | 32 例 42,272 窗 | v4a 与 v4b 同口径；v2 多 2 例 |
+| peak 显存 | **1.95 GiB** | 1.942 GiB | 24.042 GiB | ≈ v2 量级（design §3 预期兑现）；32 GB 卡余量充足 |
+| epoch 墙钟 | **8.5 s** | 9.45 s | 119.8 s | 窗数归一后 v4a ≈ 9.0 s 等效——与 v2 持平；12.3× 快于 v4b-d8 |
+| it/s | **19.41** | 18.53 | 1.38 | |
+| 100-epoch 外推 | **0.236 h（~14 min）** | 0.26 h | 3.33 h | train 循环口径；早停 10 下为上界 |
+| train total（epoch 均值） | **1.25357**（mae 0.66781） | 1.22138（mae 0.65246） | 1.27398（mae 0.65948） | 同口径对比 v4b-d8：v4a 优 1.6%（1 epoch 拟合）；vs v2 有窗数/口径差仅作参照 |
+| val total（EMA，val4） | **1.15632**（mae 0.58216/cons 0.51604/tv 0.18755/corr 0.39444） | 1.10751（**val2 口径，不可直接比**） | 1.09372 | v4a 主 Run val 轨迹对照基线（v4a 口径首登） |
+| 损失走势（step 1→165） | **1.4982→1.1484** | 1.4894→1.1103 | 1.3912→1.2270 | 正常下降、无高原（两层默认初始化谱窄风险 §6.2 无 1-epoch 红旗） |
+| t 分桶 mae | 0.90064→0.13057 单调降 | 0.881→0.094 单调降 | 0.86853→0.12937 单调降 | sanity 通过，形状一致 |
+| v_norm_mean / x̂1_std(EMA) | **45.87 / 0.7309**（val 口径 0.7309 vs x1 std 0.8533） | 52.52 / 0.651 | 42.19 / 0.70775 | v2 量级邻域（速度范数正常） |
+
+- lr 恒 1e-3 逐 step 核验（进度行）；best（=唯一 epoch，EMA val4 总 loss 1.15632）/last 就位。
+- 产物：`/root/npi/outputs/gpfm-mamba-f0/v4a-{smoke-a,r16-bench-1ep}/`（config.yaml（resolved：bottleneck_rank 16 / n_val_subjects 4 / lr_schedule "constant" / early_stop_patience 10）、env_snapshot.txt、channel_mean/std.npy（train-32 口径）、logs/{train.log, metrics.jsonl, summary.json}、checkpoints/gpfm-mamba-v4a-{best,last}.pt）；bench resolved hash **eacb763a176a**（epochs=1 覆写，与 pin 一致）。
+- 图表：无（冒烟/bench 不出图）。
+
+### 结论（跑后补）
+
+- **支持（具备进主 Run 条件，用户已授权方向——按 implement.md §2 直接进主 Run，不再等待确认）**：① 显存 1.95 GiB 与 v2 同量级（vs v4b-d8 的 24 GiB——低秩接口不改变计算形态，32 GB 卡内余量 ~30 GiB）；② 时长 100 epoch 上界 ~14 min（早停 10 可能缩短）；③ 损失正常下降（1.4982→1.1484，无 NaN、无高原）+ t 分桶单调 sanity 通过 + v_norm/x̂1_std 均处 v2 邻域——**两层默认初始化谱窄（design §6.2 第一怀疑项）1-epoch 无红旗**（风险登记保留，主 Run 期间持续对照 v2 train 曲线）；④ 低秩结构经 v1 单遮蔽包装机械正确（八项单测 + val4 划分实跑校验）。
+- 观察项登记：v4a 1-epoch train total 同口径优于 v4b-d8（1.2536 vs 1.2740）、val4 略高（1.1563 vs 1.0937）——共享 trunk 容量下接口瓶颈的早期拟合形态，非判读输入（1 epoch 证据弱，主 Run 曲线为准）。
+- 下一步：**Run 012 主 Run `v4a-r16-main-01`**（100ep 上限 + 早停 10 + 恒定 lr；主会话 nohup 脱离式启动，本实现会话不启动）→ Run 013 正式评估（Run 017 同口径）→ H3 判读（含与 v4b 剂量对照联合陈述）。

@@ -49,6 +49,7 @@ def load_eval_model(
         d_model=cfg.d_model, n_layers=cfg.n_layers, d_state=cfg.d_state,
         d_conv=cfg.d_conv, expand=cfg.expand, time_emb_dim=cfg.time_emb_dim,
         use_fast_path=cfg.use_fast_path,
+        bottleneck_rank=getattr(cfg, "bottleneck_rank", None),  # v4a 变体启用；v1/v2/v3 配置无此字段→None
     ).to(device)
     model.load_state_dict(ck["model"])  # 结构/键校验
     model.eval()

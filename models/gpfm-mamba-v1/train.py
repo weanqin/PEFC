@@ -275,6 +275,7 @@ def main() -> None:
         d_model=cfg.d_model, n_layers=cfg.n_layers, d_state=cfg.d_state,
         d_conv=cfg.d_conv, expand=cfg.expand, time_emb_dim=cfg.time_emb_dim,
         use_fast_path=cfg.use_fast_path,
+        bottleneck_rank=getattr(cfg, "bottleneck_rank", None),  # v4a 变体启用；v1/v2/v3 配置无此字段→None
     ).to(device)
     ema = EMA(model, decay=cfg.ema_decay)
     opt = torch.optim.AdamW(model.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay)

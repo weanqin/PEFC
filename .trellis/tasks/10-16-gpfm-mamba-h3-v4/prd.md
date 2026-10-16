@@ -1,67 +1,45 @@
-# H3 跨通道交互假设：gpfm-mamba v4-B 通道独立骨干 + cMLP 组件式混合读出变体探究
+# H3 跨通道交互假设：v4-A 低秩输入瓶颈变体探究（v4-B 方向已放弃存档）
 
 ## Goal
 
-按用户 2026-10-16 指定架构实现 **v4-B**：通道独立编码与时序骨干（保留通道身份，trunk 严格零跨通道混合）+ **顶层 cMLP 组件式混合读出头（唯一跨通道混合层）**，fold0 单 seed 正式口径与 v1/v2 对比，检验 H3（跨通道交互假设）：显式的、按源通道可辨识的跨通道读出结构能否成为 GC 一致性的载体（v1 隐式混合 0.2755 vs v2 可退化对齐 0.1227）。产出 5-fold 候选集（v1/v2/v4-B）拍板依据。
+在 v2（d_model=62 共享骨干）基础上实现 **v4-A**：in_proj 分解为 `Linear(79→r=16) + Linear(r→62)` 纯线性低秩瓶颈（接口强制跨通道混合、容量不变），fold0 单 seed 正式口径与 v1/v2 对比，检验 H3：v1 的 GC 一致性优势（0.2755 vs v2 0.1227）是否由 d16 瓶颈强制混合承载。产出 5-fold 候选集拍板依据。
 
-## 背景与定位
+## 方向变更登记（用户 2026-10-16 拍板）
 
-- **H3 定义（用户 2026-10-16 定义与更正）**：v1（d_model=16 瓶颈强制混合）GC 一致性 > v2（d_model=62 可学通道对齐）——结构是否鼓励跨通道滞后依赖是关键因子。勘误随登：Run 016「损失侧频带项」、Run 012「tv 权重」均不占 H3 编号。
-- **方案裁决（用户 2026-10-16 拍板）**：弃用 seed 方案 A（低秩输入瓶颈）——「我更希望的方式是使用没有低秩混合的 v4-B 方案，并保留通道身份」。A 方案登记为未测分支（规划存档于 git 历史），不再实施。
-- **v4-B 架构（用户指定，完整结构见 design §2）**：混合位置从接口移到**顶层读出**，且以 cMLP（Tank 2021 / Li & Zhou 2025）组件式结构显式给出——每个输出通道 i 一个独立子 MLP，第一层（混合层）从全部 62 通道的时序表征 h_{t,j} 读出，权重按源通道列分块 W^{(i),1}_{:,j} ⇒ 跨通道滞后依赖**结构上可表达且可辨识**。trunk（编码+Mamba 骨干）严格通道独立。
-- **对照框架改写**：v4-B 不再是「混合×容量」2×2 缺失格（A 方案框架），而是「混合位置与显式性」新轴——v1 隐式全程混合 / v2 混合可选可退化 / **v4-B trunk 零混合 + 唯一显式可辨识混合层在顶层**。v4-B 与 v2 的差异非单变量（CI trunk + cMLP head 两处），归因细分变体登记为条件后续，不在本任务。
-- **上游**：10-12 已证 GPR+Mamba 可行（三检验通过）；5-fold 拍板有意推迟至本任务产出后（候选集 v1/v2/v4-B，用户门禁）。
-- **范围边界**：本任务只做 v4-B fold0 单 seed 训练 + 正式口径评估 + H3 判读材料；5-fold、θ* 固定、group lasso 正则、归因分解变体均不在范围。
+- **v4-B（CI 骨干 + cMLP head）方向放弃**：d_ch=1 与 d_ch=8 两档剂量对照（Run 006/007/009/010）结论「容量必要而不充分」——GC 幅值/峰频/逐通道 r 三恢复但 GC r 仅 0.133→0.163（未达部分支持线 0.18），指标 3 未达标（δ–β 0.519>0.5，生成过散 std_t +74%）、CRPS +8.2%。代码与 Run 记录**存档不删**（models/gpfm-mamba-v4/ 与 v4b-* 产物），不再加 seed / 不做 d_ch=16。
+- **v4-A 复活**：即本任务最初设计（第一轮 trellis-review 已修正确认），按**当前累计口径**实施（划分 32/4/10、早停 patience=10、lr 恒定 1e-3——均为用户 2026-10-16 会话内拍板，v4-A 继承）。
+- v4-A 与 v4-B 的科学关系：v4-A 检验「接口强制混合 × 容量保持」（2×2 缺失格），与 v4-B 的「trunk 零混合 + 显式组件读出」互为对照臂；两者共享新训练口径，与 v1/v2 的口径差异清单一致登记。
 
 ## Requirements
 
-- **R1 变体定义（用户指定架构，超参默认值见 design §3）**：
-  1. **逐通道独立输入投影**：每通道 j 逐时间步特征 = [x_{t,j}(1) + 段类型嵌入(1) + t 正弦嵌入(16)] = 18 维 → `Linear(18→d_ch)`；无跨通道交互。
-  2. **通道独立时序骨干**：4 × MambaBlock(d_ch=16, d_state=16, d_conv=4, expand=2) 沿 L=512 逐通道独立 selective scan（张量视角 (B×62, 512, d_ch)），得 h_{t,j}∈R^{d_ch}；**CI 权重跨通道共享**（AI 默认，见待拍板）。
-  3. **顶层 cMLP Head（唯一跨通道混合层）**：截取 future 128 位置 + 逐通道 RMSNorm(d_ch) → 同时间步汇聚 h_t=[h_{t,1..62}]∈R^{62·d_ch} → 对每个目标通道 i 独立子 MLP：`z_{t,i}=σ(Σ_j W^{(i),1}_{:,j} h_{t,j}+b¹)`、`v_θ(t,i)=W^{(i),2} z_{t,i}+b²`。
-  4. 输出 v_θ ∈ (B, 62, 128)；**GPR 先验、复合损失 {1,1,0.1,0.1}、t~logit-normal、一步生成、EMA 0.999、best=内部验证总 loss 等训练口径全部与 v1/v2 一致**（只有速度网络结构变）。
-- **R2 命名与路径隔离**：目录 `models/gpfm-mamba-v4/`（用户口头 v3/v4-B 均指此，登记别名）；**v4 目录自带 model.py**（新结构 + EMA 类复制，config/model 双模块遮蔽，v1 代码零改动——A 方案的 v1 钩子方案随 A 弃用作废）；run_id 前缀 `v4b-`；outputs 沿用 `/root/npi/outputs/gpfm-mamba-f0/`（已拍板）；划分固化 manifest 读 v1 splits（只读共享）。
-- **R3 训练口径（与 v2 逐字段一致，结构除外）**：seed 1234、epochs 100、AdamW lr 1e-3 wd 1e-4 cosine、grad clip 0.5、监控/checkpoint/断点续传全套契约；fold0 status_ok 46 例；正式口径默认开启（`gen_lowpass_hz=40.0` 显式入 config）。
-  - **口径变更登记（用户 2026-10-16 拍板，取代此前「val=6」指示）：划分比例 train/val/test = 7/1/2，整数分配 = 32/4/10**（保 fold0 外层与 test 10 例不动——v1/v2/v4-B 同 test 可比；训练折 36 例内部按 7:1 → **train 32 / val 4**（分层 2 HC + 2 MDD，val_subject_seed=42 不变）；整体 32/4/10 ≈ 6.96/0.87/2.17）。**「以后」= 长期划分口径**：3.3 时回填 `.trellis/spec/research/data-pipeline.md`。实现 = v1 `data.py::split_manifest_path` 增 default-off 钩子 `split_manifest_override`（先例 `prior_bandlimit_hz`；v1/v2/v3 默认空 = 路径不变、config_hash 零漂移），v4 config `n_val_subjects=4` + 指向自己的固化 manifest `models/gpfm-mamba-v4/splits/`。**不可比注记**：① v4-B 训练数据 32 例 vs v1/v2 的 34 例（−6%，H3 判读材料竞争解释之一）；② best 判据基于 val4（v1/v2 为 val2）；③ test 折相同 ⇒ test 指标可比；④ Run 002/003 的 val 数值为 val2 口径，主 Run val 轨迹不与 bench 直接比。
-- **R4 评估口径（与 Run 017 完全同口径）**：evaluate + fc_metric + gc_psd，七维度与 v1/v2 并列成表；三检验按规范核算（指标 1 FC r≥0.95 / 指标 3 低频 δ–β ≤0.5 / 指标 2 用户目视）；R1 终点监控附分子分母。
-- **口径变更登记（用户 2026-10-16 拍板）：早停 patience=10 epoch**——val4 总 loss（固定 t 网格确定性复算，EMA 权重，即既有 best 判据）连续 10 个 epoch 无新 best 即停止训练（v1/v2 为固定 100 epoch 无早停）。实现 = v1 `train.py` default-off 钩子（`early_stop_patience` 字段 + 纯函数判定，v1/v2/v3 无字段=禁用、行为零漂移）；v4 config `early_stop_patience=10`。**不可比注记**：① v4-B 可能提前结束（best 仍在停止前最优点，best/last checkpoint 语义不变）；② ~~cosine T_max=100 不随早停调整~~ **已被下条变更取代**。
-- **口径变更登记（用户 2026-10-16 拍板）：取消 cosine 退火，lr 恒定 1e-3**——v1/v2 为 cosine（T_max=epochs）。实现 = v1 `train.py` default-off 钩子（`lr_schedule` 字段，默认 "cosine"=v1/v2/v3 行为零漂移；"constant"=LambdaLR 恒 1.0，scheduler 对象保留以兼容 checkpoint/resume 状态）；v4 config `lr_schedule="constant"`。**不可比注记**：优化轨迹与 v1/v2 不同（恒定 lr vs 退火到 ~0），与早停/32/4 划分一并列入 H3 判读的口径差异清单。
-- **R5 H3 判定框架（判定权在用户）**：主判据 = GC 一致性 r（补充参考口径）回升幅度；判读三态（支持/部分支持/不支持）按「混合位置与显式性」框架表述——v4-B GC 回升至 v1 带（0.2+）且五维度不塌缩 ⇒ 显式组件式混合读出是 GC 载体（H3 支持）；GC ≈ v2（≈0.12）⇒ GC 偏弱主因不在结构侧（损失/数据侧）。**归因局限随结论登记**：v4-B vs v2 非单变量，两处变化（CI trunk + cMLP head）。
-- **R6 免费诊断副产品（仅诊断，不参与主判据）**：训后按源通道列组范数聚合模型内部有向 readout 矩阵 **M[j,i]=‖W^{(i),1}_{:,j}‖_F（行=源、列=靶，全仓库方向约定）**，与外部 GC 矩阵并列报告（热图 + Spearman 参考）；无 group lasso 监督项——损失保持与 v1/v2 逐字一致。
-- **R7 产物与可复现**：每 Run 跑前登记（目的/配置/代码 commit/命令），resolved config + env snapshot 落 run 目录；记录同步 `{TASK_DIR}/experiment.md` 与 `.trellis/research/progress.md`。
-- **R8 环境纪律**：零新增依赖。
-- **R9 门禁**：1-epoch 基准（显存/时长/it/s/损失走势）+ **eval 前向探针**（评估路径显存/耗时）汇报用户确认后方可 100-epoch 完整训练——**本变体计算形态改变（scan 批 ×62、head 参数 ~1M、评估元素量 ~16×），基准门禁为硬门禁**；OOM/过慢预案（训练侧降 batch/d_z/d_ch、评估侧降 --batch-size）均属口径变更，须用户确认；d_z/d_ch 变更须 config+model 双处同改并重跑单测。**不启动 5-fold、不固定 θ\***。
+- **R1 变体定义（单变量原则，第一轮评审版）**：v4-A 唯一架构变化 = in_proj `Linear(79→62)` 分解为 `Linear(79→r=16) + Linear(16→62)`（**纯线性，两层间无非线性**；PyTorch 默认初始化）；d_model=62 与其余一切与 v2 一致。参数：in_proj 4960→2334，总 ≈129.9k（≈0.98× v2）。
+- **R2 实现路径**：v1 `model.py::VelocityNetwork` 增 `bottleneck_rank=None` default-off 参数（None 分支结构与 state_dict 键逐位不变；r 分支键 `in_proj.0/1.*`）+ `train.py`/`sample.py::load_eval_model` getattr 透传（先例 `prior_bandlimit_hz`）；新目录 `models/gpfm-mamba-v4a/`（v2 式单遮蔽 wrapper：仅遮蔽 config；`RUN_PREFIX="v4a-"`；r 扫描经 wrapper `--rank` 覆写被遮蔽 config 实例，config.py 默认唯一）。
+- **R3 训练口径（当前累计口径）**：划分 **32/4/10**（7/1/2，`n_val_subjects=4` + `split_manifest_override` 指向 v4a 自备 manifest，内容与 v4b 的 val4 manifest 逐字节一致由测试断言）；**早停 patience=10**；**lr 恒定 1e-3**（无 cosine）；batch 256、seed 1234、epochs 上限 100、EMA 0.999、损失 {1,1,0.1,0.1}、best=val4 总 loss（固定 t 网格 EMA 复算）。
+- **R4 评估口径（Run 017 同口径）**：evaluate + fc_metric，七维度与 v1/v2/v4b-d1/v4b-d8 并列；三检验核算（指标 1 ≥0.95 / 指标 3 低频 ≤0.5 / 指标 2 用户目视）；R1 附分子分母；std_t 照登。无 cMLP head ⇒ 无 readout 副产品（v4-A 不适用）。
+- **R5 H3 判定框架（判定权在用户）**：主判据 GC r 三态（支持 ≥0.2+ 且五维度不塌缩 / 部分 ≥0.18 或 r 单调 / 不支持 ≈0.12）；不对称守护（不支持 ≠ 混合被证伪，残留解释含损失侧）；0.15–0.22 邻域 → 加 seed 再判；预注册防挪阈。对照材料：v4b 剂量对照（容量必要不充分）随附——若 v4-A GC 回升而 v4-B 未回升，指向「接口混合」优于「顶层显式读出」。
+- **R6 不可比注记（vs v1/v2）**：CI 无关但训练口径四项不同（32 例 vs 34 / val4 vs val2 / 早停+恒定 lr vs 100ep+cosine）+ 结构（低秩接口）；test 折相同 ⇒ test 指标可比。
+- **R7 纪律**：v1 既有 7 测回归 + 三变体 config_hash 零漂移（v1 `c6ff80ac1c43` / v2 `fc2a9ce14948` / v3lp `0c2de30a4868`，默认 build_config 口径）；Run 跑前登记；零新增依赖；不启动 5-fold、不固定 θ*。
+- **R8 v4-B 资产处置**：`models/gpfm-mamba-v4/` 与 `outputs/gpfm-mamba-f0/v4b-*` 原样保留（存档）；其 v1 侧钩子（早停/lr/manifest override）为 default-off，v4-A 继续复用。
 
 ## Acceptance Criteria
 
-- [ ] v4 model 单测通过：CI 隔离性（扰动通道 j 输入不影响 k≠j 的 h）、因果性（扰动 future 输入不改 past 位置输出）、head 列组结构断言（W^{(i),1}_{:,j} 按 (d_z, d_ch) 分块、62 个独立子 MLP）、前向形状 (B,62,128)、梯度有限、参数量断言（**d_ch=1 口径 ≈64,056 ±1%**）
-- [ ] config/model 双遮蔽与 `v4b-` 前缀守卫冒烟通过（train/evaluate 包装）
-- [ ] 1-epoch 基准完成并登记（peak 显存 / epoch 墙钟 / it/s / 四项损失走势对照 v2 同期 / t 分桶 sanity + eval 前向探针），**含 d_ch=1 欠拟合判读（loss 高原远差于 v2 ⇒ 第一怀疑 d_ch，建议升档重跑属口径变更须确认）**；用户确认门禁留痕 experiment.md
-- [ ] v4b-main-01 fold0 单 seed 100-epoch 完整训练跑通：无 NaN、best/last 就位、断点续传冒烟通过
-- [ ] 正式口径评估完成：七维度数值 + 全部图落 run 目录，与 v1/v2（Run 017）并列对比表登记 experiment.md
-- [ ] 三检验核算落盘（指标 1/3 数值 + 指标 2 图交用户目视；R1 分子分母）
-- [ ] H3 判读材料齐备：GC 回升幅度、五维度守护对比、内部 readout 矩阵 M_{i,j} 诊断图、三态判读建议 + 归因局限声明——交用户判定，判定留痕
-- [ ] v1/v2/v3 代码与 config_hash 零改动（本方案不动 v1 任何文件——回归验证 v1 既有 7 单测通过）
-- [ ] 未启动 5-fold；未固定 θ*；group lasso 正则未实施；全部产物在声明路径内
-- [ ] experiment.md、progress.md 同步结论；3.3 时把 v4-B 回填 context.md 技术路线表
+- [ ] v1 钩子单测：None 分支前向逐位一致 + state_dict 键集不变 + 三变体 hash 零漂移 + v1 七测回归 PASS
+- [ ] v4a 单测：r=16 两层结构断言（rank≤16 构造）、前向形状 (B,62,128)、因果性、梯度有限、参数量 ≈129.9k、config↔model 一致、遮蔽与前缀守卫、`--rank` 覆写正反例、val4 manifest 一致性
+- [ ] 1-epoch bench 登记（显存/墙钟/损失走势，预期 ≈v2 量级 ~9 s/ep）后主 Run（用户「尝试 v4a」已授权方向；bench 无异常即续跑）
+- [ ] 主 Run：早停或 100ep 收，无 NaN，best/last 就位
+- [ ] 正式评估：七维度五列对比表 + 三检验 + R1 + std_t 落 experiment.md
+- [ ] H3 判读材料（含与 v4b 剂量对照的联合陈述）交用户判定
+- [ ] 未启动 5-fold；v4-B 资产未被改动
 
-## 待用户拍板（已全部落定 · 2026-10-16 用户拍板 + 批准启动）
+## 待用户拍板
 
-1. ~~CI 权重共享~~ **已定：跨通道共享**（PatchTST 式 channel-independent，通道身份由数据流保留）
-2. ~~子 MLP 隐宽 d_z~~ **已定：16**
-3. ~~激活 σ~~ **已定：SiLU**
-4. ~~group lasso~~ **已定：不加**（损失与 v1/v2 逐字一致；训后免费算粗 readout M[j,i]）
-5. ~~d_ch~~ **已定：1（用户指定）**——每通道独立表征宽度 1 个标量；总参数 ≈64.1k（0.48× v2，head 占 99.2%），参数/样本比 ≈1.4:1（过拟合风险低，主风险反转为 trunk 容量塌缩 + RMSNorm(1) 退化，design §9.10）；欠拟合时第一预案 = 升 d_ch（口径变更须确认）
-7. ~~val 规模/划分比例~~ **已定（用户 2026-10-16）：长期口径 train/val/test = 7/1/2；本任务整数分配 32/4/10（保 fold0 test）**（R3 口径变更登记；3.3 回填 data-pipeline spec）
-6. （已定沿用）outputs 根 f0 + `v4b-` 前缀；训练/评估/数据口径与 v2 逐字段一致
+- 无新增拍板项（r=16 默认、纯线性、当前累计口径继承均已定）；r 扫描 {8,32} 仍为条件扩展（主 Run 判读后议）。
 
 ## 子研究路由（1.0b / 1.0c）
 
 <!-- trellis-research-routing -->
 
-> 任务创建时由 hook 自动播种。规划阶段必须填写以下四项；全部落定前不得进入 1.4 start 门禁（见 `.trellis/workflow.md` Phase 1.0b / 1.0c）。
-
 - **分类结果**：`study1`
-- **依据**：任务主体是 EEG 代理脑（Study I）的模型变体设计与训练——gpfm-mamba 新结构变体 v4-B 的 fold0 单 seed 前置验证对比，属代理脑选型/结构消融范畴。
-- **新路径/方法检测（1.0c）**：`已有路径：Study I gpfm-mamba（context.md 技术路线表第 1 行，已含 v2 消融薄变体；本任务为其下新结构变体 v4-B）`——不新增技术路线；cMLP 组件式结构为变体设计借鉴（论文存档 docs/research/papers/）；3.3 时把 v4-B 回填该行变体注记。
-- **research 产物**：`.trellis/research/h3-cross-channel-seed.md`（上游 10-12 移交：A/B/C 设计空间与论文机制提取；用户 2026-10-16 在此基础上裁决弃 A 用 B 并自定架构——以用户架构为准）
+- **依据**：EEG 代理脑（Study I）模型结构变体 fold0 前置验证对比。
+- **新路径/方法检测（1.0c）**：`已有路径：Study I gpfm-mamba（context.md 技术路线表第 1 行）`——v4-A 为其下薄变体（v2 基础单变量分解）；3.3 时与 v4-B 一并回填变体注记。
+- **research 产物**：`.trellis/research/h3-cross-channel-seed.md`（A/B/C 设计空间；A 方案机制依据）
