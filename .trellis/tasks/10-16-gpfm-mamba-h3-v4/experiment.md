@@ -360,3 +360,85 @@
 - 支持（d_ch=8 口径机械正确 + 资源可行，可进入主 Run，**待用户确认门禁**）：① 显存 24.04 GiB 与探针一致，32 GB 卡内稳定运行无 OOM；② 时长上界 3.33 h（100 epoch 满跑口径；早停 patience=10 下为上界，参照 d_ch=1 主 Run 27 epoch 即停则可能显著缩短）；③ t 分桶 sanity 通过；④ 1-epoch 拟合能力证据积极——train/val 同期均优于 d_ch=1（−5.2%/−1.1%），v_norm 量级恢复，与「d_ch=1 容量不足」的 Run 006/007 竞争解释处置方向一致。
 - 观察项预登记：参数/训练窗 11.8:1（过拟合观察项重启）——主 Run 监控 train/val gap 与 best epoch（design §1）；d_ch=8 仍低于 v1 的 d_model=16，判读时随附。
 - 下一步：摘要汇报用户确认 → 确认后启动 d_ch=8 主 Run（run_id `v4b-d8-main-01`，100-epoch 上限 + 早停 patience=10 + 恒定 lr；**主会话接续，本实现会话不启动**）；预案（均口径变更须确认）：显存侧 batch 256→128（若主 Run 期间与评估并行触发紧张）、时长侧接受或降 d_z。
+
+## Run 009 — v4b-d8 主 Run：d_ch=8 fold0 完整训练（100ep 上限 + 早停 10 + 恒定 lr）（2026-10-16）
+
+### 目的与配置（跑前登记）
+
+- 目的：d_ch=8 重训 v4-B（方案 B，用户拍板），检验容量恢复后 CI+cMLP 结构下 GC 一致性是否回升（H3 主判据）；产出三检验与 5-fold 候选评估对象。
+- 代码：commit（本块上方最近一次 feat(task-10-16)）；config_hash `91dfd211dbc3`。
+- 配置：与 Run 006 唯一差异 = d_model 1→8（config+model 双处同改，参数 499,456）；batch 256 保持；其余全部同 Run 006（32/4/10、seed 1234、lr 恒定 1e-3、EMA 0.999、早停 patience=10、损失 {1,1,0.1,0.1}、best=val4 总 loss）。
+- 显存预期：24.0 GiB（Run 008 实测）；100ep 上界 3.33 h（早停可能大幅缩短）。
+- 命令：`mkdir -p outputs/gpfm-mamba-f0/v4b-d8-main-01/logs && python3 models/gpfm-mamba-v4/train.py --run-id v4b-d8-main-01`（后台）。
+
+### Run 009 中断与续跑登记（2026-10-16）
+
+- 中断：epoch 28（1 基）step 136/165 处进程被杀（主会话监控等待取消连带终止未 detach 的后台任务；无 NaN/无 early-stop，属外部中断非训练故障）。中断点状态：metrics.jsonl 0–26（0 基）27 行完整，best=epoch 27（1 基，val 0.76912，连续 27 轮新 best），last/best ckpt 完好。
+- 续跑：`nohup python3 models/gpfm-mamba-v4/train.py --resume …/v4b-d8-main-01/checkpoints/gpfm-mamba-v4b-last.pt`（同 Run 延续口径，artifacts-management；RNG/optimizer/scheduler/EMA 全量恢复，早停计数经 metrics 回放连续=0）。日志续写 logs/train_resume.log（train.log 保留中断现场，尾部有取消时的重复行，无害）。
+
+### 结果（2026-10-16 训练完成）
+
+- **早停触发**：epoch 55/100 停止（连续 10 epoch 无新 best，patience=10；末行附 `"early_stop": true`，先落盘后 break）——**best epoch 45**（metrics 0 基 44）| **best val total 0.75638**（val4 口径，EMA，固定 t 网格确定性复算）。
+- 曲线形态：val total 1.09372（ep1）→ 0.75638（ep45 best）→ 0.75913（ep55，+0.36%）；train total 同期 0.887→0.872 仍缓降——**过拟合观察项（11.8:1）轻微兑现**（best 后 val 微升而 train 继续降，分离幅度温和，非急速恶化）；全程 val<train 属口径不同构（train=随机 t 批内损失、val=EMA 固定 t 网格，同 Run 006 现象），不作品质判读输入。
+- 资源：**peak 24.04 GiB**（summary.json，与 Run 008 bench 一致）| **119.06 s/ep 均值** | 1.39 it/s | 355.1 samples/s | **全程无 NaN**（55 行 metrics 数值域扫描 0 NaN/inf）| lr 恒 1e-3 逐 epoch 核验。
+- 中断续跑时间线（上块中断登记的收口）：run 目录 13:03:54 建立 → 原进程 ep28 step 136 被外部终止（train.log 现场核实：末行恰为 `[ep 028/100 step 0136/165]`，其后取消重复行 2 行 + resume 输出追加入 train.log 并同步 train_resume.log——即「尾部重复行无害」的具体形态）→ 14:19:39 `--resume`（last ckpt ep27 1 基 / best_val 0.7691；RNG/optimizer/scheduler/EMA 全量恢复；metrics 截齐至 0 基 26 后自 ep28 重跑）→ 15:25:02 早停完成（resume 段 28 epoch ≈ 65 min）。总墙钟 ~2 h 22 m（含 ~15 min 中断间隙）；**metrics.jsonl 终态 55 行（0–54）无缺口无重复**（resume 段确定性重跑 ep28，val 0.7671 与中断前日志行一致）。
+- 产物：`/root/npi/outputs/gpfm-mamba-f0/v4b-d8-main-01/`（config.yaml（resolved，hash `91dfd211dbc3`）、env_snapshot.txt、channel_mean/std.npy、logs/{train.log, train_resume.log, metrics.jsonl（55 行）, summary.json}、checkpoints/gpfm-mamba-v4b-{best,last}.pt（best=epoch 45 1 基，best_val 0.75638））。注记：summary.json 的 `epochs_run: 28` 为 resume 会话口径（非累计），累计 epoch 数以 metrics.jsonl 55 行为准。
+- 图表：无（训练不出图；训练曲线图随 Run 010 evaluate 产出）。
+
+### 结论
+
+- 支持（主 Run 完成口径内目标）：d_ch=8 主 Run 完整跑通且早停 ep55 触发（vs d_ch=1 的 ep27——容量提升伴随更长有效训练）；**best val 0.75638 显著优于 d_ch=1 的 1.04405（同 val4 口径，−27.5%）**——d_ch 1→8 容量增益在内部验证上大幅兑现，与 Run 008 bench 1-epoch 证据方向一致，d_ch=1 容量塌缩竞争解释（design §9.10）在训练侧进一步坐实。
+- 观察项登记：① 过拟合轻微（best 后 val +0.36% vs train −1.7%，参数/窗 11.8:1）——正式口径五维度为最终证据；② 早停 55 ep 仍未跑满 100，训练长度与 v1/v2 不同构注记照登；③ best val 0.7564 与 v1/v2 的 val2 best（0.7417/0.7741）不可直接比（判据集合与数据量不同，口径差异清单随附）。
+- 下一步：Run 010 正式口径评估（Run 017 同口径）+ 指标 1 v2.1 + readout 诊断（d_ch 自适应）。
+
+## Run 010 — v4b-d8-main-01 正式口径评估（Run 017 同口径）+ readout 诊断（2026-10-16）
+
+### 目的与配置（跑前登记）
+
+- 目的：v4b-d8-main-01（best ckpt，EMA 权重，**d_ch=8**）按 **Run 017 完全同口径**正式评估——七维度**四列**对比（v1/v2 = Run 017、v4b-d1 = Run 007、**v4b-d8 = 本 Run**）+ 三检验核算材料（指标 1 v2.1 / 指标 3 分频段 |Δlog10| / 指标 2 轨迹图备好交用户目视）+ R1 附分子分母 + std_t 幅度照登 + **readout 诊断副产品 M[j,i]（d_ch 由 ckpt 形状自适应，d8 主路径）**；产出 **H3 三态判读建议**（GC r 是否回升）与 **d1→d8 剂量对照**（GC 幅值是否自 3.9% 恢复、峰频偏移是否消失）。
+- 代码：同 Run 009（commit `acfc899` 工作树）；评估链只读复用 v1（evaluate/gc_psd/fc_metric/sample/visualizer 经双遮蔽）。
+- 配置/命令（默认参数即正式口径，与 Run 007 对 d1 的评估逐项一致）：
+  - `python3 models/gpfm-mamba-v4/evaluate.py --run-id v4b-d8-main-01`（Pass A K=16 seed=1234、Pass B K=1 seed=1235、GC p_max=10 bootstrap 1000 受试者级 seed=2026、PSD nperseg=512、空间 σ=0.080、**gen_lowpass_hz=40.0 正式口径**（config 显式，无命令行覆写）；**显存预警：d8 评估路径显存显著高于 d1 探针（当时 12.36 GiB）——若 OOM 立即 `--batch-size 32`（或 16）重试并登记降档口径**；Pass A 采样预计 ~30–40 min）
+  - `python3 models/gpfm-mamba-v1/fc_metric.py --run-id v4b-d8-main-01`（指标 1 v2.1）
+  - `python3 models/gpfm-mamba-v4/readout_diag.py --run-id v4b-d8-main-01`（M[j,i]=‖W^{(i),1}_{:,j}‖_F 热图 + M~GC(gen)/M~GC(real) Spearman；对照 d1 的 0.240/0.049）
+- ckpt：`checkpoints/gpfm-mamba-v4b-best.pt`（epoch 45 1 基，best_val 0.75638，config_hash `91dfd211dbc3` 校验）。
+- 环境/数据：同 Run 001（base @ AutoDL，RTX 4080 SUPER 32GB；test 折 = v1 fold0 同 10 例——**test 指标与 v1/v2/d1 三方可比**）。
+
+### 结果（2026-10-16 评估完成）
+
+- 评估跑通（evaluate 全程 ~49 min：Pass A 207 批 2633 s 主导 + Pass B + GC/PSD/空间 + bootstrap 1000 + 图；fc_metric 3.6 s；readout_diag ~0.5 min）；**无 OOM、无 --batch-size 降档**（评估期 GPU 峰值 ~28.1 GiB/32.8 GiB 稳定——高于 d1 探针 12.36 GiB，与预警一致但卡内安全）；无命令行参数偏离（默认参数即正式口径：Pass A K=16 seed=1234、GC 单样本 seed=1235、BIC p\*=4（真实组选定两组共用）、bootstrap 受试者级 1000 seed=2026、gen_lowpass 40 Hz）。
+
+**七维度四列并列（v1/v2 = Run 017 正式口径；v4b-d1 = Run 007；v4b-d8 = 本 Run；test 折四方相同）**
+
+| 量 | v1 main-01 | v2 v2d62-main-01 | v4b-d1 v4b-main-01 | **v4b-d8 v4b-d8-main-01** | 备注 |
+|---|---|---|---|---|---|
+| test-MAE（主指标） | 0.70834 | **0.70096** | 0.71663 | 0.72563 | d8 四方最差（+2.4%/+3.5%/+1.3% vs v1/v2/d1）；GPR 均值基线 0.69297 四方均未超 |
+| CRPS | 0.52629 | **0.52496** | 0.53461 | 0.56966 | **d8 显著劣化**（+8.2%/+8.5% vs v1/v2） |
+| 逐通道 r | 0.14371 | **0.15053** | 0.11479 | 0.14643 | **d1 塌缩恢复**至 v1/v2 带（+1.9% vs v1、−2.7% vs v2） |
+| R1 触发 | 未触发（1.2432） | 触发（1.5261，口径效应） | 未触发（1.0386） | **未触发（1.3899）** | 分子分母见下 |
+| 指标 1 FC r（v2.1） | 0.95856 | 0.97625 | **0.98510** | 0.96662 | **≥0.95 过线**；ρ 0.97205；t=106.8 p=2.8e-15（df=9） |
+| GC r（补充参考） | **0.27549** | 0.12272 | 0.13343 | 0.16300 | ρ 0.20762；bootstrap r CI [0.093, 0.195]、ρ CI [0.137, 0.240]；**落预注册 0.15–0.22 邻域** |
+| GC 幅值 gen/real（max 比） | 92% | 89% | 3.9% | **109%**（0.03334/0.03051） | **d1 塌缩完全恢复**；显著边 gen 3782/3782、Jaccard 1.000（d1 0.980） |
+| 空间 R̂~R / Fro | 0.953 / 10.79 | 0.970 / 6.71 | 0.984 / 9.89 | 0.968 / **6.50** | **Fro 四方最优**；R̂~K_s 0.803（先验注入相关低于 d1 的 0.893） |
+| 低频 δ（指标 3） | 0.091 | 0.122 | 0.131 | 0.124 | θ 0.497/α 0.249/**β 0.674**；**δ–β(1–30) 整段 0.519 > 0.5 超线**（v1/v2/d1 0.091/0.122/0.233） |
+
+- 指标 3 高频照登：30–60 Hz **2.618**（v1/v2/d1 2.36/2.38/2.295）；60–250 Hz **9.97**（9.74/9.76/9.594）——量级与三方相同（真实侧数值地板主导）；分频段口径 = 全通道平均谱 |Δlog10|（bin [lo,hi)，方法对 d1 复算逐段复现 Run 007 登记值）。**gen 峰频率 0.98 Hz = real 0.98 Hz——d1 特有的 1.95 Hz 偏移消失**。偏差方向登记：θ/α/β 全为**正向**（gen 功率偏高），最差 bin 集中 **15–19 Hz**（|Δlog10| 至 0.82）——与 std_t 过冲同源的过量功率特征。
+- **R1 分子分母（附三方对照）**：分子 = 采样终点 test-MAE **0.72563**；分母 = 训练末期（ep51–55 1 基）5-epoch 均值 x̂1-MAE **0.52206**；比值 **1.3899 < 1.5 未触发**（高/中 t 桶比 0.3677 亦未触发）。对照：v1 0.70834/0.5699=1.2432、v2 0.70096/0.45931=1.5261（触发，按 R1 规则定性为分母收缩口径效应）、d1 0.71663/0.690=1.0386——d8 分母较 d1 收缩（0.690→0.522，拟合更深）但未及 v2 深度，且分子为四方最差；未触发属分子轻微劣化与分母收缩共同作用，**非 v2 型纯口径效应**，按规则照登两值。
+- **std_t 幅度**：生成 **1.38492** vs 真实 **0.79459**（本 run z-score 口径，与 d1 同 32 例训练折）→ 比值 **174.2%（过冲 +74.2%）**——四方最差（v1 +23%/v2 +29%/d1 欠冲 −7.3%）；**d1 的欠冲方向随容量提升反转为大幅过冲**。样本间展宽 1.32873（v1 0.93065/v2 0.96344/d1 0.81372）。与 CRPS +8.2%、β 段过量功率互洽：**d8 生成分布过散**。
+- **readout 诊断副产品（仅诊断，R6；d_ch 由 ckpt W1 (62,16,496) 形状自适应推断 = 8，主路径生效）**：M[j,i]（行=源、列=靶）mean 0.75146，**对角（自源）2.36846 vs 非对角 0.72495（占优比 3.27×，d1 为 0.460/0.308=1.49×）**；与外部 GC 展平相关（主口径 = 去对角 3782 有向边）：
+  - M ~ GC(gen)：Spearman **0.49322** / Pearson 0.58619（d1 0.23981/0.38797；全 62×62 0.42249）
+  - M ~ GC(real)：Spearman **0.17388** / Pearson 0.25285（d1 0.04927/0.11165；全 62×62 0.11826）
+  - 解读：d8 的 head 内部有向读出与**模型自身生成动态** GC 高度一致（0.49），与**真实 GC** 从 d1 的几乎不相关（0.05）升至中等（0.17）——显式混合层学到的有向结构与真实有向动态的对应随 trunk 容量恢复而建立，但仍未达 gen 侧水平（0.17 vs 0.49）。
+- 产物（全部落 `/root/npi/outputs/gpfm-mamba-f0/v4b-d8-main-01/`）：eval/{summary.json, gc_psd_results.json, fc_metric.json, fc_matrices.npz, gc_input.npz, gc_real.npy, gc_gen.npy, gc_F_p_gen.npz, gc_F_p_real.npz, psd.npz, spatial_corr.npz, readout_M.npy, readout_diag.json}；figs/{eval_trajectories, eval_training_curves, eval_gc_matrix, eval_psd, eval_spatial_corr, eval_readout_matrix}_v4b-d8-main-01.png；logs/{eval.log, eval_metrics.jsonl（8 stage 齐全）}。
+- 图表：指标 2 素材 = `figs/eval_trajectories_v4b-d8-main-01.png`（medoid + 90% PI、K=16、lowpass 40 Hz 注记）——**交用户目视判定**。
+
+### 结论
+
+- **七维度初判（vs v1/v2/d1，正式口径同 test 折）**：d8 三项积极（空间 Fro 6.50 四方最优、GC 幅值 109% 恢复至 v1/v2 带、逐通道 r 0.1464 回带）+ 指标 1 FC r 0.9666 过线；两项劣化（MAE 0.7256 四方最差、**CRPS 0.5697 显著劣化 +8.2%**）+ std_t 过冲 +74.2% + **指标 3 低频 0.519 超线**。
+- **H3 三态判读建议（判定权在用户）**：GC r（Pearson 主口径）**0.16300**——未达「部分支持」线 0.18，明显高于 v2 水平（0.1227，+0.040），更未达 v1 带（0.2+）；**落在预注册的 0.15–0.22 邻域（design §1 预设动作：提请用户加 seed 再判）**。Spearman ρ 0.20762 已入 v1 带——两口径分歧登记（Pearson 幅值加权线性 vs Spearman 边序；gen 幅值恢复后大值边贡献真实化，ρ 侧更乐观）。**建议：此单 seed 落点不定论，按预注册规则提请加 seed（≥2 个补充 seed）后再判**；若以当前单 seed 强判，位置在「不支持」与「部分支持」之间、偏部分支持侧。
+- **d1→d8 剂量对照（同结构容量加倍，单变量）**：① GC 幅值 3.9%→**109%**（25× 塌缩完全恢复）；② gen 峰频偏移**消失**（1.95→0.98=real）；③ 逐通道 r 0.1148→0.1464（塌缩恢复）；④ readout M~GC(real) 0.049→**0.174**、M~GC(gen) 0.240→0.493；⑤ best val 1.044→0.756（训练侧 −27.5%）。——**d1 口径的「不支持」判读主要由 trunk 容量塌缩驱动（design §9.10 竞争解释在 d1 成立）**；但容量恢复后 GC r 仅 +0.030（0.133→0.163），未随幅值同步回到 v1 带——提示容量是 GC 一致性的必要条件而非充分条件，剩余缺口指向损失/训练目标侧（无跨通道时序监督）或 d_ch=8 仍低于 v1 的 16（未穷尽）。
+- **五维度守护检查（H3 判据的守护条件）**：逐通道 r/FC/空间三项不塌缩（r 回带、FC 过线高于 v1、Fro 四方最优）；MAE 轻微劣化（+2.4%/+3.5%）；**CRPS 显著劣化（+8.2%/+8.5%）**——配合 std_t +74% 过冲与 15–19 Hz 过量功率，**d8 生成分布过散是明确的质量代价**；若 H3 判「支持/部分支持」须随附此代价声明。
+- **过拟合竞争解释检查（design §1 预登记）**：轻微兑现——best epoch 45/55（中段）、best 后 val +0.36% vs train −1.7%、参数/窗 11.8:1、R1 分母收缩至 0.522；「CRPS 劣化 + 过散」可能部分来自训练分布拟合加深而非纯结构效应，列为竞争解释之一（非唯一归因；欠拟合侧已排除）。
+- **口径差异清单（对 v1/v2 对比必随附）**：① CI trunk + cMLP head 两处变化（非单变量，归因局限——分解变体为条件后续）；② 训练数据 32 例 vs 34 例（−6%）；③ best 判据 val4 vs val2；④ 早停 55 ep + 恒定 lr vs 固定 100 ep + cosine；⑤ d_ch=8 仍低于 v1 的 d_model=16。对 d1 对比为单变量剂量差（仅 d_ch 1→8）。
+- 三检验核算：**指标 1 通过**（0.96662 ≥ 0.95；t=106.8 p=2.8e-15 df=9）/ **指标 3 低频数值侧未达标**（δ–β 0.519 > 0.5，超线 +3.8%；主因 β 0.674 + θ 0.497；高频照登 2.618/9.97；PSD 形态目视交用户）/ 指标 2 轨迹图备好——**判定留用户**；H3 三态判读建议如上（含加 seed 决策），**判定留用户**。
+- 下一步：§5 H3 判读收尾（用户判定留痕：三态选择 + 是否加 seed + 指标 2/3 目视）→ trellis-check 全量质量检查 → 3.3 spec 更新与 progress.md 同步。
