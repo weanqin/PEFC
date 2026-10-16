@@ -12,6 +12,10 @@
   `early_stop_patience`（getattr 透传，先例 prior_bandlimit_hz/split_manifest_override）——
   best 判据连续 patience 个 epoch 无新 best 即停（break 前该 epoch best/last checkpoint 与
   metrics.jsonl 已落盘，触发行附 "early_stop": true）；v1/v2/v3 config 无此字段 ⇒ 0=禁用恒不触发。
+- lr 调度 default-off 钩子（用户 2026-10-16 拍板，v4-B 取消 cosine 退火改恒定 lr）：config 字段
+  `lr_schedule`（getattr 透传，先例同上）——无字段/"cosine" = CosineAnnealingLR(T_max=epochs)
+  （v1/v2/v3 构建与日志零漂移）；"constant" = LambdaLR 恒 1.0（lr=cfg.lr 不变，scheduler 对象
+  保留以兼容 checkpoint/resume 状态契约；仅非 cosine 时多打印一行 [sched]）。
 用法：
   python3 models/gpfm-mamba-v1/train.py --smoke                 # 冒烟（4 受试者 1 epoch）
   python3 models/gpfm-mamba-v1/train.py --epochs 1 --bench      # 全量 1-epoch 基准
@@ -84,6 +88,24 @@ def git_commit() -> str:
         return subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], cwd="/root/npi", text=True).strip()
     except Exception:
         return "unknown"
+
+
+def build_lr_scheduler(opt, cfg):
+    """lr 调度构建钩子（用户 2026-10-16 拍板 v4-B 取消 cosine 退火；default-off 配套纯函数）。
+
+    - lr_schedule == "cosine"（默认）：CosineAnnealingLR(opt, T_max=cfg.epochs)——与原内联构建
+      逐位同构（v1/v2/v3 config 无此字段 → getattr 透传默认 "cosine"，构建行为零漂移）；
+    - "constant"：LambdaLR(opt, lambda ep: 1.0)——lr 全程 = cfg.lr 不退火；保留 scheduler 对象
+      以兼容 checkpoint 存 scheduler 状态的既有契约（普通函数 lambda 的 state_dict 存 None，
+      round-trip 正常，--resume 全量恢复语义不变；进度行/metrics.jsonl 的 lr 记录恒为 cfg.lr）；
+    - 其他值：ValueError（config 拼写错误在构建期尽早暴露）。
+    """
+    sched_name = str(getattr(cfg, "lr_schedule", "cosine"))
+    if sched_name == "cosine":
+        return torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=cfg.epochs)
+    if sched_name == "constant":
+        return torch.optim.lr_scheduler.LambdaLR(opt, lambda ep: 1.0)  # 恒 lr；保留 scheduler 对象以兼容 ckpt/resume 状态
+    raise ValueError(f"unknown lr_schedule: {sched_name}")
 
 
 def should_early_stop(epochs_since_best: int, patience: int) -> bool:
@@ -256,9 +278,17 @@ def main() -> None:
     ).to(device)
     ema = EMA(model, decay=cfg.ema_decay)
     opt = torch.optim.AdamW(model.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay)
-    sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=cfg.epochs)
+    # lr 调度 default-off 钩子（用户 2026-10-16 拍板，v4-B 取消 cosine 退火；先例 prior_bandlimit_hz/
+    # early_stop_patience）：v1/v2/v3 config 无 lr_schedule 字段 → getattr 默认 "cosine" →
+    # 构建路径与 [model] 日志行与原版逐字节一致（零漂移）。
+    _lr_sched = str(getattr(cfg, "lr_schedule", "cosine"))
+    sched = build_lr_scheduler(opt, cfg)
+    _sched_desc = f"cosine T_max {cfg.epochs}" if _lr_sched == "cosine" else f"lr_schedule {_lr_sched}"
     log(f"[model] params {model.num_params()} | EMA {cfg.ema_decay} | AdamW lr {cfg.lr} wd {cfg.weight_decay} "
-        f"cosine T_max {cfg.epochs} | clip {cfg.grad_clip} | batch {cfg.batch_size} | seed {cfg.seed}")
+        f"{_sched_desc} | clip {cfg.grad_clip} | batch {cfg.batch_size} | seed {cfg.seed}")
+    if _lr_sched != "cosine":  # 仅非默认口径打印一行 [sched]（v1/v2/v3 日志零漂移）
+        log(f"[sched] lr_schedule={_lr_sched}（lr 恒定 {cfg.lr}，全程不退火；"
+            f"进度行与 metrics.jsonl 的 lr 记录恒为该值）")
 
     # ---- resume（全量恢复：model/EMA/opt/sched/epoch/step/RNG/metrics 截齐）----
     start_epoch, gs, best_val = 0, 0, float("inf")

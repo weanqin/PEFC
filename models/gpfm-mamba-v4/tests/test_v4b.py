@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""test_v4b.py — v4-B（CI 骨干 + cMLP 组件式读出）单测九项（design §4.4，implement.md §1）。
+"""test_v4b.py — v4-B（CI 骨干 + cMLP 组件式读出）单测十项（design §4.4，implement.md §1）。
 
 ① CI 隔离性：扰动输入通道 j，trunk 表征 h_{t,k}（k≠j）逐位不变；输出 v 经 head 全通道
    可变（合法跨通道影响——两段验证：trunk 不变 + 输出可变，head 混合是唯一通道间通路）
@@ -16,6 +16,11 @@
 ⑨ 早停口径（用户 2026-10-16 拍板 patience=10）：v1 train.py 纯函数逻辑（patience<=0 恒 False
    /1/9/10 边界/恰好第 patience 轮触发）+ epoch 循环计数模拟 + resume 回放恢复 +
    v1/v2/v3 config 无字段 getattr 默认 0（禁用）断言；v4=10
+⑩ lr 调度口径（用户 2026-10-16 拍板：取消 cosine 退火，lr 恒定 1e-3）：v1 train.py 纯函数
+   build_lr_scheduler——constant 构建 LambdaLR 且 10 步 step 后 lr 仍精确 1e-3（含
+   state_dict/load_state_dict round-trip，ckpt/resume 状态契约）；cosine 构建 T_max=epochs 且
+   step 后 lr 严格下降；未知值 ValueError；v1/v2/v3 config 无字段 getattr→"cosine"（零漂移）；
+   v4="constant"（config_hash 新 pin 见 ⑥：a965f24e580a；v1/v2/v3 hash 逐位不变亦在 ⑥ 断言）
 
 运行：python3 models/gpfm-mamba-v4/tests/test_v4b.py（需 CUDA——mamba_ssm 官方 kernel）
 """
@@ -56,9 +61,10 @@ EXPECTED_PARAMS = 64_056          # design §3.2：2+19+484+1+63,550
 V1_HASH_DEFAULT = "c6ff80ac1c43"  # 基准：v1 main-01 落盘 resolved config hash（零漂移守护）
 V2_HASH_DEFAULT = "fc2a9ce14948"  # 基准：v2d62-main-01 落盘 resolved config hash
 V3_HASH_DEFAULT = "0c2de30a4868"  # 基准：v3lp 落盘 resolved config hash
-V4_HASH_VAL4 = "26cd2bb2e43f"     # v4 默认 config hash——2026-10-16 划分口径变更（32/4/10）后
-                                  # f088186dd386 → 早停口径变更（early_stop_patience=10）后本值；
-                                  # 更早旧值 251c7be664ea 作废。后续任何口径变更（含 d_z/d_ch/划分/早停）
+V4_HASH_VAL4 = "a965f24e580a"     # v4 默认 config hash——2026-10-16 划分口径变更（32/4/10）后
+                                  # f088186dd386 → 早停口径变更（early_stop_patience=10）后 26cd2bb2e43f
+                                  # → lr 调度口径变更（lr_schedule="constant"，取消 cosine）后本值；
+                                  # 更早旧值 251c7be664ea 作废。后续任何口径变更（含 d_z/d_ch/划分/早停/lr）
                                   # 须重算登记此值
 
 
@@ -500,6 +506,84 @@ def test_early_stop_hook() -> None:
           f"v1/v2/v3 无字段 getattr→0、v4=10 全过")
 
 
+def test_lr_schedule_hook() -> None:
+    """⑩ lr 调度口径（用户 2026-10-16 拍板：取消 cosine 退火，lr 恒定 1e-3，prd R3/design §5）：
+
+    - v1 train.py 纯函数 build_lr_scheduler："constant" → LambdaLR 恒 1.0，10 步 step 后 lr 仍
+      精确 = cfg.lr（get_last_lr 与 param_groups 双检）；LambdaLR state_dict/load_state_dict
+      round-trip（checkpoint 存 scheduler 状态的既有契约，--resume 全量恢复不变）
+    - cosine 口径：无字段 shim（v1/v2/v3 语义）→ getattr 默认 "cosine" → CosineAnnealingLR
+      T_max=epochs，step 后 lr 严格下降（与原内联构建同构，零漂移）
+    - 未知 lr_schedule 值 → ValueError（拼写错误构建期暴露）
+    - v1/v2/v3 config 无字段 → getattr 默认 "cosine"（子进程口径）；v4 = "constant"、lr=1e-3
+      （v4 config_hash 新 pin 与 v1/v2/v3 hash 零漂移断言在 ⑥）
+    """
+    # 载入 v1 train.py（importlib 独立模块名；其 import config/model 命中 v4 缓存——纯函数与 cfg 无关）
+    spec = importlib.util.spec_from_file_location("gpfm_mamba_v1_train_lrs_test", str(_V1 / "train.py"))
+    tr = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(tr)
+    cfg = C.Config()
+    param = torch.nn.Parameter(torch.zeros(1))
+
+    def _opt():
+        return torch.optim.AdamW([param], lr=cfg.lr, weight_decay=cfg.weight_decay)
+
+    # constant（v4 拍板口径）：LambdaLR 恒 1.0，10 步 step 后 lr 仍精确 1e-3
+    assert cfg.lr_schedule == "constant" and cfg.lr == 1e-3, \
+        f"v4 lr 口径漂移：lr_schedule {cfg.lr_schedule!r} lr {cfg.lr}"
+    sched_c = tr.build_lr_scheduler(_opt(), cfg)
+    assert isinstance(sched_c, torch.optim.lr_scheduler.LambdaLR)
+    for _ in range(10):
+        sched_c.step()
+    assert sched_c.get_last_lr()[0] == cfg.lr, \
+        f"constant 口径 lr 漂移：get_last_lr {sched_c.get_last_lr()[0]} != {cfg.lr}"
+    assert sched_c.optimizer.param_groups[0]["lr"] == cfg.lr, "param_groups lr 与 get_last_lr 不一致"
+
+    # state_dict/load_state_dict round-trip（resume 契约；普通函数 lambda 的 lr_lambdas 存 None）
+    sd = sched_c.state_dict()
+    sched_r = tr.build_lr_scheduler(_opt(), cfg)
+    sched_r.load_state_dict(sd)
+    sched_r.step()
+    assert sched_r.get_last_lr()[0] == cfg.lr, "round-trip 后 constant lr 漂移"
+
+    # cosine（v1/v2 语义）：无字段 shim → 默认 cosine；T_max=epochs；step 后严格下降
+    class _NoSched:  # 模拟 v1/v2/v3 config（无 lr_schedule 字段）
+        epochs, lr, weight_decay = cfg.epochs, cfg.lr, cfg.weight_decay
+
+    sched_k = tr.build_lr_scheduler(_opt(), _NoSched())
+    assert isinstance(sched_k, torch.optim.lr_scheduler.CosineAnnealingLR)
+    assert sched_k.T_max == cfg.epochs, f"cosine T_max {sched_k.T_max} != epochs {cfg.epochs}"
+    lr0 = sched_k.get_last_lr()[0]
+    for _ in range(10):
+        sched_k.step()
+    lr10 = sched_k.get_last_lr()[0]
+    assert lr0 == cfg.lr and lr10 < lr0, f"cosine 口径 lr 未按 T_max=epochs 下降：{lr0} -> {lr10}"
+
+    # 未知值 → ValueError
+    class _BadSched:
+        epochs, lr, weight_decay = cfg.epochs, cfg.lr, cfg.weight_decay
+        lr_schedule = "linear"
+
+    try:
+        tr.build_lr_scheduler(_opt(), _BadSched())
+        raise AssertionError("未知 lr_schedule 未被拦截")
+    except ValueError as e:
+        assert "lr_schedule" in str(e), f"报错未指明 lr_schedule：{e}"
+
+    # v1/v2/v3 config 无字段 → getattr 默认 "cosine"（子进程隔离导入，零漂移守护）
+    for path, name in ((str(_V1), "v1"),
+                       (str(_V1.parent / "gpfm-mamba-v2"), "v2"),
+                       (str(_V1.parent / "gpfm-mamba-v3"), "v3lp")):
+        code = (f"import sys; sys.path.insert(0, {path!r}); import config as C; "
+                f"print(getattr(C.Config(), 'lr_schedule', 'cosine'))")
+        out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=True)
+        assert out.stdout.strip() == "cosine", \
+            f"{name} config 应无 lr_schedule 字段（getattr 默认 cosine，零漂移守护）"
+    print(f"[lr 调度] constant：LambdaLR 10 步后 lr 仍精确 {cfg.lr}（round-trip 同）；"
+          f"cosine：T_max={cfg.epochs}，10 步 {lr0:.2e}->{lr10:.2e} 严格下降；未知值 ValueError；"
+          f"v1/v2/v3 无字段 getattr→cosine、v4=constant 全过")
+
+
 def main() -> None:
     assert torch.cuda.is_available(), "mamba_ssm 官方 kernel 需要 CUDA"
     cfg = C.Config()
@@ -518,7 +602,8 @@ def main() -> None:
     test_masking_and_guard()                          # ⑦
     test_split_caliber_val4()                         # ⑧（32/4/10 划分口径，2026-10-16 用户拍板）
     test_early_stop_hook()                            # ⑨（早停 patience=10，2026-10-16 用户拍板）
-    print("[PASS] test_v4b 九项全部断言通过")
+    test_lr_schedule_hook()                           # ⑩（lr 恒定取消 cosine，2026-10-16 用户拍板）
+    print("[PASS] test_v4b 十项全部断言通过")
 
 
 if __name__ == "__main__":

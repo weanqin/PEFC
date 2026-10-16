@@ -18,9 +18,15 @@
 
 **命名与别名**：目录 v4；用户口头「v3」「v4-B」均指本变体（仓库 v3 已被 v3lp 占用）。
 
-训练/评估口径与 v2 逐字段一致（seed 1234、epochs 100、AdamW lr 1e-3 wd 1e-4 cosine、
-clip 0.5、EMA 0.999、t~logit-normal(−0.8,0.8)、损失 {1,1,0.1,0.1}、status_ok 46 例）——
-唯一变化 = 速度网络结构。
+训练/评估口径与 v2 逐字段一致（seed 1234、epochs 100、AdamW lr 1e-3 wd 1e-4、clip 0.5、
+EMA 0.999、t~logit-normal(−0.8,0.8)、损失 {1,1,0.1,0.1}、status_ok 46 例）——结构变化
+（CI 骨干 + cMLP head）之外，2026-10-16 另有三项口径变更登记（划分 32/4/10、早停
+patience=10、lr 恒定，分别见下方各块与字段注释）。
+**lr 调度口径变更（用户 2026-10-16 拍板：取消 cosine 退火，lr 恒定 1e-3）**：v1/v2 为
+cosine（T_max=epochs）；实现 = v1 train.py default-off 钩子 `lr_schedule`（v1/v2/v3 config
+无此字段 = "cosine"，行为与 config_hash 零漂移；"constant" = LambdaLR 恒 1.0，scheduler
+对象保留兼容 ckpt/resume 状态契约）。不可比注记：优化轨迹与 v1/v2 不同（恒定 lr vs 退火
+到 ~0），与早停/32/4 划分一并列入 H3 判读的口径差异清单。
 **划分口径变更（用户 2026-10-16 拍板，长期口径 train/val/test = 7/1/2；本任务整数分配 32/4/10）**：
 训练折 36 例内部由 train 34/val 2 改为 **train 32 / val 4**（分层 2 HC + 2 MDD，
 val_subject_seed=42 不变）；fold0 外层与 test 10 例不动（保 v1/v2/v4 test 可比）。
@@ -104,12 +110,17 @@ class Config:
     w_corr: float = 0.1
     corr_eps: float = 1e-6
 
-    # ---- 训练（design §2.2 / §5；与 v1/v2 一致）----
+    # ---- 训练（design §2.2 / §5；与 v1/v2 一致，lr 调度除外——2026-10-16 口径变更恒定 lr）----
     seed: int = 1234              # 训练 seed（划分 seed 独立 = 42）
     batch_size: int = 256
     epochs: int = 100
     lr: float = 1e-3
     weight_decay: float = 1e-4
+    lr_schedule: str = "constant"  # lr 调度（用户 2026-10-16 拍板：取消 cosine 退火，lr=1e-3 恒定不变）。
+                                   # v1 train.py default-off 钩子 getattr 透传——v1/v2/v3 config 无此字段
+                                   # = "cosine"（CosineAnnealingLR T_max=epochs，行为与 config_hash 零漂移）；
+                                   # "constant" = LambdaLR 恒 1.0（scheduler 对象保留，ckpt/resume 状态契约不变）。
+                                   # 不可比注记：优化轨迹与 v1/v2 不同（恒定 lr vs 退火到 ~0），随 H3 判读登记
     grad_clip: float = 0.5
     ema_decay: float = 0.999      # 短程训练口径（v1 登记的偏离论文 0.9999，不变）
     sigma_min: float = 1e-4
@@ -128,8 +139,9 @@ class Config:
     early_stop_patience: int = 10  # 早停（用户 2026-10-16 拍板）：best 判据（val4 总 loss，固定 t 网格
                                    # 确定性复算+EMA）连续 10 个 epoch 无新 best 即停止训练；v1/v2 config
                                    # 无此字段 = 禁用（v1 train.py default-off 钩子 getattr 透传，零漂移）。
-                                   # cosine T_max=100 不随早停调整——提前停止时 lr 未退火到底，属早停+cosine
-                                   # 固有交互，登记不修正（best/last checkpoint 语义不变）
+                                   # （登记时的「cosine T_max=100 不随早停调整、提前停止 lr 未退火到底」
+                                   # 交互注记，已随同日 lr 恒定口径变更（lr_schedule="constant"）作废：
+                                   # lr 全程恒定，早停不再有 lr 未退火交互；best/last checkpoint 语义不变）
 
     # ---- 采样（§5/§6；与 v1/v2 一致）----
     euler_steps: int = 16

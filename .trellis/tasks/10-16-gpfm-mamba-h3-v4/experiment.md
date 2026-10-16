@@ -225,3 +225,15 @@
 
 - 支持：早停钩子三路径（无触发零副作用/触发时产物先落盘后 break/resume 回放计数连续）在 v4 真实训练主流程验证通过；配合单测 ⑨（纯函数边界 0/负恒 False、恰第 patience 轮触发、循环计数模拟、v1/v2/v3 无字段 getattr→0）与 v1 既有 7 测回归 + config_hash pin（v1 c6ff80ac1c43 / v2 fc2a9ce14948 / v3lp 0c2de30a4868 零漂移），口径变更落定。
 - 下一步：R9 硬门禁确认后启动 `v4b-main-01`（100-epoch 上限 + early_stop_patience=10；提前停止时 0.85 h 为上界）。
+
+## lr 调度口径变更登记（2026-10-16）
+
+**用户拍板（2026-10-16）：v4-B 取消 cosine 退火，lr 恒定 1e-3**（v1/v2 为 cosine T_max=epochs——口径变更，非 bug 修正；取代早停块中「cosine T_max=100 不随早停调整」注记，见下）：
+
+- **变更内容**：v4-B 优化器 lr 全程恒定 `lr=1e-3` 不退火（AdamW/wd=1e-4/batch/clip 等其余训练超参不变）；v1/v2 维持 cosine（T_max=epochs）。
+- **实现机制**：v1 `train.py` **default-off 钩子**（先例 `prior_bandlimit_hz` / `split_manifest_override` / `early_stop_patience`）——模块级纯函数 `build_lr_scheduler(opt, cfg)`（`getattr(cfg, "lr_schedule", "cosine")` 透传）："cosine" = CosineAnnealingLR(T_max=cfg.epochs)，与原内联构建逐位同构；"constant" = LambdaLR 恒 1.0（lr 恒 = cfg.lr；**scheduler 对象保留**——checkpoint 存 scheduler 状态的既有契约不变，LambdaLR 对普通函数 lambda 的 state_dict 存 None、load_state_dict round-trip 正常，`--resume` 全量恢复语义不变）；未知值 ValueError（构建期暴露拼写错误）。v1/v2/v3 config 无此字段 ⇒ 默认 cosine ⇒ 构建行为**零漂移**；日志 = `[model]` 行 cosine 口径逐字节不变（constant 口径下该行片段改打 `lr_schedule constant`，不出现失实的 cosine 字样），**仅非 cosine 时多打印一行 `[sched] lr_schedule=constant`**（v1/v2/v3 日志零漂移）。训练循环 lr 记录来源 = `sched.get_last_lr()`（每 step 进度行 + metrics.jsonl `lr` 字段）——constant 口径下恒为 1e-3（单测 ⑩ 双检 get_last_lr 与 opt.param_groups 同值）。
+- **v4 config**：`lr_schedule: str = "constant"`（lr=1e-3 不变）；**config_hash 更新**：默认 **`a965f24e580a`**（26cd2bb2e43f 作废）、epochs=1 覆写口径 `275f6c8fe93b`（f42570df2704 作废——此前已落盘产物按各自记录 hash 不受影响，此后 bench 复跑用新值）。单测 pin 同步（test_v4b ⑥），v1/v2/v3 hash 逐位不变（c6ff80ac1c43 / fc2a9ce14948 / 0c2de30a4868，⑥ 子进程断言）。
+- **早停交互注记作废**：早停登记块的「cosine T_max=100 不随早停调整——提前停止时 lr 未退火到底，属早停+cosine 固有交互，登记不修正」**随本变更作废**：lr 全程恒定，早停不再有 lr 未退火交互。
+- **不可比注记（对 v1/v2 对比时必随附）**：v4-B 优化轨迹与 v1/v2 不同构（恒定 lr vs cosine 退火到 ~0——后期步长更大，收敛动力学不同），与 32/4 划分、早停 patience=10 一并列入 H3 判读的口径差异清单（prd R3 三条口径变更登记）。
+- **验证**：test_v4b 十项全 PASS（⑩ 新增：constant 10 步 lr 仍精确 1e-3 + state_dict round-trip + cosine T_max=epochs 严格下降 + 未知值 ValueError + v1/v2/v3 无字段 getattr→cosine）；v1 既有 7 测回归全 PASS。资源口径不变（调度钩子零计算开销，Run 004 的 0.85 h 外推仍为上界）。
+- **主 Run**：本变更落地后由主会话启动 `v4b-main-01`（100-epoch 上限 + early_stop_patience=10 + **lr 恒定 1e-3**）；R9 门禁材料（Run 002/003/004）不受影响，无需重跑 bench（调度钩子不改每 epoch 计算形态）。
