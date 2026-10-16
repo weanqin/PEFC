@@ -125,6 +125,11 @@ class Config:
     val_t_grid: tuple = (0.1, 0.3, 0.5, 0.7, 0.9)
     val_eps_seed: int = 2026      # 固定 eps（确定性复算，跨 epoch 可比）
     use_ema_for_val: bool = True  # 评估用 EMA 权重
+    early_stop_patience: int = 10  # 早停（用户 2026-10-16 拍板）：best 判据（val4 总 loss，固定 t 网格
+                                   # 确定性复算+EMA）连续 10 个 epoch 无新 best 即停止训练；v1/v2 config
+                                   # 无此字段 = 禁用（v1 train.py default-off 钩子 getattr 透传，零漂移）。
+                                   # cosine T_max=100 不随早停调整——提前停止时 lr 未退火到底，属早停+cosine
+                                   # 固有交互，登记不修正（best/last checkpoint 语义不变）
 
     # ---- 采样（§5/§6；与 v1/v2 一致）----
     euler_steps: int = 16

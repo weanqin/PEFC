@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""test_v4b.py — v4-B（CI 骨干 + cMLP 组件式读出）单测八项（design §4.4，implement.md §1）。
+"""test_v4b.py — v4-B（CI 骨干 + cMLP 组件式读出）单测九项（design §4.4，implement.md §1）。
 
 ① CI 隔离性：扰动输入通道 j，trunk 表征 h_{t,k}（k≠j）逐位不变；输出 v 经 head 全通道
    可变（合法跨通道影响——两段验证：trunk 不变 + 输出可变，head 混合是唯一通道间通路）
@@ -13,6 +13,9 @@
 ⑧ 划分口径 32/4/10（用户 2026-10-16 拍板长期口径 7/1/2）：train 32 / val 4（分层 2HC+2MDD）/
    test 10 与 v1 固化 manifest 逐 ID 一致（保 test 可比）；v4 固化 manifest 落 v4 splits/
    （首建写入、二建校验一致）；v1 旧 manifest 未被改动（hash+mtime）；default-off 钩子正反例
+⑨ 早停口径（用户 2026-10-16 拍板 patience=10）：v1 train.py 纯函数逻辑（patience<=0 恒 False
+   /1/9/10 边界/恰好第 patience 轮触发）+ epoch 循环计数模拟 + resume 回放恢复 +
+   v1/v2/v3 config 无字段 getattr 默认 0（禁用）断言；v4=10
 
 运行：python3 models/gpfm-mamba-v4/tests/test_v4b.py（需 CUDA——mamba_ssm 官方 kernel）
 """
@@ -53,8 +56,10 @@ EXPECTED_PARAMS = 64_056          # design §3.2：2+19+484+1+63,550
 V1_HASH_DEFAULT = "c6ff80ac1c43"  # 基准：v1 main-01 落盘 resolved config hash（零漂移守护）
 V2_HASH_DEFAULT = "fc2a9ce14948"  # 基准：v2d62-main-01 落盘 resolved config hash
 V3_HASH_DEFAULT = "0c2de30a4868"  # 基准：v3lp 落盘 resolved config hash
-V4_HASH_VAL4 = "f088186dd386"     # v4 默认 config hash——2026-10-16 划分口径变更（32/4/10）后新值；
-                                  # 旧值 251c7be664ea 作废。后续任何口径变更（含 d_z/d_ch/划分）须重算登记此值
+V4_HASH_VAL4 = "26cd2bb2e43f"     # v4 默认 config hash——2026-10-16 划分口径变更（32/4/10）后
+                                  # f088186dd386 → 早停口径变更（early_stop_patience=10）后本值；
+                                  # 更早旧值 251c7be664ea 作废。后续任何口径变更（含 d_z/d_ch/划分/早停）
+                                  # 须重算登记此值
 
 
 def build_model(cfg: C.Config, dev: str) -> M.VelocityNetwork:
@@ -413,6 +418,88 @@ def test_masking_and_guard() -> None:
           "v4b- 前缀守卫 train 4 例 + evaluate 3 例全过")
 
 
+def test_early_stop_hook() -> None:
+    """⑨ 早停口径（用户 2026-10-16 拍板 patience=10，prd R3/design §5）：
+
+    - v1 train.py 纯函数 should_early_stop：patience<=0 恒 False（禁用语义）；1/9/10 边界；
+      恰好第 patience 轮无改善触发
+    - epoch 循环计数模拟（与 train.py 每 epoch 末「新 best 清零否则 +1→判定」同口径）：
+      patience=10 恰在连续第 10 轮无改善的 epoch 末触发；patience=0（v1/v2/v3 语义）100 轮恒不触发
+    - replay_epochs_since_best（resume 兼容）：metrics.jsonl 回放计数 == 循环计数连续
+    - v1/v2/v3 config 无 early_stop_patience 字段 → getattr 默认 0（禁用，子进程口径）；
+      v4 cfg.early_stop_patience == 10
+    """
+    # 载入 v1 train.py（importlib 独立模块名；其 import config/model 命中 v4 缓存——纯函数与 cfg 无关）
+    spec = importlib.util.spec_from_file_location("gpfm_mamba_v1_train_es_test", str(_V1 / "train.py"))
+    tr = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(tr)
+    f = tr.should_early_stop
+
+    # patience<=0 恒 False（禁用——v1/v2/v3 config 无字段 → getattr 默认 0）
+    for p in (0, -1, -10):
+        for es in (0, 1, 5, 10, 99, 100):
+            assert f(es, p) is False, f"patience {p} 须恒不触发（es={es}）"
+    # 边界：恰在第 patience 轮无改善触发（es 达到 patience），差一轮不触发
+    assert f(0, 1) is False and f(1, 1) is True
+    assert f(8, 9) is False and f(9, 9) is True
+    assert f(9, 10) is False and f(10, 10) is True and f(11, 10) is True
+    # patience=10（v4 拍板口径）逐轮扫描
+    assert [f(es, 10) for es in range(12)] == [False] * 10 + [True, True]
+
+    # epoch 循环计数模拟（同 train.py 每 epoch 末三行钩子的口径）
+    def _sim(best_flags, patience):
+        es, fired_at = 0, None
+        for e, b in enumerate(best_flags):
+            es = 0 if b else es + 1
+            if f(es, patience):
+                fired_at = e
+                break
+        return fired_at, es
+
+    flags = [True] * 6 + [False] * 20     # 最近 best 在 epoch 5（0 基），此后连续无改善
+    fired_at, es = _sim(flags, 10)
+    assert fired_at == 15 and es == 10, "patience=10 应恰在 best 后第 10 轮（epoch 15 末）触发"
+    fired_at, es = _sim([False] * 20, 10)
+    assert fired_at == 9 and es == 10, "全程无 best（fresh start 不发生——best_val=inf 首轮必 best）仅口径参照"
+    fired_at, es = _sim([True] * 100, 10)
+    assert fired_at is None, "每轮新 best 恒不触发"
+    fired_at, es = _sim([False] * 100, 0)  # v1/v2/v3 语义（patience=0）：100 轮无 best 恒不触发
+    assert fired_at is None and es == 100, "patience=0（v1/v2/v3）不得改变固定 100 epoch 行为"
+    # 中途穿插 best 打断计数
+    fired_at, _ = _sim([True, False, False, True, False, False, False], 3)
+    assert fired_at == 6, "计数应自最近一次 best 重新累计（epoch 3 best → epoch 6 末触发）"
+
+    # replay_epochs_since_best（resume 回放）== 循环计数连续
+    for flags2, want in (([True, False, False, True, False, False], 2),
+                         ([True, True], 0),
+                         ([True] + [False] * 9, 9),
+                         ([], 0)):
+        lines = [json.dumps({"epoch": i, "best": b}) for i, b in enumerate(flags2)]
+        assert tr.replay_epochs_since_best(lines) == want, f"回放计数错：{flags2}"
+    # 空行/空白行跳过（metrics.jsonl 允许尾随空行）；极旧行缺 "best" 键按非 best 计
+    assert tr.replay_epochs_since_best(["", "   "]) == 0
+    assert tr.replay_epochs_since_best([json.dumps({"epoch": 0}), json.dumps({"epoch": 1, "best": True})]) == 0
+    assert tr.replay_epochs_since_best([json.dumps({"epoch": 0, "best": True}), json.dumps({"epoch": 1})]) == 1
+    # 截齐语义（resume 块先截到断点 epoch 再回放）——断点在 epoch 3：只回放前 4 行 → 计数 0
+    lines = [json.dumps({"epoch": i, "best": b}) for i, b in enumerate(flags)]
+    assert tr.replay_epochs_since_best(lines[:4]) == 0, "截齐后回放应只统计断点前行"
+
+    # v1/v2/v3 config 无字段 → getattr 默认 0（子进程隔离导入）；v4 = 10
+    for path, name in ((str(_V1), "v1"),
+                       (str(_V1.parent / "gpfm-mamba-v2"), "v2"),
+                       (str(_V1.parent / "gpfm-mamba-v3"), "v3lp")):
+        code = (f"import sys; sys.path.insert(0, {path!r}); import config as C; "
+                f"print(getattr(C.Config(), 'early_stop_patience', 0))")
+        out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=True)
+        assert out.stdout.strip() == "0", \
+            f"{name} config 应无 early_stop_patience 字段（getattr 默认 0=禁用，零漂移守护）"
+    v4_cfg = C.Config()
+    assert v4_cfg.early_stop_patience == 10, f"v4 early_stop_patience 应为 10，got {v4_cfg.early_stop_patience}"
+    print(f"[早停] should_early_stop 边界（0/负恒 False；恰第 patience 轮触发）+ 循环计数模拟"
+          f"（patience=10 epoch15 末触发 / patience=0 百轮不触发 / best 打断重累计）+ 回放恢复 + "
+          f"v1/v2/v3 无字段 getattr→0、v4=10 全过")
+
+
 def main() -> None:
     assert torch.cuda.is_available(), "mamba_ssm 官方 kernel 需要 CUDA"
     cfg = C.Config()
@@ -430,7 +517,8 @@ def main() -> None:
     test_config_model_consistency(cfg)                # ⑥
     test_masking_and_guard()                          # ⑦
     test_split_caliber_val4()                         # ⑧（32/4/10 划分口径，2026-10-16 用户拍板）
-    print("[PASS] test_v4b 八项全部断言通过")
+    test_early_stop_hook()                            # ⑨（早停 patience=10，2026-10-16 用户拍板）
+    print("[PASS] test_v4b 九项全部断言通过")
 
 
 if __name__ == "__main__":

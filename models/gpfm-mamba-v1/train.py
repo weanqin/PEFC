@@ -8,6 +8,10 @@
   best = 内部验证总 loss（固定 t 网格 {0.1,0.3,0.5,0.7,0.9}+固定 eps 确定性复算）创新优覆写；
   last 每 epoch 无条件覆写（均含 model+EMA+optimizer+scheduler+epoch/step+RNG+best+config hash）；
   --resume 全量恢复（含 metrics.jsonl 截齐到断点 epoch）
+- 早停 default-off 钩子（用户 2026-10-16 拍板，v4-B 启用 patience=10）：config 字段
+  `early_stop_patience`（getattr 透传，先例 prior_bandlimit_hz/split_manifest_override）——
+  best 判据连续 patience 个 epoch 无新 best 即停（break 前该 epoch best/last checkpoint 与
+  metrics.jsonl 已落盘，触发行附 "early_stop": true）；v1/v2/v3 config 无此字段 ⇒ 0=禁用恒不触发。
 用法：
   python3 models/gpfm-mamba-v1/train.py --smoke                 # 冒烟（4 受试者 1 epoch）
   python3 models/gpfm-mamba-v1/train.py --epochs 1 --bench      # 全量 1-epoch 基准
@@ -80,6 +84,32 @@ def git_commit() -> str:
         return subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], cwd="/root/npi", text=True).strip()
     except Exception:
         return "unknown"
+
+
+def should_early_stop(epochs_since_best: int, patience: int) -> bool:
+    """早停判定（纯函数；用户 2026-10-16 拍板 v4-B 口径，default-off 钩子配套）。
+
+    - patience <= 0：恒 False（禁用语义——v1/v2/v3 config 无 early_stop_patience 字段即禁用，
+      训练行为零漂移）；
+    - patience > 0：连续 epochs_since_best 个 epoch 无新 best 且达到 patience 即触发
+      （恰好第 patience 轮无改善触发）。
+    """
+    return patience > 0 and epochs_since_best >= patience
+
+
+def replay_epochs_since_best(metrics_lines) -> int:
+    """从 metrics.jsonl 行序列回放早停计数（--resume 兼容，实现最省且可靠的一种）。
+
+    每行 "best" 标志即当 epoch 的 is_best：计数 = 最近一次 best=true 之后的 epoch 数。
+    checkpoint 已存 best 指标与 epoch 但不存计数——截齐后的 metrics.jsonl 与断点 epoch
+    严格一致（resume 块保证），直接回放即得连续计数，无须扩展 checkpoint 结构（旧 ckpt 兼容）。
+    行缺失 "best" 键（极旧行）按非 best 计。空序列 → 0。
+    """
+    es = 0
+    for line in metrics_lines:
+        if line.strip():
+            es = 0 if json.loads(line).get("best") else es + 1
+    return es
 
 
 def evaluate_internal_val(
@@ -232,6 +262,7 @@ def main() -> None:
 
     # ---- resume（全量恢复：model/EMA/opt/sched/epoch/step/RNG/metrics 截齐）----
     start_epoch, gs, best_val = 0, 0, float("inf")
+    epochs_since_best = 0  # 早停计数（连续无新 best 的 epoch 数；resume 时从 metrics.jsonl 回放恢复，见下）
     metrics_path = run_dir / "logs" / "metrics.jsonl"
     if args.resume:
         ck = torch.load(args.resume, map_location="cpu", weights_only=False)
@@ -259,6 +290,9 @@ def main() -> None:
                     if rec["epoch"] <= ck["epoch"]:
                         kept.append(line)
             metrics_path.write_text("\n".join(kept) + ("\n" if kept else ""))
+            # 早停计数恢复：截齐后的 metrics.jsonl 与断点 epoch 严格一致 → 回放最近一次
+            # 新 best 之后的 epoch 数（replay_epochs_since_best；断点续传后早停计数连续）
+            epochs_since_best = replay_epochs_since_best(metrics_path.read_text().splitlines())
         log(f"[resume] {args.resume} | epoch {ck['epoch']} -> {start_epoch} | global_step {gs} | "
             f"best_val {best_val:.4f} | RNG(python/numpy/torch/cuda)+optimizer+scheduler 已恢复 | "
             f"metrics.jsonl 截齐至 epoch {ck['epoch']}（同一 Run 延续，artifacts-management 口径）")
@@ -338,6 +372,12 @@ def main() -> None:
         is_best = val["total"] < best_val
         if is_best:
             best_val = val["total"]
+        # 早停 default-off 钩子（用户 2026-10-16 拍板，v4-B 启用；先例 prior_bandlimit_hz）：
+        # v1/v2/v3 config 无 early_stop_patience 字段 → getattr 默认 0 → 恒不触发（零漂移，
+        # 仅多一次 getattr 与整数比较）；新 best 计数清零，否则 +1。
+        _es_patience = int(getattr(cfg, "early_stop_patience", 0))
+        epochs_since_best = 0 if is_best else epochs_since_best + 1
+        _es_fire = should_early_stop(epochs_since_best, _es_patience)
         save_ckpt(str(ck_last), model, ema, opt, sched, epoch, gs, best_val, cfg)
         if is_best:
             save_ckpt(str(ck_best), model, ema, opt, sched, epoch, gs, best_val, cfg)
@@ -356,10 +396,20 @@ def main() -> None:
             "best": is_best,
             "peak_mem_gb": round(torch.cuda.max_memory_allocated() / 2 ** 30, 3),
         }
+        if _es_fire:  # 仅触发时写入（v1/v2/v3 恒不触发 → metrics 行零漂移）
+            rec["early_stop"] = True
         with open(metrics_path, "a") as f:
             f.write(json.dumps(rec) + "\n")
         log(f"[epoch {epoch + 1}/{cfg.epochs} 完成] train total {acc['total']:.4f} | val total {val['total']:.4f}"
             f"{'（新 best）' if is_best else ''} | 耗时 {epoch_time:.1f}s | last{'+best' if is_best else ''} ckpt 已写")
+        if _es_fire:
+            # 位于每 epoch 收尾动作（best/last checkpoint + metrics.jsonl 落盘）之后——
+            # 触发时该 epoch 产物完整，best/last checkpoint 语义不变（best 仍为停止前最优点）。
+            log(f"[early-stop] epoch {epoch + 1}/{cfg.epochs} 触发早停：val 总 loss 连续 {epochs_since_best} 个 epoch"
+                f" 无新 best（patience {_es_patience}，判据=内部验证总 loss 固定 t 网格确定性复算/EMA）| "
+                f"best epoch {epoch + 1 - epochs_since_best} | best val total {best_val:.4f} | "
+                f"metrics.jsonl 本 epoch 行已附 \"early_stop\": true，停止训练")
+            break
 
     # ---- 汇总 ----
     total_train_s = float(np.sum(epoch_times)) if epoch_times else 0.0

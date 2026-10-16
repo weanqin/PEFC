@@ -189,3 +189,39 @@
 
 - 支持（口径切换机械正确 + 主 Run 基线就位）：① 32/4/10 划分经训练主流程实跑验证（log 载「train 32 例 42272 窗 | val 4 例 5284 窗」，v4 自备 manifest 校验通过）；② 显存/时长与 Run 002 持平（12.7 GiB / 30.6 s / 0.85 h 外推），资源结论不变；③ **val4 口径 1-epoch val 总 loss（EMA）= 1.10607 登记为主 Run（v4b-main-01）val 轨迹的对照基线**——与 Run 002 的 1.06179（val2 口径）不直接可比；④ d_ch=1 欠拟合判读：train total 1.34453 与 Run 002 的 1.34579 逐位近同，无欠拟合红旗。
 - 下一步：R9 硬门禁仍未确认——**100-epoch 主 Run（v4b-main-01）继续等待用户确认后方可启动**（Run 002/003/004 为门禁材料全集）。
+
+## 早停口径变更登记（2026-10-16）
+
+**用户拍板（2026-10-16）：v4-B 训练加入早停，patience=10 epoch**（v1/v2 为固定 100 epoch 无早停——本变更为口径变更，非 bug 修正）：
+
+- **判定基准 = 既有 best 判据**：val4 总 loss（固定 t 网格 {0.1,0.3,0.5,0.7,0.9} + 固定 ε 确定性复算、EMA 权重）**连续 10 个 epoch 无新 best 即停止训练**（恰好第 10 轮无改善触发）。
+- **实现机制**：v1 `train.py` **default-off 钩子**（先例 `prior_bandlimit_hz` / `split_manifest_override`）——模块级纯函数 `should_early_stop`（patience<=0 恒 False=禁用语义）+ epoch 循环每 epoch 末 `getattr(cfg, "early_stop_patience", 0)`；新 best 计数清零否则 +1；触发时 break **位于每 epoch 收尾动作（best/last checkpoint + metrics.jsonl 落盘）之后**（best/last checkpoint 语义不变），触发行附 `"early_stop": true`；resume 兼容 = `replay_epochs_since_best` 从截齐后的 metrics.jsonl 回放计数（checkpoint 不扩字段，旧 ckpt 兼容，断点续传后计数连续）。v1/v2/v3 config 无此字段 ⇒ patience=0 ⇒ 恒不触发，**行为零漂移**（每 epoch 仅多一次 getattr 与整数比较）。
+- **v4 config**：`early_stop_patience: int = 10`；**config_hash 更新**：默认 `26cd2bb2e43f`（f088186dd386 作废）、epochs=1 覆写口径 `f42570df2704`（323c6d49e6bf 作废——Run 004 已落盘产物按其记录 hash 不受影响，此后 bench 复跑用新值）。单测 pin 同步（test_v4b ⑥/⑨）。
+- **不可比注记（对 v1/v2 对比时必随附）**：① v4-B 可能提前结束（best 仍在停止前最优点，best/last checkpoint 语义不变）；② cosine T_max=100 不随早停调整——提前停止时 lr 未退火到底，属早停+cosine 固有交互，**登记不修正**；③ epochs_run < 100 时与 v1/v2 的「训练长度」不同构，epoch 数轴对比须注明；④ 早停不改变每 epoch 成本，只缩短总时长——Run 004 的 0.85 h 外推变为**上界**，无需重跑 bench。
+- **主 Run 门禁不变**：R9 硬门禁仍待用户确认，100-epoch 主 Run（v4b-main-01）未启动。
+
+## Run 005 — v4b 早停钩子集成冒烟（无触发/触发/resume 回放三路径）（2026-10-16）
+
+### 目的与假设
+
+- 验证早停口径变更（上块）的 v1 train.py default-off 钩子在 v4 双遮蔽真实训练主流程中的三条路径：① 无触发（计数不足时零副作用）；② 触发（连续 patience 轮无新 best → break 前产物完整落盘 + metrics 行附 `early_stop` 字段）；③ resume 回放（断点续传后早停计数连续）。patience 采用运行时临时覆盖（2）以缩短触发窗口——**v4 config.py 文件不动（拍板值仍 10）**。
+
+### 配置
+
+- 代码：`models/gpfm-mamba-v1/train.py`（早停钩子增量）+ `models/gpfm-mamba-v4/config.py`（early_stop_patience=10）+ tests/test_v4b.py ⑨；git commit ed80e3e 工作树增量
+- 参数：三子跑均临时 patience=2（驱动脚本运行时覆盖 `C.build_config`，机制为「构建后 setattr」，v4 config.py 文件值 10 不动）——① `--smoke --epochs 13 --run-id v4b-smoke-es`（train 4 例）；② `--epochs 15 --limit-train-subjects 1 --run-id v4b-smoke-es2`（train 2 例，构造易过拟合小集）；③ resume 确定性夹具 `--resume .../v4b-smoke-es3/checkpoints/gpfm-mamba-v4b-last.pt --epochs 15 --limit-train-subjects 1`（es2 run 目录副本：ckpt 回拨 epoch 10 + best_val 抬高 0.5 不可逾越 + metrics epoch-10 行 best 翻 false → 回放计数应为 1；等价构造「kill 于无改善断点」的真实场景）
+- 环境：同 Run 001（base @ AutoDL，RTX 4080 SUPER 32GB）
+- 数据：同 Run 001（status_ok 46 例 fold0；val 均为 val4 固定 4 例 5,284 窗确定性复算）
+
+### 结果
+
+- ① es（13 epoch 上限）：每 epoch 均新 best（EMA 平滑下 val 单调改善 1.1676→1.1970 量级）→ **未触发**，13/13 跑满、正常收尾；全部 metrics 行**无** `early_stop` 字段（无触发=零副作用，v1/v2/v3 同构路径零漂移佐证）；config_hash 5f90cced0284（临时口径）。
+- ② es2（15 epoch 上限，train 2 例）：仍未触发（val 1.2261→1.2203 单调）——小集 15 epoch 内 EMA 仍持续改善，有机触发不可得，转 ③ 确定性夹具；两跑共同佐证无触发路径 metrics/checkpoint/summary 与旧代码行为一致。
+- ③ es3（resume 夹具）：`[resume] epoch 10 -> 11 | best_val 0.5000 | metrics.jsonl 截齐至 epoch 10` → 首个续跑 epoch（显示 epoch 12/15）val 1.2199 > 0.5 非新 best → 计数 1→2 达 patience → **触发**：`[early-stop] epoch 12/15 触发早停：连续 2 个 epoch 无新 best（patience 2）| best epoch 10 | best val total 0.5000 | metrics.jsonl 本 epoch 行已附 "early_stop": true`；**break 前产物核验**：last.pt 已写（epoch 11/best_val 0.5，mtime 晚于 metrics 行）、非新 best 故 best.pt 未覆写、metrics.jsonl 末行（epoch 11）恰含 `"early_stop": true` 且此前各行无该字段。
+- 产物：`/root/npi/outputs/gpfm-mamba-f0/v4b-smoke-{es,es2,es3}/`（各含 config.yaml/logs/checkpoints；es3 的 metrics.jsonl 12 行=截齐 11 行+触发行）
+- 图表：无（冒烟不出图）
+
+### 结论
+
+- 支持：早停钩子三路径（无触发零副作用/触发时产物先落盘后 break/resume 回放计数连续）在 v4 真实训练主流程验证通过；配合单测 ⑨（纯函数边界 0/负恒 False、恰第 patience 轮触发、循环计数模拟、v1/v2/v3 无字段 getattr→0）与 v1 既有 7 测回归 + config_hash pin（v1 c6ff80ac1c43 / v2 fc2a9ce14948 / v3lp 0c2de30a4868 零漂移），口径变更落定。
+- 下一步：R9 硬门禁确认后启动 `v4b-main-01`（100-epoch 上限 + early_stop_patience=10；提前停止时 0.85 h 为上界）。
