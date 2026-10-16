@@ -18,9 +18,17 @@
 
 **命名与别名**：目录 v4；用户口头「v3」「v4-B」均指本变体（仓库 v3 已被 v3lp 占用）。
 
-训练/评估/数据口径与 v2 逐字段一致（seed 1234、epochs 100、AdamW lr 1e-3 wd 1e-4 cosine、
-clip 0.5、EMA 0.999、t~logit-normal(−0.8,0.8)、损失 {1,1,0.1,0.1}、status_ok 46 例、
-划分 split_seed=42 读 v1 固化 manifest 只读共享）——唯一变化 = 速度网络结构。
+训练/评估口径与 v2 逐字段一致（seed 1234、epochs 100、AdamW lr 1e-3 wd 1e-4 cosine、
+clip 0.5、EMA 0.999、t~logit-normal(−0.8,0.8)、损失 {1,1,0.1,0.1}、status_ok 46 例）——
+唯一变化 = 速度网络结构。
+**划分口径变更（用户 2026-10-16 拍板，长期口径 train/val/test = 7/1/2；本任务整数分配 32/4/10）**：
+训练折 36 例内部由 train 34/val 2 改为 **train 32 / val 4**（分层 2 HC + 2 MDD，
+val_subject_seed=42 不变）；fold0 外层与 test 10 例不动（保 v1/v2/v4 test 可比）。
+实现 = v4 自备固化 manifest（v1 data.py `split_manifest_path` 的 default-off 钩子
+`split_manifest_override` 指向本目录 splits/；v1/v2/v3 无此字段 = 路径与 config_hash 零漂移）。
+**不可比注记**：① v4-B 训练数据 32 例 vs v1/v2 的 34 例（−6%）；② best 判据基于 val4
+（v1/v2 为 val2）；③ test 折相同 ⇒ test 指标可比；④ 既有 bench（Run 002/003）val 数值为
+val2 口径，与本口径 val 轨迹不直接可比。
 正式口径显式化：`gen_lowpass_hz=40.0`（输出侧 40 Hz 低通，evaluation-calibers.md；
 v1/v2 经 getattr 默认值透传，v4 起显式入 config 进 hash）。
 
@@ -48,7 +56,7 @@ class Config:
     outputs_root: str = "/root/npi/outputs/gpfm-mamba-f0"
     variant_name: str = "gpfm-mamba-v4b"  # checkpoint 主名 + config_hash 组成部分（区别于 v1/v2）
 
-    # ---- 数据与划分（design §4；与 v1/v2 逐字段一致 → 校验到 v1 固化 manifest）----
+    # ---- 数据与划分（design §4；2026-10-16 口径变更 32/4/10 → 校验 v4 自备固化 manifest，见下 override）----
     n_channels: int = 62
     past_len: int = 384
     future_len: int = 128
@@ -57,9 +65,14 @@ class Config:
     fold: int = 0                 # study1 前置验证固定 fold0
     split_seed: int = 42          # 受试者级 5-fold 分层（MDD/HC）划分 seed
     subject_filter: str = "status_ok"  # 受试者过滤口径（2026-10-12 用户拍板 b）：'status_ok'（46 例）| 'qc_pass'（13 例）
-    n_val_subjects: int = 2       # 训练折内内部验证受试者（每类 1 例）
+    n_val_subjects: int = 4       # 训练折内内部验证受试者（分层每类 2 例）——用户 2026-10-16 拍板长期口径
+                                  # train/val/test=7/1/2（整数分配 32/4/10）；此前 v1/v2 为 2（34/2/10）
     val_subject_seed: int = 42
-    fixate_split: bool = True     # 划分固化：与 v1/v2 同参数 → 校验 v1 的 splits/ manifest（只读共享）
+    fixate_split: bool = True     # 划分固化：校验本变体 splits/ 自备 manifest（见 split_manifest_override）
+    split_manifest_override: str = "/root/npi/models/gpfm-mamba-v4/splits/fold0_status_ok_seed42_val4.json"
+                                  # v1 data.py::split_manifest_path 的 default-off 钩子（2026-10-16 口径变更）：
+                                  # 指向 v4 自备 val4 固化 manifest；v1/v2/v3 无此字段 = 路径不变、零漂移。
+                                  # 不可比注记：train 32 vs v1/v2 的 34 例；best 判据 val4 vs val2；test 相同
     num_workers: int = 4
 
     # ---- GPR 条件先验（design §2.1，时空可分 K_s x K_t；与 v1/v2 一致）----

@@ -137,3 +137,55 @@
 - 评估探针（Run 003）：B=64·K=16 稳态 **3.31 s/批**、峰值 **12.36 GiB**、全量采样段外推 **~11 min**；无需 --batch-size 降档。
 - **d_ch=1 欠拟合判读**：1-epoch 证据不支持欠拟合红旗（train loss 未高原远差于 v2、val 反优）；风险登记 design §9.10，主 Run 期间持续对照 v2 曲线（v2 best_val 0.74167 参照带）。
 - 预案（均属口径变更，须用户确认后方可用于主 Run）：训练侧 batch 256→128、d_z 16→8、d_ch 1→8/16（欠拟合第一预案，config+model 双改+重跑单测）；评估侧 --batch-size 64→32/16。
+
+## 口径变更登记（2026-10-16）
+
+**用户拍板（2026-10-16）：长期数据划分口径 train/val/test = 7/1/2；本任务整数分配 32/4/10**（取代此前 v1/v2/v3 实际执行、v4-B 曾拟的 train 34/val 2/test 10）：
+
+- **不变**：fold0 外层 5-fold 划分（split_seed=42）与 **test 10 例**逐 ID 不动——v1/v2/v4-B 的 test 指标保持可比；受试者过滤 status_ok 46 例不变。
+- **变更**：训练折 36 例内部由 train 34 / val 2 改为 **train 32 / val 4**（分层 2 HC + 2 MDD，val_subject_seed=42 不变）；整体 32/4/10 ≈ 6.96/0.87/2.17 ≈ 7/1/2。
+- **实现机制**：v1 `data.py::split_manifest_path` 增 **default-off 钩子** `split_manifest_override`（getattr 透传，先例 `prior_bandlimit_hz`）——v4 config `n_val_subjects=4` + `split_manifest_override` 指向 v4 自备固化 manifest `models/gpfm-mamba-v4/splits/fold0_status_ok_seed42_val4.json`（首建写入、之后校验一致）；v1/v2/v3 config 无此字段 ⇒ manifest 路径与 config_hash **零漂移**（v1 c6ff80ac1c43 / v2 fc2a9ce14948 / v3lp 0c2de30a4868 守护断言入单测 ⑥/⑧）。
+- **v4 config_hash 更新**：默认 f088186dd386（旧 251c7be664ea 作废）；epochs=1 覆写口径 323c6d49e6bf（旧 91e44df5e142 作废）。
+- **不可比注记（对 v1/v2 对比时必随附）**：① v4-B 训练数据 32 例 vs v1/v2 的 34 例（−6%）；② v4 best 判据基于 val4（v1/v2 为 val2）；③ test 折相同 ⇒ test 指标可比；④ Run 002/003 的 val 数值为 val2 口径，主 Run val 轨迹以 Run 004（val4 口径）为对照基线，不与 Run 002 直接比。
+- 「以后」= 长期划分口径：3.3 时回填 `.trellis/spec/research/data-pipeline.md`。
+
+## Run 004 — v4b 1-epoch 基准更新（val4 口径 32/4/10）（2026-10-16）
+
+### 目的与假设
+
+- 划分口径变更（32/4/10）后的 1-epoch 基准更新：train 32 例（~42k 窗）全量 1 epoch 的显存/墙钟/it/s，以及 **val4 口径的内部验证总 loss（EMA）**——后者是主 Run（v4b-main-01，待 R9 用户确认后启动）val 轨迹的对照基线；与 Run 002（val2 口径，train 34 例）数值并列展示但**不直接可比**（数据量与 best 判据均不同）。
+
+### 配置
+
+- 代码：`models/gpfm-mamba-v4/`（本任务口径变更增量：v1 data.py default-off 钩子 + v4 config n_val_subjects=4/split_manifest_override + 单测 ⑥⑧ 扩展）；git commit 84e1dc3 工作树增量
+- 参数：`--epochs 1 --bench`（train 32 例 / val 4 例（2HC+2MDD）/ test 10 不入训练管道；batch 256，seed=1234，AdamW lr 1e-3 wd 1e-4 cosine T_max=1，EMA 0.999，损失 {1,1,0.1,0.1}）；结构 d_ch=1/d_z=16/silu（不变）；resolved config_hash 323c6d49e6bf（epochs=1 覆写口径）
+- 环境：同 Run 001（base @ AutoDL，RTX 4080 SUPER 32GB，16 核 cgroup BLAS 上限 8 线程）
+- 数据：`/root/autodl-tmp/edra_process_v4/`，status_ok 46 例，fold0 split_seed=42 + val_subject_seed=42（**校验 v4 自备固化 manifest** `models/gpfm-mamba-v4/splits/fold0_status_ok_seed42_val4.json`；test 与 v1 逐 ID 一致断言见单测 ⑧）
+- 命令：`python3 models/gpfm-mamba-v4/train.py --epochs 1 --bench --run-id v4b-bench-1ep-val4`
+
+### 结果
+
+- 指标（对照 Run 002——**val 列口径不同不直接可比**：Run 002 为 val2（train 34 例/171 step），本 Run 为 val4（train 32 例/165 step）；epoch 墙钟差异主要来自窗数 44,914→42,272）：
+
+| 项 | **Run 004 v4b-bench-1ep-val4**（32/4/10） | Run 002 v4b-bench-1ep（34/2/10，val2 口径） | 备注 |
+|---|---|---|---|
+| train 受试者/窗 | **32 例 42,272 窗** | 34 例 44,914 窗 | 训练数据 −6%（不可比注记①） |
+| val 受试者/窗 | **4 例（2HC+2MDD）5,284 窗** | 2 例 | **主 Run val 轨迹对照基线** |
+| peak 显存 | **12.697 GiB** | 12.697 GiB | 同（batch 形态不变） |
+| epoch 墙钟 | **30.59 s** | 32.33 s | 窗数减少所致 |
+| it/s | **5.39** | 5.41 | 持平 |
+| 100-epoch 外推 | **0.85 h**（train 循环） | 0.90 h | |
+| train total | **1.34453**（mae 0.70863/cons 0.55924/tv 0.20942/corr 0.55721） | 1.34579（mae 0.70931） | 逐位近同——d_ch=1 无欠拟合红旗 |
+| **val total（EMA）** | **1.10607**（mae 0.55871/cons 0.49036/tv 0.18368/corr 0.38621；x̂1 std 0.7152 vs x1 std 0.8533） | 1.06179（mae 0.54549） | **不直接可比**（val 集不同：4 例含新增 37/49） |
+| 损失走势（trend） | 1.3831→1.2902（step 1→161） | 1.3783→1.3247（step 1→171） | 正常下降 |
+| t 分桶 mae | 0.966→0.131 单调降 | 0.979→0.093 单调降 | sanity 通过 |
+| v_norm_mean / x̂1_std | 13.52 / 0.6728 | 11.04 / 0.676 | 正常量级 |
+
+- 损失全程有限无 NaN；best（=唯一 epoch，EMA val total 1.10607）/last 就位
+- 产物：`/root/npi/outputs/gpfm-mamba-f0/v4b-bench-1ep-val4/`（config.yaml（resolved，hash 323c6d49e6bf）、env_snapshot.txt、channel_mean/std.npy（train-32 口径）、logs/{train.log, metrics.jsonl, summary.json}、checkpoints/gpfm-mamba-v4b-{best,last}.pt）
+- 图表：无（bench 不出图）
+
+### 结论
+
+- 支持（口径切换机械正确 + 主 Run 基线就位）：① 32/4/10 划分经训练主流程实跑验证（log 载「train 32 例 42272 窗 | val 4 例 5284 窗」，v4 自备 manifest 校验通过）；② 显存/时长与 Run 002 持平（12.7 GiB / 30.6 s / 0.85 h 外推），资源结论不变；③ **val4 口径 1-epoch val 总 loss（EMA）= 1.10607 登记为主 Run（v4b-main-01）val 轨迹的对照基线**——与 Run 002 的 1.06179（val2 口径）不直接可比；④ d_ch=1 欠拟合判读：train total 1.34453 与 Run 002 的 1.34579 逐位近同，无欠拟合红旗。
+- 下一步：R9 硬门禁仍未确认——**100-epoch 主 Run（v4b-main-01）继续等待用户确认后方可启动**（Run 002/003/004 为门禁材料全集）。

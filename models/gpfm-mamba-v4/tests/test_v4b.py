@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""test_v4b.py — v4-B（CI 骨干 + cMLP 组件式读出）单测七项（design §4.4，implement.md §1）。
+"""test_v4b.py — v4-B（CI 骨干 + cMLP 组件式读出）单测八项（design §4.4，implement.md §1）。
 
 ① CI 隔离性：扰动输入通道 j，trunk 表征 h_{t,k}（k≠j）逐位不变；输出 v 经 head 全通道
    可变（合法跨通道影响——两段验证：trunk 不变 + 输出可变，head 混合是唯一通道间通路）
@@ -8,14 +8,19 @@
 ④ 前向形状 (B,62,128) / return_all (B,62,512) / 梯度有限 + EMA swap + GPU B=256 冒烟
 ⑤ 参数量断言：64,056（d_ch=1, d_z=16 口径，±1%；design §3.2）
 ⑥ config↔model 一致性：cfg.d_z/head_act/d_model 与类默认同值；config_hash 稳定 + 对 d_z 敏感；
-   v1/v2 config_hash 零漂移（子进程口径，基准值取自 v1/v2 已落盘 run）
+   v1/v2/v3 config_hash 零漂移（子进程口径，基准值取自已落盘 run）；v4 hash 因口径变更登记新值
 ⑦ 双遮蔽命中 v4 + `v4b-` 前缀守卫正反例 + d_z/head_act 运行时断言正反例
+⑧ 划分口径 32/4/10（用户 2026-10-16 拍板长期口径 7/1/2）：train 32 / val 4（分层 2HC+2MDD）/
+   test 10 与 v1 固化 manifest 逐 ID 一致（保 test 可比）；v4 固化 manifest 落 v4 splits/
+   （首建写入、二建校验一致）；v1 旧 manifest 未被改动（hash+mtime）；default-off 钩子正反例
 
 运行：python3 models/gpfm-mamba-v4/tests/test_v4b.py（需 CUDA——mamba_ssm 官方 kernel）
 """
 
 from __future__ import annotations
 
+import hashlib
+import json
 import os
 
 # BLAS 线程上限（environment.md 惯例：有效 16 核 cgroup，须在 numpy 导入前设置；可覆盖）
@@ -41,11 +46,15 @@ sys.path.insert(0, str(_V1))
 sys.path.insert(0, str(_V4))
 
 import config as C  # noqa: E402
+import data as D  # noqa: E402  # v1 data.py（只读复用；split_manifest_override 钩子所在）
 import model as M  # noqa: E402
 
 EXPECTED_PARAMS = 64_056          # design §3.2：2+19+484+1+63,550
 V1_HASH_DEFAULT = "c6ff80ac1c43"  # 基准：v1 main-01 落盘 resolved config hash（零漂移守护）
 V2_HASH_DEFAULT = "fc2a9ce14948"  # 基准：v2d62-main-01 落盘 resolved config hash
+V3_HASH_DEFAULT = "0c2de30a4868"  # 基准：v3lp 落盘 resolved config hash
+V4_HASH_VAL4 = "f088186dd386"     # v4 默认 config hash——2026-10-16 划分口径变更（32/4/10）后新值；
+                                  # 旧值 251c7be664ea 作废。后续任何口径变更（含 d_z/d_ch/划分）须重算登记此值
 
 
 def build_model(cfg: C.Config, dev: str) -> M.VelocityNetwork:
@@ -247,7 +256,7 @@ def test_param_count(model) -> None:
 
 
 def test_config_model_consistency(cfg) -> None:
-    """⑥ config↔model 一致性 + config_hash 稳定性/敏感性 + v1/v2 基线 hash 零漂移。"""
+    """⑥ config↔model 一致性 + config_hash 稳定性/敏感性 + v1/v2/v3 基线 hash 零漂移 + v4 新值登记。"""
     assert cfg.d_model == 1 and cfg.d_z == 16 and cfg.head_act == "silu", \
         f"cfg 超参漂移：d_model {cfg.d_model} d_z {cfg.d_z} head_act {cfg.head_act}"
     sig = inspect.signature(M.VelocityNetwork.__init__)
@@ -257,18 +266,82 @@ def test_config_model_consistency(cfg) -> None:
     assert cfg.variant_name == "gpfm-mamba-v4b"
     h1, h2 = C.Config().config_hash(), C.build_config().config_hash()
     assert h1 == h2, "config_hash 不稳定（同配置两次构建不一致）"
+    assert h1 == V4_HASH_VAL4, \
+        f"v4 config_hash {h1} != 登记值 {V4_HASH_VAL4}（口径变更后须显式重算登记 V4_HASH_VAL4）"
     h_mut = dataclasses.replace(cfg, d_z=8).config_hash()
     assert h_mut != h1, "config_hash 对 d_z 不敏感（防线失效）"
-    # v1/v2 config_hash 零漂移（子进程隔离导入，基准 = 已落盘 run 的 resolved hash）
+    h_split = dataclasses.replace(cfg, n_val_subjects=2).config_hash()
+    assert h_split != h1, "config_hash 对 n_val_subjects 不敏感（划分口径未进 hash）"
+    # v1/v2/v3 config_hash 零漂移（子进程隔离导入，基准 = 已落盘 run 的 resolved hash）
     for path, base, name in ((str(_V1), V1_HASH_DEFAULT, "v1"),
-                             (str(_V1.parent / "gpfm-mamba-v2"), V2_HASH_DEFAULT, "v2")):
+                             (str(_V1.parent / "gpfm-mamba-v2"), V2_HASH_DEFAULT, "v2"),
+                             (str(_V1.parent / "gpfm-mamba-v3"), V3_HASH_DEFAULT, "v3lp")):
         code = (f"import sys; sys.path.insert(0, {path!r}); import config as C; "
                 f"print(C.Config().config_hash())")
         out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=True)
         got = out.stdout.strip()
-        assert got == base, f"{name} config_hash 漂移：{got} != 基准 {base}（v1/v2 须零改动）"
-    print(f"[config↔model] d_model/d_z/head_act 双处一致；config_hash {h1} 稳定且对 d_z 敏感；"
-          f"v1 {V1_HASH_DEFAULT} / v2 {V2_HASH_DEFAULT} 零漂移")
+        assert got == base, f"{name} config_hash 漂移：{got} != 基准 {base}（v1/v2/v3 须零改动）"
+    print(f"[config↔model] d_model/d_z/head_act 双处一致；config_hash {h1}（口径变更后登记值）稳定"
+          f"且对 d_z/n_val_subjects 敏感；v1 {V1_HASH_DEFAULT} / v2 {V2_HASH_DEFAULT} / "
+          f"v3lp {V3_HASH_DEFAULT} 零漂移")
+
+
+def test_split_caliber_val4() -> None:
+    """⑧ 划分口径 32/4/10（用户 2026-10-16 拍板 7/1/2，长期口径）：
+
+    - train 32 / val 4（分层 2 HC + 2 MDD）/ test 10；三折互斥、合计 46
+    - test 10 例与 v1 固化 manifest 逐 ID 一致（fold0 外层不动，保 v1/v2/v4 test 可比——关键断言）
+    - v4 固化 manifest 落 v4 自己的 splits/（经 v1 data.py default-off 钩子；首建写入、二建校验一致）
+    - v1 旧 manifest 未被改动（内容 hash + mtime 双检）
+    - default-off 钩子正反例：无 split_manifest_override 字段 → 原 v1 路径（v1/v2/v3 零漂移）
+    """
+    cfg = C.Config()
+    # default-off 钩子：无字段 → 原 v1 路径；v4 有 override → 指向自身 splits/
+    class _NoOverride:  # 模拟 v1/v2/v3 config（无 split_manifest_override 字段）
+        fold, subject_filter, split_seed = cfg.fold, cfg.subject_filter, cfg.split_seed
+
+    v1_manifest = _V1 / "splits" / "fold0_status_ok_seed42.json"
+    assert D.split_manifest_path(_NoOverride()) == str(v1_manifest), \
+        "default-off 钩子破坏：无字段时未回到 v1 原 manifest 路径（v1/v2/v3 零漂移守护）"
+    assert D.split_manifest_path(cfg) == cfg.split_manifest_override
+    assert Path(cfg.split_manifest_override).parent == _V4 / "splits", "override 未落在 v4 自己的 splits/"
+
+    v1_before = hashlib.sha256(v1_manifest.read_bytes()).hexdigest()
+    v1_mtime = v1_manifest.stat().st_mtime_ns
+
+    entries = D.load_manifest(cfg.data_root, subject_filter=cfg.subject_filter)
+    assert len(entries) == 46, f"status_ok 过滤后应 46 例，got {len(entries)}"
+    train, val, test = D.split_fold(
+        entries, n_folds=cfg.n_folds, fold=cfg.fold, split_seed=cfg.split_seed,
+        n_val_subjects=cfg.n_val_subjects, val_subject_seed=cfg.val_subject_seed,
+    )
+    assert (len(train), len(val), len(test)) == (32, 4, 10), \
+        f"划分计数漂移：train {len(train)} / val {len(val)} / test {len(test)}（应 32/4/10）"
+    vg = sorted(e["group"] for e in val)
+    assert vg == ["HC", "HC", "MDD", "MDD"], f"val 分层破坏（应 2 HC + 2 MDD）：{vg}"
+    ids = lambda xs: sorted(e["subject_id"] for e in xs)  # noqa: E731
+    assert not (set(ids(train)) & set(ids(val))) and not (set(ids(train)) & set(ids(test))) \
+        and not (set(ids(val)) & set(ids(test))), "三折受试者重叠（泄漏）"
+    assert len(ids(train) + ids(val) + ids(test)) == 46
+    # 关键可比性断言：test 与 v1 固化 manifest 逐 ID 一致
+    saved = json.loads(v1_manifest.read_text(encoding="utf-8"))
+    assert ids(test) == sorted(saved["test"]), \
+        f"test 折与 v1 固化 manifest 不一致（可比性破坏）：{ids(test)} vs {saved['test']}"
+    # v4 固化 manifest：首建写入（若已存在则校验一致）+ 二建校验一致（fixate_split 幂等）
+    p1 = D.fixate_split(cfg, train, val, test)
+    p2 = D.fixate_split(cfg, train, val, test)
+    assert Path(p1) == Path(cfg.split_manifest_override) and p1 == p2
+    m4 = json.loads(Path(p1).read_text(encoding="utf-8"))
+    assert m4["train"] == ids(train) and m4["val"] == ids(val) and m4["test"] == ids(test)
+    assert all(m4["groups"][str(s)] == g for s, g in
+               [(e["subject_id"], e["group"]) for e in val]), "manifest 分组记录与划分不一致"
+    # v1 旧 manifest 未被改动（内容 hash + mtime 双检）
+    assert hashlib.sha256(v1_manifest.read_bytes()).hexdigest() == v1_before, "v1 manifest 内容被改动"
+    assert v1_manifest.stat().st_mtime_ns == v1_mtime, "v1 manifest mtime 被改动"
+    print(f"[划分口径] train {len(train)} / val {len(val)} / test {len(test)}（32/4/10，7/1/2 长期口径）；"
+          f"val={ids(val)} 分层 {vg}；test 与 v1 manifest 逐 ID 一致（fold0 外层不动）；"
+          f"v4 manifest {_V4.name}/splits/{Path(p1).name} 首建+二建一致；"
+          f"v1 manifest hash+mtime 未动；default-off 钩子正反例通过")
 
 
 def test_masking_and_guard() -> None:
@@ -356,7 +429,8 @@ def main() -> None:
     test_param_count(model)                           # ⑤
     test_config_model_consistency(cfg)                # ⑥
     test_masking_and_guard()                          # ⑦
-    print("[PASS] test_v4b 七项全部断言通过")
+    test_split_caliber_val4()                         # ⑧（32/4/10 划分口径，2026-10-16 用户拍板）
+    print("[PASS] test_v4b 八项全部断言通过")
 
 
 if __name__ == "__main__":

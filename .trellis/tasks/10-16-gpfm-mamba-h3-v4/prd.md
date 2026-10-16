@@ -22,6 +22,7 @@
   4. 输出 v_θ ∈ (B, 62, 128)；**GPR 先验、复合损失 {1,1,0.1,0.1}、t~logit-normal、一步生成、EMA 0.999、best=内部验证总 loss 等训练口径全部与 v1/v2 一致**（只有速度网络结构变）。
 - **R2 命名与路径隔离**：目录 `models/gpfm-mamba-v4/`（用户口头 v3/v4-B 均指此，登记别名）；**v4 目录自带 model.py**（新结构 + EMA 类复制，config/model 双模块遮蔽，v1 代码零改动——A 方案的 v1 钩子方案随 A 弃用作废）；run_id 前缀 `v4b-`；outputs 沿用 `/root/npi/outputs/gpfm-mamba-f0/`（已拍板）；划分固化 manifest 读 v1 splits（只读共享）。
 - **R3 训练口径（与 v2 逐字段一致，结构除外）**：seed 1234、epochs 100、AdamW lr 1e-3 wd 1e-4 cosine、grad clip 0.5、监控/checkpoint/断点续传全套契约；fold0 status_ok 46 例；正式口径默认开启（`gen_lowpass_hz=40.0` 显式入 config）。
+  - **口径变更登记（用户 2026-10-16 拍板，取代此前「val=6」指示）：划分比例 train/val/test = 7/1/2，整数分配 = 32/4/10**（保 fold0 外层与 test 10 例不动——v1/v2/v4-B 同 test 可比；训练折 36 例内部按 7:1 → **train 32 / val 4**（分层 2 HC + 2 MDD，val_subject_seed=42 不变）；整体 32/4/10 ≈ 6.96/0.87/2.17）。**「以后」= 长期划分口径**：3.3 时回填 `.trellis/spec/research/data-pipeline.md`。实现 = v1 `data.py::split_manifest_path` 增 default-off 钩子 `split_manifest_override`（先例 `prior_bandlimit_hz`；v1/v2/v3 默认空 = 路径不变、config_hash 零漂移），v4 config `n_val_subjects=4` + 指向自己的固化 manifest `models/gpfm-mamba-v4/splits/`。**不可比注记**：① v4-B 训练数据 32 例 vs v1/v2 的 34 例（−6%，H3 判读材料竞争解释之一）；② best 判据基于 val4（v1/v2 为 val2）；③ test 折相同 ⇒ test 指标可比；④ Run 002/003 的 val 数值为 val2 口径，主 Run val 轨迹不与 bench 直接比。
 - **R4 评估口径（与 Run 017 完全同口径）**：evaluate + fc_metric + gc_psd，七维度与 v1/v2 并列成表；三检验按规范核算（指标 1 FC r≥0.95 / 指标 3 低频 δ–β ≤0.5 / 指标 2 用户目视）；R1 终点监控附分子分母。
 - **R5 H3 判定框架（判定权在用户）**：主判据 = GC 一致性 r（补充参考口径）回升幅度；判读三态（支持/部分支持/不支持）按「混合位置与显式性」框架表述——v4-B GC 回升至 v1 带（0.2+）且五维度不塌缩 ⇒ 显式组件式混合读出是 GC 载体（H3 支持）；GC ≈ v2（≈0.12）⇒ GC 偏弱主因不在结构侧（损失/数据侧）。**归因局限随结论登记**：v4-B vs v2 非单变量，两处变化（CI trunk + cMLP head）。
 - **R6 免费诊断副产品（仅诊断，不参与主判据）**：训后按源通道列组范数聚合模型内部有向 readout 矩阵 **M[j,i]=‖W^{(i),1}_{:,j}‖_F（行=源、列=靶，全仓库方向约定）**，与外部 GC 矩阵并列报告（热图 + Spearman 参考）；无 group lasso 监督项——损失保持与 v1/v2 逐字一致。
@@ -49,6 +50,7 @@
 3. ~~激活 σ~~ **已定：SiLU**
 4. ~~group lasso~~ **已定：不加**（损失与 v1/v2 逐字一致；训后免费算粗 readout M[j,i]）
 5. ~~d_ch~~ **已定：1（用户指定）**——每通道独立表征宽度 1 个标量；总参数 ≈64.1k（0.48× v2，head 占 99.2%），参数/样本比 ≈1.4:1（过拟合风险低，主风险反转为 trunk 容量塌缩 + RMSNorm(1) 退化，design §9.10）；欠拟合时第一预案 = 升 d_ch（口径变更须确认）
+7. ~~val 规模/划分比例~~ **已定（用户 2026-10-16）：长期口径 train/val/test = 7/1/2；本任务整数分配 32/4/10（保 fold0 test）**（R3 口径变更登记；3.3 回填 data-pipeline spec）
 6. （已定沿用）outputs 根 f0 + `v4b-` 前缀；训练/评估/数据口径与 v2 逐字段一致
 
 ## 子研究路由（1.0b / 1.0c）

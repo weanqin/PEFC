@@ -150,7 +150,7 @@ v1 train.py/sample.py 以显式 kwargs 构建：`VelocityNetwork(n_channels, pas
 
 ## 5. 训练口径（与 v2 逐字段一致；差异仅结构相关三字段）
 
-seed 1234 · epochs 100 · batch 256 · AdamW lr 1e-3 wd 1e-4 cosine · clip 0.5 · EMA 0.999 · t~logit-normal(−0.8,0.8) · 损失 {1,1,0.1,0.1} · best=内部验证总 loss（固定 t 网格确定性复算）· R9 全套监控/checkpoint/断点续传 · fold0 status_ok 46 例 · 划分固化 manifest 只读校验。
+seed 1234 · epochs 100 · batch 256 · AdamW lr 1e-3 wd 1e-4 cosine · clip 0.5 · EMA 0.999 · t~logit-normal(−0.8,0.8) · 损失 {1,1,0.1,0.1} · best=内部验证总 loss（固定 t 网格确定性复算）· R9 全套监控/checkpoint/断点续传 · fold0 status_ok 46 例 · 划分固化 manifest 只读校验。**划分口径变更（用户 2026-10-16，长期口径 train/val/test=7/1/2）**：v4-B 为 train 32 / val 4（2HC+2MDD）/ test 10（**test 与 v1/v2 相同**，fold0 外层不动）；`n_val_subjects=4` + `split_manifest_override` 指向 `models/gpfm-mamba-v4/splits/`（v1 data.py default-off 钩子，v1/v2/v3 manifest 与 config_hash 零漂移）；不可比注记见 prd R3（train 32 vs v1/v2 的 34 例）。
 
 - **1-epoch 基准（硬门禁）**：`--epochs 1 --bench --run-id v4b-bench-1ep`，登记 peak 显存/墙钟/it/s/四项损失走势/t 分桶 sanity + 100-epoch 外推；**摘要（含 OOM/时长预案建议）汇报用户确认后**才启动全程。
 - 主 Run：`nohup … --run-id v4b-main-01`（先 mkdir run 目录）；断点续传冒烟留痕。

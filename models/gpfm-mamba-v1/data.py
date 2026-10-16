@@ -185,6 +185,9 @@ class EdraWindowsDataset(Dataset):
 
 def split_manifest_path(cfg) -> str:
     """划分固化 manifest 路径：splits/fold{N}_{filter}_seed{S}.json（变体目录内，随仓库提交）。"""
+    override = getattr(cfg, "split_manifest_override", "")
+    if override:
+        return override  # 变体自备固化 manifest（v4-B val4 口径，2026-10-16 用户 7/1/2 拍板；v1/v2/v3 无此字段=路径不变）
     d = os.path.join(os.path.dirname(os.path.abspath(__file__)), "splits")
     return os.path.join(d, f"fold{cfg.fold}_{cfg.subject_filter}_seed{cfg.split_seed}.json")
 
