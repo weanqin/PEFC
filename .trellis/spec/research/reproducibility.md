@@ -7,6 +7,7 @@
 - **随机性全部显式固定**：python / numpy / 框架 / random 的 seed 同源统一设置；dataloader 的 shuffle 与 worker seed 一并固定；框架级确定性开关（如 `torch.backends.cudnn.deterministic`、`use_deterministic_algorithms`）按所用框架惯例显式声明开或关
 - **seed 是实验配置的一部分**，必须写入 `{TASK_DIR}/experiment.md` 的 Run 块配置区
 - **环境快照**：依赖清单（`pip freeze` / `conda env export` / lock 文件）随变体目录保存；环境任何变更至少在 Run 块注明，重大变更（框架大版本）视为新口径
+- **变体实验一律走 default-off config 钩子，不改旧路径默认行为**（惯例确立：v3 `prior_bandlimit_hz` → `split_manifest_override` → 早停 `early_stop_patience` → `lr_schedule` → v4a `bottleneck_rank`）：新变体能力以 config 字段 + `getattr(cfg, 字段, None)` 透传实现，**None 分支与原结构逐位一致**（state_dict 键不变、既有变体 config_hash 零漂移，须单测断言）；启用与否由变体目录的 resolved config 呈现，不以代码默认值区分变体。训练口径同样以钩子表达（早停 patience、恒定/退火 lr 等），不复制训练脚本
 
 ## 跑中
 
