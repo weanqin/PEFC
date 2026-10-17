@@ -28,6 +28,11 @@
 - **EC_pert readout 设计约束（Study II 落地时执行）**：主 readout=**低剂量斜率**（剂量-响应 D_j(r) 线性段 OLS 斜率），AUC 次、r* 降级（右删失标注 + τ 阈值敏感性登记）；r 网格低密度段加密；斜率/AUC 天然大=强，免方向翻转。比较器接口契约：npz{ec (62,62), readout∈{slope,auc,rstar}, subject_ids|'global', orientation='larger_is_stronger'}（rstar 须调用方先翻转）。
 - **方向约定全仓库统一**：EC 矩阵行=源、列=靶；有向边展平非三角（3782）。
 
+### 首版回填（2026-10-17，任务 10-17-perturb-ec-f0）
+
+- **τ 双口径 v2（用户拍板）**：操作性 = **相对自响应 τ̃=0.25**（D̃=D̄_{A→B}/D̄_{B→B}，敏感 0.50；D̃ 不作跨靶数值比较）；预注册绝对口径（独立样本对 q95）降为**材质性观察**照登（v4a-fmt θ\* 实测 100% 删失：q95≈1.82σ vs 全边最大响应 1.14σ）。变更依据：CRN 契约下 D 确定性，绝对口径实为极端材质性标尺。
+- **CRN 确定性契约、增益算子、readout 行为、隔离装载矩阵、首版实测基线**：可执行契约沉淀于 [perturb-ec-pipeline.md](./perturb-ec-pipeline.md)（study2 任务必读）。首验 AC6 判定：v4a-fmt θ\* 上未获结构收敛初步证据，缺口=跨通道传导特异性（四重证据），非流程/readout/参考侧问题。
+
 ## gpfm-mamba 路径生成产物口径：输出侧 40 Hz 低通（2026-10-13 登记，任务 10-12-gpfm-mamba-edra-f0，用户拍板）
 
 - **口径内容**：gpfm-mamba 路径（`models/gpfm-mamba-v1/v2/v3` 及后续派生）的生成样本自本口径起，一律先经「reflect-pad(±64) + rFFT 砖墙 >40 Hz 置零」低通（fs=500 Hz），再进入一切下游产物与指标：K 样本**逐条**滤波且在聚合（点预测均值/medoid/分位带）**之前**；GC/PSD 输入（`gc_input.npz`）、FC 指标、空间 R̂、轨迹图同源。**真实侧不滤**（数据 v4 已 bp1-40+notch50，契约见 [../data/edra.md](../data/edra.md)）。

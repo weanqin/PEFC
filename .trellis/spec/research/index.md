@@ -11,6 +11,7 @@
 | [reproducibility.md](./reproducibility.md) | seed/确定性/环境快照/复现三要素 |
 | [artifacts-management.md](./artifacts-management.md) | outputs 组织与 checkpoint 管理、清理纪律 |
 | [evaluation-calibers.md](./evaluation-calibers.md) | 指标定义先行、口径纪律与统计汇报 |
+| [perturb-ec-pipeline.md](./perturb-ec-pipeline.md) | Study II 扰动→EC 推断流程首版（CRN 契约/增益算子/τ 双口径 v2/readout 与比较接口/隔离装载矩阵/首版实测基线；任务路由到 `study2` 时必读） |
 | `../research/` 事实档案 | `.trellis/research/{context,progress,environment}.md`（SessionStart hook 自动注入；环境未记录的场景必须先问用户） |
 | [experiment-template.md](./experiment-template.md) | 任务创建时自动播种到 `{TASK_DIR}/experiment.md` 的模板 |
 | [surrogate-brain-qualification.md](./surrogate-brain-qualification.md) | Study I 代理脑合格性检验：FC 一致性（v2.1 Pearson 口径，GC 为补充参考）/ 人工视觉检验 / PSD 相似性三指标与固定 θ\* 前门禁（任务路由到 `study1` 时调用；指标 1/3 通过标准 2026-10-16 已回填） |

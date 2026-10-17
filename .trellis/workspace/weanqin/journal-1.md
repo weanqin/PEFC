@@ -137,3 +137,18 @@ v4a-fmt 基座上把 5 个 LayerNorm 位换 adaLN（emb(t)→逐 site SiLU→Lin
 ### Status
 
 [OK] **Completed**
+
+## Session 6: Study II 流程首验证（任务 10-17-perturb-ec-f0）全程
+<!-- trellis-session: v=2 fp=pertur-ec-f0 -->
+
+**Date**: 2026-10-17
+**Task**: fold0 虚拟扰动→EC 有效路径推断流程设计验证（任务 10-17-perturb-ec-f0，study2 路由）
+**Branch**: `main`
+
+### Summary
+
+以 v4a-fmt（非 adaLN）fold0 best ckpt 为冻结 θ\*（前置验证级偏离经用户 1.4 签认），完成 Study II 首任务全流程。规划：prd/design/implement + 双 mandate review（A-M1 先验通路事实更正：posterior_mean 逐通道、CRN 下跨通道仅速度网络单通路；B-Major1 gen_lowpass=40 陷阱、Major2 importlib sys.modules 先注册）。实现 B0-B6：perturb-ec-v1 变体（A 案增益算子用户拍板 + CRN 批采样 497 并批 + readout 三件套 + 子进程隔离参考侧 + 比较器）。关键节点：smoke 发现绝对 τ（独立样本对 q95≈1.82σ）下 100% 删失——CRN 确定性响应 vs 条件分布宽度材质性错配，τ v2 经用户拍板改相对自响应 τ̃=0.25（删失 3.7%、路径集交集 3201 边）；主 Run 10 例 27.7 min、跨 Run 逐位复现、100% 单调。AC6 如实判定：**该 θ\* 上未获结构收敛初步证据**（slope×GC ρ̄=−0.007 p=0.581、slope×gPDC ρ̄=+0.022 Holm p=0.112；ceiling 0.96、实际可检 ρ̄≈0.028 排除 power 不足），缺口四重证据（空间衰减平 −0.05、D̃ 近 r 无关 ~0.78、三 readout 同值、自/跨比 1.27×）定位 θ\* 跨通道传导弥散无特异性——为 Study I 损失侧迭代提供直接判据。spec 首版沉淀 spec/research/perturb-ec-pipeline.md + evaluation-calibers τ v2 登记 + context/progress 同步。trellis-check 通过（1 Major 数值笔误修复）。提交 5e66c88/2950630/37931dc/④。
+
+### Status
+
+[OK] **Completed**

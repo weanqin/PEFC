@@ -15,7 +15,7 @@
 | 路线 | 一句话方法 | 代码位置 | 状态 |
 |---|---|---|---|
 | Study I：EEG Conditional Future Generation | 训练代理脑 X_past→X_future（时序预测/条件生成/时间修补三视角），含 EEG 表征、未来生成、代理脑有效性三层次 | `models/gpfm-mamba-v1/`（+v2/v4b/v4a/v1-fmt/v4a-fmt/v4a-fmt-adaln 变体目录） | gpfm-mamba v1/v2/v4 已实现，fold0 单 seed 前置验证（任务 10-12）与 H3 消融（任务 10-16）完成；**5-fold 候选集已拍板 {v1, v4a}**；新范式 edra-fmt fold0 前置验证完成（任务 10-16-gpfm-mamba-fmt-f0，2026-10-17，LayerNorm/p=25/无低通/GC 阻塞口径）；adaLN(t) 消融中性结果（任务 10-17-gpfm-mamba-adaln-f0，2026-10-17，排序不变）；5-fold 主实验待启动 |
-| Study II：Critical Perturbation Connectivity Inference | 固定 θ* 后扰动源节点 A→测目标节点 B 响应→搜临界强度 r*_A→B=inf{r:Δ(r)≥τ}→临界扰动矩阵→连接强度 | 依赖 Study I | 四要素均未定义 |
+| Study II：Critical Perturbation Connectivity Inference | 固定 θ* 后扰动源节点 A→测目标节点 B 响应→搜临界强度 r*_A→B=inf{r:Δ(r)≥τ}→临界扰动矩阵→连接强度 | `models/perturb-ec-v1/`（θ\* 只读引用 Study I 产物） | **四要素首版已定义 + fold0 流程验证完成**（任务 10-17-perturb-ec-f0，2026-10-17）：CRN 确定性契约 + 增益算子 + τ 双口径 v2（操作性 τ̃=0.25 相对自响应）+ readout 三件套；v4a-fmt θ\* 上**未获结构收敛初步证据**（缺口=跨通道传导特异性，非流程问题）；流程规范首版见 spec/research/perturb-ec-pipeline.md |
 
 Study I 是 Study II 的前置（先建立可信代理脑，再做虚拟扰动）。注意：**预测质量 ≠ Surrogate Brain Validity**，须作为两个独立问题评价。
 
@@ -35,20 +35,22 @@ Study I 是 Study II 的前置（先建立可信代理脑，再做虚拟扰动�
 
 2026-10-17 adaLN(t) 调制归一化消融（任务 10-17-gpfm-mamba-adaln-f0，v4a-fmt 基座 fold0 单 seed，A 案 scale/shift + fork_rng 恒等初始化）：**中性结果**——与 v4afmt-main-01 全维度持平（MAE 0.70571 vs 0.70565、FC 0.9797 vs 0.98147、指标3 0.30605 vs 0.30134 均 ✓，Δ≤0.005 单 seed 噪声框内），无维度方向性改善；过散/高频尾微加重（+44.5%→+47.0%、gen>40Hz 4.92%→5.19%）。两 Run 同 seed 初始权重逐位相同（fork_rng 契约，epoch-0 step-1 损失逐位相等 1.4787474870681763），分叉恰为处理效应——**该规模（140k）与纪律下，速度网络未从 norm 仿射 t 条件化获得超出输入侧 temb 注入的可用信息**。候选集 {v1, v4a} 排序不变；RNG 中性构建惯例已入 reproducibility.md。
 
+2026-10-17 Study II 流程首验证（任务 10-17-perturb-ec-f0，v4a-fmt fold0 冻结 θ\*·前置验证级偏离经用户签认，10 例 CRN 批采样 27.7 min）：**流程可跑通且确定性契约全兑现**（r=0 同批逐位恒等、跨 Run 逐位复现、100% 单调剂量-响应）；四要素首版落地（增益算子/CRN-RMS 度量/τ 双口径 v2——绝对口径 q95≈1.82σ 全边 100% 删失系材质性标尺错配，操作性改相对自响应 τ̃=0.25 删失 3.7%/路径集交集 3201 边；r\* 近二元如实登记）；**AC6 如实判定：该 θ\* 上未获结构收敛初步证据**（slope×GC ρ̄=−0.007 p=0.581、slope×gPDC ρ̄=+0.022 Holm p=0.112；ceiling 0.96、实际可检 ρ̄≈0.028 排除 power 不足）——缺口四重证据定位 **θ\* 跨通道传导弥散无特异性**（空间衰减平 ρ=−0.05、D̃ 近 r 无关 ~0.78、三 readout ρ 同值、自/跨比仅 1.27×），为 Study I 迭代（损失侧跨通道监督）提供直接判据；流程/契约与实测基线沉淀 spec/research/perturb-ec-pipeline.md。
+
 ## 待用户拍板
 
-- 代理脑模型选型（Study I 结构与训练方案）
-- 扰动算子 P(X,A,r)：加性/其他形式、输入层或中间表示、单时刻或时间段、正负方向、强度 r 定义
-- 输出变化度量 D（未来波形差异 → 响应强度）
-- 响应阈值 τ：须区分模型自然波动与扰动真实响应，应作为独立算法模块设计
-- 临界强度搜索策略（逐步增加 / 区间搜索 / 数值优化）
-- r* → 连接强度的最终映射
+- ~~扰动算子 P / 度量 D / 阈值 τ / 搜索策略~~ → **已首版定义**（2026-10-17 用户拍板 A 案增益算子 + τ̃=0.25 相对自响应；契约见 spec/research/perturb-ec-pipeline.md，变更须走口径变更纪律）
+- r\* → 连接强度的最终映射（框架第 14 步，现仅候选 readout 三件套）
+- Study II 缺口应对路径：换跨通道特异性更强的代理脑（Study I 损失侧迭代）后复跑流程 / B 案算子等口径变更 / 其他
+- 5-fold 主实验（范式/口径）与 Study II 复跑的先后关系
+- （沿既有）指标2 视觉人工判；GC 阻塞解除时点
 
 ## 关键文档地图
 
 - `docs/research/research-direction.md` — 研究框架权威文档（主题/两任务/方法框架/两子研究/术语表/核心逻辑）
-- `.trellis/spec/research/` — 科研工作流规范九份（实验日志、路径隔离、可复现性、产物管理、评估口径、实验模板、代理脑合格性检验、数据管道、可视化）
+- `.trellis/spec/research/` — 科研工作流规范十份（实验日志、路径隔离、可复现性、产物管理、评估口径、实验模板、代理脑合格性检验、数据管道、可视化、**Study II 扰动流程**）
 - `.trellis/spec/research/surrogate-brain-qualification.md` — Study I 代理脑合格性检验规范（任务路由到 `study1` 时经 1.0b/1.3 调用；固定 θ\* 前须完成三项检验）
+- `.trellis/spec/research/perturb-ec-pipeline.md` — Study II 扰动→EC 推断流程规范首版（任务路由到 `study2` 时必读；CRN 契约/τ 双口径/隔离矩阵/实测基线）
 - `.trellis/research/environment.md` — 环境契约（写/跑代码前必读）
 - **实验笔记目录与命名惯例**：随 Trellis 任务走 —— 每任务 `{TASK_DIR}/experiment.md`（创建任务时自动播种，格式见 spec/research/experiment-template.md）；跨任务独立实验记录目录未设立，如需要由用户指定
 

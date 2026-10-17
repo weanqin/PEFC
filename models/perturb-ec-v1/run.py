@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""run.py — perturb-ec-v1 CLI 入口（design §1；B0 脚手架 + B1 smoke + B2 bench）。
+r"""run.py — perturb-ec-v1 CLI 入口（design §1；B0 脚手架 + B1 smoke + B2 bench）。
 
 用法（implement.md 验证命令速查）：
   python3 models/perturb-ec-v1/run.py --stage smoke --run-id smoke-01
@@ -988,7 +988,7 @@ def _dist_mm_matrix(coords: np.ndarray) -> np.ndarray:
 
 
 def stage_readout(run_id: str = "readout-01", main_run_id: str = "main-01") -> None:
-    """B4 readout（implement.md B4 / experiment.md Run 004）：从 main-01 产物（只读、不重采样、
+    r"""B4 readout（implement.md B4 / experiment.md Run 004）：从 main-01 产物（只读、不重采样、
     不加载 θ\* 网络）计算三 readout → 受试者级 EC 矩阵 + load_ec_pert 契约 npz ×3 readout
     ×10 例 + 有效路径集（τ̃=0.25 主 / 0.50 敏感性 / slope top-100 池+逐例）+ 汇总指标。
 
@@ -1087,7 +1087,7 @@ def stage_readout(run_id: str = "readout-01", main_run_id: str = "main-01") -> N
              rstar_abs_q99=rs_all["rstar_abs_q99"], strength_ttil025=rs_all["strength025"],
              ec_group_slope=slope_all.mean(0), ec_group_auc=auc_all.mean(0),
              ec_group_rstar_strength=rs_all["strength025"].mean(0))
-    log(f"落盘 readout_products.npz（逐例三 readout + r\* 五口径 + 组均矩阵）+ 契约 npz ×"
+    log(f"落盘 readout_products.npz（逐例三 readout + r\\* 五口径 + 组均矩阵）+ 契约 npz ×"
         f"{3 * len(sids)}（ec_pert_{{slope,auc,rstar}}_s*，rstar 已翻转）")
 
     # ---- 汇总指标：删失率（两档 τ̃ + 绝对三档）/ r* 频次 / slope·AUC 分布 ----
@@ -1110,7 +1110,7 @@ def stage_readout(run_id: str = "readout-01", main_run_id: str = "main-01") -> N
     tot = len(sids) * n_cross
     n_first025 = freq025[f"{PC.PERT_R_GRID[0]:g}"]
     n_cens025 = freq025[f"{PC.R_NEXT:g}"]
-    log(f"r\* 分布形态（τ̃0.25，{tot} 边·例）：首档 {PC.PERT_R_GRID[0]:g} = "
+    log(f"r\\* 分布形态（τ̃0.25，{tot} 边·例）：首档 {PC.PERT_R_GRID[0]:g} = "
         f"{n_first025}（{n_first025 / tot * 100:.1f}%）；中间档 = "
         f"{tot - n_first025 - n_cens025}（{(tot - n_first025 - n_cens025) / tot * 100:.1f}%）；"
         f"删失 {PC.R_NEXT:g} = {n_cens025}（{n_cens025 / tot * 100:.1f}%）——近二元形态如实登记")

@@ -59,4 +59,4 @@
 ## 附注：Study II 扰动 EC 对比的下游约束（2026-10-13 登记）
 
 - 观测参考侧管线与口径见任务 `10-13-baseline-ec-v1`（GC+gPDC 两参考法，TE 经用户拍板取消）与 [evaluation-calibers.md](./evaluation-calibers.md) 的「Study II 扰动 EC 对比口径」节；术语统一 observational directed-connectivity references，目标是结构收敛性验证。
-- **EC_pert readout 约束**：主 readout=低剂量斜率（r 网格低密度段加密），AUC 次、r* 降级（右删失+τ 敏感性登记）；比较器接口已就绪（`models/baseline-ec-v1/compare.py::load_ec_pert`，契约 orientation='larger_is_stronger'，rstar 须调用方先翻转）。
+- **EC_pert readout 约束**：主 readout=低剂量斜率（r 网格低密度段加密），AUC 次、r* 降级（右删失+τ 敏感性登记）；比较器接口已就绪（`models/baseline-ec-v1/compare.py::load_ec_pert`，契约 orientation='larger_is_stronger'，rstar 须调用方先翻转）。首版实现契约与实测基线（含 τ 双口径 v2）见 [perturb-ec-pipeline.md](./perturb-ec-pipeline.md)。

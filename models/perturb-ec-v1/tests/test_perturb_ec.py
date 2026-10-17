@@ -250,7 +250,7 @@ def test_readout_math() -> None:
         assert (Dc[a, :, other] == 0).all(), f"D[{a},:,{other}] 非源通道响应非零"
     print(f"[③ readout] D̄=2r → slope=2（主/敏感段）、AUC={PC.R_MAX}（解析）；τ=3.0 → r*={PC.R_NEXT}"
           f" → strength=0；翻转偏移 {PC.R_NEXT} 由 R_GRID 推导；有效路径对角/删失排除；"
-          f"D̃ 合成（跨 0.5/自 1/r=0 槽 0）+ 相对口径 r\* 两分支；"
+          f"D̃ 合成（跨 0.5/自 1/r=0 槽 0）+ 相对口径 r\\* 两分支；"
           f"契约 npz 四字段往返；D/null 解析值（1.0/0.25/2.0）全中")
 
 
