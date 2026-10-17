@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/research/evaluation-calibers.md", "reason": "核对：主指标（距离偏相关 Spearman ρ）与主 readout（低剂量斜率）预注册且唯一；Holm/bootstrap/seed 2026 合规；方向约定与 3782 边口径；术语纪律（无 ground-truth 表述）；档位调整不超一次且登记"}
+{"file": ".trellis/spec/research/path-isolation.md", "reason": "核对：只写 models/perturb-ec-v1/ 与 outputs/perturb-ec-f0/；gpfm-mamba-v1、v4a-fmt、baseline-ec-v1、旧 outputs 根、数据集本体零改写；config_hash 05d9bb875a2c 未漂移"}
+{"file": ".trellis/spec/research/reproducibility.md", "reason": "核对：CRN 契约（显式 eps/eta、r=0 逐位恒等）有单测锁定；seeds/config.yaml/env_snapshot 齐全；Run 块口径登记完整"}
+{"file": ".trellis/spec/research/experiment-template.md", "reason": "核对：experiment.md Run 块结构（目的/配置含实现口径声明/结果含数值与图路径/结论）完整；先登记后跑纪律"}
+{"file": ".trellis/spec/research/surrogate-brain-qualification.md", "reason": "核对：θ* 前置验证级偏离的登记与表述纪律（不宣称代理脑合格、不出现 genGC 一致性产物）；Study II 下游约束（readout 主次序/r* 右删失+τ 敏感性）落实"}
+{"file": ".trellis/spec/research/artifacts-management.md", "reason": "核对：产物布局/命名/figs 落盘符合规范；不可覆盖目录未覆盖"}

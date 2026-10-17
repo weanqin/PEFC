@@ -1,0 +1,8 @@
+{"file": ".trellis/spec/research/evaluation-calibers.md", "reason": "Study II 扰动 EC 对比口径总纲：readout 三件套约束（主=低剂量斜率）、方向约定（行=源列=靶/3782 边）、load_ec_pert 接口契约、术语纪律（observational references）、口径变更纪律（K/N_w/网格一次调整权）"}
+{"file": ".trellis/spec/research/path-isolation.md", "reason": "新变体目录 models/perturb-ec-v1/ 的只读复用与禁写边界契约（gpfm-mamba-v1 / v4a-fmt / baseline-ec-v1 只读）"}
+{"file": ".trellis/spec/research/surrogate-brain-qualification.md", "reason": "θ* 门禁语境（本任务为已登记的前置验证级偏离）+「Study II 扰动 EC 对比的下游约束」附注（readout 主次序、比较器契约、结构收敛性目标）"}
+{"file": ".trellis/spec/research/data-pipeline.md", "reason": "fold0 划分契约与 EdraWindowsDataset 接口（past 384/future 128/stride 64、评估侧 z-score 统计口径）"}
+{"file": ".trellis/spec/research/reproducibility.md", "reason": "seed/确定性纪律（CRN 契约、config_hash 校验、env_snapshot、RNG 中性构建惯例）"}
+{"file": ".trellis/spec/research/artifacts-management.md", "reason": "outputs/perturb-ec-f0/<run-id>/ 产物布局与落盘纪律（config.yaml/env_snapshot/logs/figs）"}
+{"file": ".trellis/spec/research/visualization.md", "reason": "诊断六件套图表统一走 common/visualizer 的绘制规范"}
+{"file": ".trellis/research/environment.md", "reason": "环境契约：RTX 4080S/16 核 cgroup/BLAS 护栏 _blas_guard 惯例/nohup 长跑/数据落点"}
