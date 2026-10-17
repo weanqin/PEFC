@@ -115,3 +115,25 @@ v1-fmt/v4a-fmt（LayerNorm/p=25/无低通/genGC-realGC 阻塞口径，48 例 34/
 ### Status
 
 [OK] **Completed**
+
+
+## Session 5: v4a-fmt adaLN 调制归一化消融（任务 10-17-gpfm-mamba-adaln-f0）全程
+<!-- trellis-session: v=2 fp=3869b1c605f7541e -->
+
+**Date**: 2026-10-17
+**Task**: v4a-fmt adaLN 调制归一化消融（任务 10-17-gpfm-mamba-adaln-f0）全程
+**Branch**: `main`
+
+### Summary
+
+v4a-fmt 基座上把 5 个 LayerNorm 位换 adaLN（emb(t)→逐 site SiLU→Linear(16,124) 零初始化，A 案 scale/shift 用户拍板，参数 130366→140906）。流程：1.0c 适配研究（DiT 锚核）→ 双 Mandate review（共同 Major：nn.Linear 构建消耗全局 RNG→采纳 fork_rng 中性构造）→ 实现+六段单测+五套回归全绿 → smoke/bench → 主 Run 54ep 早停（best 44，val 0.66262）→ 正式评估（GC 阻塞口径）→ trellis-check 通过（6 处记录笔误修复）。结果：与 v4afmt-main-01 全维度持平（MAE 0.70571 vs 0.70565、FC 0.9797 vs 0.98147、指标3 0.30605 vs 0.30134 均✓，Δ≤0.005），中性结论——该规模/纪律下 t 条件调制无超出输入侧 temb 注入的增量收益；候选集 {v1,v4a} 排序不变。亮点证据：两 Run epoch-0 step-1 损失逐位相等（1.4787474870681763，fork_rng 契约 run 级兑现）。spec 回填：reproducibility RNG 中性构建惯例 + cond_adaln 钩子链、context 技术路线登记、progress 同步。提交 847c728/1b8b4ce/c235943。同 session 前段完成 fmt-f0 收尾（Session 4 已记）。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c235943` | docs(adaln-f0): experiment.md Run 001–004 回填 + 对比表（中性结论·单变量）+ spec 回填（reproducibility RNG 中性构建惯例/钩子链、context 技术路线登记）+ research 记忆同步（提交点④） |
+
+### Status
+
+[OK] **Completed**
