@@ -10,6 +10,8 @@
   与 GC 口径同一输入，保证与旧口径可比的「同输入、不同度量」）
 
 运行：python3 models/gpfm-mamba-v1/fc_metric.py --run-id main-01
+      python3 models/gpfm-mamba-v1-fmt/fc_metric.py --run-id v1fmt-main-01  # fmt 包装经
+      --outputs-root 传新根（/root/npi/outputs/gpfm-mamba-fmt-f0）
 """
 
 from __future__ import annotations
@@ -25,6 +27,10 @@ import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from gc_psd import t_two_sided_p  # noqa: E402  同变体内复用（Lentz 连分式 incomplete beta）
+
+# 默认 outputs 根 = 原硬编码路径（零漂移口径：不传 --outputs-root 时行为与旧版逐位一致；
+# fmt 等新任务经包装脚本传各自新根——default-off 参数惯例）
+DEFAULT_OUTPUTS_ROOT = "/root/npi/outputs/gpfm-mamba-f0"
 
 
 def subject_fc(x_subj: np.ndarray) -> np.ndarray:
@@ -62,9 +68,12 @@ def one_sample_ttest(x: np.ndarray):
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--run-id", default="main-01")
+    ap.add_argument("--outputs-root", default=DEFAULT_OUTPUTS_ROOT,
+                    help=f"任务 outputs 根（默认 {DEFAULT_OUTPUTS_ROOT} = 原硬编码路径，零漂移；"
+                         f"fmt 等新任务传各自新根）")
     args = ap.parse_args()
 
-    base = Path("/root/npi/outputs/gpfm-mamba-f0") / args.run_id
+    base = Path(args.outputs_root) / args.run_id
     d = np.load(base / "eval" / "gc_input.npz")
     gen, real, subj = d["gen"], d["real"], d["win_subj"]
     subjects = np.unique(subj)

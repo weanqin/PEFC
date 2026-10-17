@@ -21,7 +21,14 @@ GC（future-only 口径，两组参数完全一致）：
 
 PSD（两组完全相同分段与拼接）：测试折抽取互不重叠 future 段（窗 start ≡ 0 mod 2·stride →
 future 首尾相接），逐受试者拼成连续序列，丢前导残段对齐绝对 512 点网格后切 512 点块 →
-Welch（Hann，nperseg=512，fs=500 → 0.977 Hz≈0.98 Hz）。
+Welch（Hann，nperseg=512，分辨率 = fs/nperseg——fs=500 → 0.977 Hz、fs=250 → 0.488 Hz；
+fs 由调用方传入，250 Hz fmt 数据集经 evaluate.py 传 cfg.fs）。
+
+skip_gc default-off 钩子（用户 2026-10-16 拍板 D1：genGC vs real GC 对比暂时阻塞）：
+run_all(skip_gc=True) 跳过阶段 1/2（BIC 选阶 + 两组 VAR 条件 GC + 一致性/bootstrap），
+**PSD 与空间结构归因照跑**（二者只依赖 gc_input.npz 的 gen/real/win 元数据，与 GC 阶段
+无数据依赖）；summary/日志显式记 "gc": "skipped(blocked)"，且不落任何 GC 产物（gc_real/
+gc_gen/gc_F_p_* npy 与 gc 矩阵图、结果 json 的 gc 数组/图引用）。默认 False = 原行为逐位不变。
 
 指标 4（空间结构归因）：生成样本 62×62 零滞后相关 R̂ vs K_s（Ricker3D σ=0.080，加 jitter 前
 原始核）vs 真实 R 三方对比（Frobenius + 上三角 Pearson/Spearman + 数值表）。
@@ -393,7 +400,9 @@ def _bootstrap_corr_ci(pieces_real: List[Dict], pieces_gen: List[Dict], p: int,
 def run_all(run_dir: str, data_root: str, sigma_s: float, jitter_s: float,
             p_max: int = 10, bootstrap_n: int = 1000, fs: float = 500.0,
             nperseg: int = 512, stride: int = 64, past_len: int = 384,
-            log: Optional[Callable] = None, jsonl=None) -> Dict:
+            log: Optional[Callable] = None, jsonl=None,
+            skip_gc: bool = False) -> Dict:
+    """skip_gc=True：跳过阶段 1/2（GC 对比阻塞口径，D1），PSD + 空间结构归因照跑（default-off）。"""
     log = log or print
     run_dir = os.path.abspath(run_dir)
     eval_dir = os.path.join(run_dir, "eval")
@@ -411,61 +420,70 @@ def run_all(run_dir: str, data_root: str, sigma_s: float, jitter_s: float,
     log(f"[gc] 输入 {real.shape} | 受试者 {len(subjects)} 例 | future-only 口径 | "
         f"p_max={p_max}")
 
-    # ---- 阶段 1：BIC（真实组对齐行集 Gram 选 p，两组共用）----
-    t0 = time.time()
-    pieces_max_real = [gram_pieces(real[m], p_max, row_from=p_max) for m in subj_masks]
-    p_star, bic_tab = bic_from_gram(sum_grams(pieces_max_real), log=log)
-    log(f"[gc] BIC 完成 {time.time() - t0:.1f}s | p*={p_star}")
+    # ---- 阶段 1/2：BIC + 两组条件 GC（skip_gc=True 时整体跳过；GC 对比阻塞口径 D1）----
+    gc_stats = "skipped(blocked)"
+    gc_fig = None
+    if skip_gc:
+        log("[gc] skip_gc=True：跳过 BIC/VAR 条件 GC/一致性/bootstrap（genGC vs real GC 对比暂时"
+            "阻塞，D1 拍板）；不落任何 GC 产物；PSD 与空间结构归因照跑")
+        if jsonl:
+            jsonl.write({"stage": "gc", "gc": "skipped(blocked)",
+                         "note": "GC 对比阻塞（D1）；PSD/空间结构归因照跑"})
+    else:
+        t0 = time.time()
+        pieces_max_real = [gram_pieces(real[m], p_max, row_from=p_max) for m in subj_masks]
+        p_star, bic_tab = bic_from_gram(sum_grams(pieces_max_real), log=log)
+        log(f"[gc] BIC 完成 {time.time() - t0:.1f}s | p*={p_star}")
 
-    # ---- 阶段 2：两组条件 GC（受试者级 Gram，精确行集 t∈[p*,F)）----
-    pieces_real, pieces_gen = [], []
-    for si, m in enumerate(subj_masks):
-        pieces_real.append(gram_pieces(real[m], p_star))
-        pieces_gen.append(gram_pieces(gen[m], p_star))
-        if (si + 1) % 5 == 0 or si == len(subj_masks) - 1:
-            el = time.time() - t0
-            log(f"[gc-gram] 受试者 {si + 1}/{len(subj_masks)} | {el:.0f}s | "
-                f"ETA {el / (si + 1) * (len(subj_masks) - si - 1):.0f}s")
-    del pieces_max_real
-    out_r = conditional_gc(sum_grams(pieces_real), p_star)
-    out_g = conditional_gc(sum_grams(pieces_gen), p_star)
-    np.save(os.path.join(eval_dir, "gc_real.npy"), out_r["gc"])
-    np.save(os.path.join(eval_dir, "gc_gen.npy"), out_g["gc"])
-    np.savez(os.path.join(eval_dir, "gc_F_p_real.npz"), Fmat=out_r["F"], pmat=out_r["p"])
-    np.savez(os.path.join(eval_dir, "gc_F_p_gen.npz"), Fmat=out_g["F"], pmat=out_g["p"])
+        # ---- 阶段 2：两组条件 GC（受试者级 Gram，精确行集 t∈[p*,F)）----
+        pieces_real, pieces_gen = [], []
+        for si, m in enumerate(subj_masks):
+            pieces_real.append(gram_pieces(real[m], p_star))
+            pieces_gen.append(gram_pieces(gen[m], p_star))
+            if (si + 1) % 5 == 0 or si == len(subj_masks) - 1:
+                el = time.time() - t0
+                log(f"[gc-gram] 受试者 {si + 1}/{len(subj_masks)} | {el:.0f}s | "
+                    f"ETA {el / (si + 1) * (len(subj_masks) - si - 1):.0f}s")
+        del pieces_max_real
+        out_r = conditional_gc(sum_grams(pieces_real), p_star)
+        out_g = conditional_gc(sum_grams(pieces_gen), p_star)
+        np.save(os.path.join(eval_dir, "gc_real.npy"), out_r["gc"])
+        np.save(os.path.join(eval_dir, "gc_gen.npy"), out_g["gc"])
+        np.savez(os.path.join(eval_dir, "gc_F_p_real.npz"), Fmat=out_r["F"], pmat=out_r["p"])
+        np.savez(os.path.join(eval_dir, "gc_F_p_gen.npz"), Fmat=out_g["F"], pmat=out_g["p"])
 
-    xr, xg = offdiag_flat(out_r["gc"]), offdiag_flat(out_g["gc"])
-    r, p_r = r_and_p(xr, xg)
-    rho, p_rho = r_and_p(rank_transform(xr), rank_transform(xg))
-    log(f"[gc] 矩阵一致性：Pearson r={r:.4f} (raw p={p_r:.2e}) | Spearman rho={rho:.4f} "
-        f"(raw p={p_rho:.2e}) | n_offdiag={len(xr)}（矩阵元素非独立，p 为朴素口径）")
+        xr, xg = offdiag_flat(out_r["gc"]), offdiag_flat(out_g["gc"])
+        r, p_r = r_and_p(xr, xg)
+        rho, p_rho = r_and_p(rank_transform(xr), rank_transform(xg))
+        log(f"[gc] 矩阵一致性：Pearson r={r:.4f} (raw p={p_r:.2e}) | Spearman rho={rho:.4f} "
+            f"(raw p={p_rho:.2e}) | n_offdiag={len(xr)}（矩阵元素非独立，p 为朴素口径）")
 
-    qr = bh_fdr(out_r["p"][~np.eye(C, dtype=bool)])
-    qg = bh_fdr(out_g["p"][~np.eye(C, dtype=bool)])
-    sig_r, sig_g = qr < 0.05, qg < 0.05
-    jac = float(np.sum(sig_r & sig_g) / max(np.sum(sig_r | sig_g), 1))
-    log(f"[gc] BH-FDR q<0.05 显著边：真实 {int(sig_r.sum())}/{len(qr)} | 生成 {int(sig_g.sum())} | "
-        f"Jaccard {jac:.3f}")
+        qr = bh_fdr(out_r["p"][~np.eye(C, dtype=bool)])
+        qg = bh_fdr(out_g["p"][~np.eye(C, dtype=bool)])
+        sig_r, sig_g = qr < 0.05, qg < 0.05
+        jac = float(np.sum(sig_r & sig_g) / max(np.sum(sig_r | sig_g), 1))
+        log(f"[gc] BH-FDR q<0.05 显著边：真实 {int(sig_r.sum())}/{len(qr)} | 生成 {int(sig_g.sum())} | "
+            f"Jaccard {jac:.3f}")
 
-    boot = _bootstrap_corr_ci(pieces_real, pieces_gen, p_star, bootstrap_n,
-                              BOOTSTRAP_SEED, log)
-    log(f"[gc] bootstrap（受试者级 {bootstrap_n} 次）：r 95% CI {boot['pearson_ci95']} | "
-        f"rho 95% CI {boot['spearman_ci95']}")
+        boot = _bootstrap_corr_ci(pieces_real, pieces_gen, p_star, bootstrap_n,
+                                  BOOTSTRAP_SEED, log)
+        log(f"[gc] bootstrap（受试者级 {bootstrap_n} 次）：r 95% CI {boot['pearson_ci95']} | "
+            f"rho 95% CI {boot['spearman_ci95']}")
 
-    gc_stats = {"p_star": p_star, "bic_table": bic_tab, "n_rows": int(out_r["n"]),
-                "pearson_r": round(r, 5), "pearson_raw_p": p_r,
-                "spearman_rho": round(rho, 5), "spearman_raw_p": p_rho,
-                "n_sig_q05": {"real": int(sig_r.sum()), "gen": int(sig_g.sum())},
-                "sig_jaccard": round(jac, 4), "bootstrap": boot,
-                "gc_range": {"real": [float(xr.min()), float(xr.max())],
-                             "gen": [float(xg.min()), float(xg.max())]}}
-    if jsonl:
-        jsonl.write({"stage": "gc", **gc_stats})
+        gc_stats = {"p_star": p_star, "bic_table": bic_tab, "n_rows": int(out_r["n"]),
+                    "pearson_r": round(r, 5), "pearson_raw_p": p_r,
+                    "spearman_rho": round(rho, 5), "spearman_raw_p": p_rho,
+                    "n_sig_q05": {"real": int(sig_r.sum()), "gen": int(sig_g.sum())},
+                    "sig_jaccard": round(jac, 4), "bootstrap": boot,
+                    "gc_range": {"real": [float(xr.min()), float(xr.max())],
+                                 "gen": [float(xg.min()), float(xg.max())]}}
+        if jsonl:
+            jsonl.write({"stage": "gc", **gc_stats})
 
-    gc_fig = viz.render("gc_matrix", {
-        "gc_real": out_r["gc"], "gc_gen": out_g["gc"],
-        "stats": {"pearson_r": r, "spearman_rho": rho, "pearson_ci95": boot["pearson_ci95"]},
-    }, f"eval_gc_matrix_{run_id}.png")
+        gc_fig = viz.render("gc_matrix", {
+            "gc_real": out_r["gc"], "gc_gen": out_g["gc"],
+            "stats": {"pearson_r": r, "spearman_rho": rho, "pearson_ci95": boot["pearson_ci95"]},
+        }, f"eval_gc_matrix_{run_id}.png")
 
     # ---- 阶段 3：PSD（两组完全相同分段与拼接；绝对 512 点网格对齐）----
     t0 = time.time()
@@ -529,13 +547,19 @@ def run_all(run_dir: str, data_root: str, sigma_s: float, jitter_s: float,
     sp_fig = viz.render("spatial_corr", {"R_hat": R_hat, "K_s": K_s, "R_real": R_real,
                                          "stats": sp}, f"eval_spatial_corr_{run_id}.png")
 
-    res = {"gc": gc_stats, "psd": psd_stats, "spatial": sp,
-           "figures": [gc_fig, psd_fig, sp_fig],
-           "arrays": {"gc_real": "eval/gc_real.npy", "gc_gen": "eval/gc_gen.npy",
-                      "psd": "eval/psd.npz", "spatial": "eval/spatial_corr.npz"}}
+    if skip_gc:
+        res = {"gc": gc_stats, "psd": psd_stats, "spatial": sp,
+               "figures": [psd_fig, sp_fig],
+               "arrays": {"psd": "eval/psd.npz", "spatial": "eval/spatial_corr.npz"}}
+    else:
+        res = {"gc": gc_stats, "psd": psd_stats, "spatial": sp,
+               "figures": [gc_fig, psd_fig, sp_fig],
+               "arrays": {"gc_real": "eval/gc_real.npy", "gc_gen": "eval/gc_gen.npy",
+                          "psd": "eval/psd.npz", "spatial": "eval/spatial_corr.npz"}}
     with open(os.path.join(eval_dir, "gc_psd_results.json"), "w") as fp:
         json.dump(res, fp, indent=2, ensure_ascii=False, default=float)
-    log(f"[gc_psd] 结果落 {eval_dir}/gc_psd_results.json + npy | 图 {res['figures']}")
+    log(f"[gc_psd] 结果落 {eval_dir}/gc_psd_results.json + npy | 图 {res['figures']}"
+        f"{'（GC 对比阻塞：无 gc 产物/图）' if skip_gc else ''}")
     return res
 
 

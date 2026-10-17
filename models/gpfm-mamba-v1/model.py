@@ -2,7 +2,9 @@
 
 - Token 序列 512：前 384 = past 条件前缀，后 128 = future 流变量位置
 - 逐时间步输入 = 62 通道值 + 段类型嵌入（past/future 可学习标量）+（future 位置）全局 t 的正弦嵌入（dim 16 广播）
-- 投影 Linear(→16) → 4×MambaBlock(d_model=16, d_state=16, d_conv=4, expand=2) → 输出头 RMSNorm+Linear(16→62)
+- 投影 Linear(→16) → 4×MambaBlock(d_model=16, d_state=16, d_conv=4, expand=2) → 输出头
+  norm + Linear(16→62)（norm 默认 RMSNorm，norm_type="layernorm" 时为 LayerNorm——fmt 变体
+  D4 default-off 钩子，5 个 norm 位 = 4×MambaBlock pre-norm + 本 head norm）
 - 仅取 future 128 位置 → v_θ (B,62,128)（return_all=True 供因果性单测取全部位置）
 - EMA 封装（decay 由 config 传入，默认 0.999），推理/评估用 EMA 权重
 """
@@ -16,7 +18,7 @@ from typing import Dict, Iterator
 import torch
 import torch.nn as nn
 
-from mamba import build_mamba_backbone
+from mamba import build_mamba_backbone, build_norm
 
 
 def time_embedding(t: torch.Tensor, dim: int) -> torch.Tensor:
@@ -45,6 +47,7 @@ class VelocityNetwork(nn.Module):
         time_emb_dim: int = 16,
         use_fast_path: bool = True,
         bottleneck_rank: int | None = None,  # v4a 变体启用（低秩输入瓶颈）；None = 原结构逐位不变
+        norm_type: str = "rmsnorm",  # fmt 变体启用（D4 RMSNorm→LayerNorm）；默认 = 原结构逐位不变
     ):
         super().__init__()
         self.n_channels = n_channels
@@ -66,10 +69,14 @@ class VelocityNetwork(nn.Module):
                 nn.Linear(n_channels + 1 + time_emb_dim, bottleneck_rank),
                 nn.Linear(bottleneck_rank, d_model),
             )
+        # norm 类型 default-off 钩子（用户 2026-10-16 拍板 D4，fmt 变体 layernorm；先例
+        # bottleneck_rank）：默认 "rmsnorm" 分支与原实现逐位一致（结构/state_dict 键不变，
+        # v1/v2/v3/v4a 行为零漂移）；"layernorm" = 5 个 norm 位（4×MambaBlock pre-norm +
+        # head norm）全部 nn.LayerNorm（含 bias ⇒ state_dict 多 *.norm.bias/head_norm.bias 键）。
         self.blocks = build_mamba_backbone(
-            n_layers, d_model, d_state, d_conv, expand, use_fast_path
+            n_layers, d_model, d_state, d_conv, expand, use_fast_path, norm_type
         )
-        self.head_norm = nn.RMSNorm(d_model)
+        self.head_norm = build_norm(d_model, norm_type)
         self.head = nn.Linear(d_model, n_channels)
 
     def forward(

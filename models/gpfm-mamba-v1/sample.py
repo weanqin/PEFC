@@ -50,6 +50,7 @@ def load_eval_model(
         d_conv=cfg.d_conv, expand=cfg.expand, time_emb_dim=cfg.time_emb_dim,
         use_fast_path=cfg.use_fast_path,
         bottleneck_rank=getattr(cfg, "bottleneck_rank", None),  # v4a 变体启用；v1/v2/v3 配置无此字段→None
+        norm_type=str(getattr(cfg, "norm_type", "rmsnorm")),    # fmt 变体启用（D4）；旧 config 无此字段→rmsnorm 零漂移
     ).to(device)
     model.load_state_dict(ck["model"])  # 结构/键校验
     model.eval()

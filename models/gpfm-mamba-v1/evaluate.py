@@ -9,10 +9,12 @@ R1 触发监控：高 t 桶 [0.8,1] mae / 中 t 桶 [0.4,0.6] mae ≥ 1.5（训�
 加权），或采样终点 MAE ≥ 训练末期 x̂1-MAE 的 1.5× → 告警行（口径注记：后者为 test vs train 折
 不同数据，按 design §6 规定执行并如实标注）。
 全部进度与结构化结果落 run 目录 logs/eval.log + logs/eval_metrics.jsonl；数值汇总 eval/summary.json；
-图经 common/visualizer 落 figs/；GC/PSD/空间归因由 gc_psd.run_all 完成（--skip-gc 跳过）。
+图经 common/visualizer 落 figs/；GC/PSD/空间归因由 gc_psd.run_all 完成（--skip-gc 整段跳过；
+--skip-gc-only 仅跳 GC 对比——PSD/空间归因照跑、GC 阻塞口径记 "skipped(blocked)"，二者互斥）。
 
 用法（真实评估，主会话在训练完成后执行）：
   python3 models/gpfm-mamba-v1/evaluate.py --run-id main-01
+  python3 models/gpfm-mamba-v1-fmt/evaluate.py --run-id v1fmt-main-01 --skip-gc-only  # fmt 口径示例
 """
 
 from __future__ import annotations
@@ -215,7 +217,15 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--n-samples", type=int, default=None, help="每窗样本数 K（默认 cfg.n_samples=16）")
     p.add_argument("--sample-seed", type=int, default=None,
                    help="采样 seed（默认 cfg.seed=1234；不修改 config 以免 hash 漂移）")
-    p.add_argument("--skip-gc", action="store_true", help="跳过 GC/PSD/空间归因（调试用）")
+    # --skip-gc（整段跳过 GC/PSD/空间归因）与 --skip-gc-only（仅跳 GC 对比，PSD/空间照跑——
+    # fmt 口径 D1）语义互斥：同传 argparse 构建期即报错（default-off 钩子配套）
+    gc_group = p.add_mutually_exclusive_group()
+    gc_group.add_argument("--skip-gc", action="store_true",
+                          help="跳过 GC/PSD/空间归因（调试用）")
+    gc_group.add_argument("--skip-gc-only", action="store_true",
+                          help="仅跳过 GC 对比（genGC vs real GC 阻塞口径 D1）：PSD 与空间结构"
+                               "归因照跑，summary 记 \"gc\": \"skipped(blocked)\"，不落任何 GC 产物；"
+                               "与 --skip-gc 互斥")
     p.add_argument("--gc-bootstrap", type=int, default=1000, help="GC 相关 CI bootstrap 次数（登记）")
     p.add_argument("--figures-only", action="store_true",
                    help="仅确定性重采样并重渲染轨迹图（medoid+90%%PI 口径）；"
@@ -289,7 +299,9 @@ def main() -> None:
             "gen_medoid": np.stack(traj_store["medoid"]),
             "gen_q05": np.stack(traj_store["q05"]), "gen_q95": np.stack(traj_store["q95"]),
             "window_ids": [int(i) for i in traj_w], "channel_ids": [int(c) for c in traj_c],
-            "fs": 500, "K": K,
+            # 指标 2 轨迹图时间轴（标秒）随数据集采样率：fs 经 cfg 透传（fmt=250；旧范式无该
+            # 字段 → getattr 默认 500，零漂移——review Major 回填）
+            "fs": float(getattr(cfg, "fs", 500.0)), "K": K,
         }
         if gen_lp:
             d["note"] = f"lowpass {gen_lp:g} Hz"
@@ -427,9 +439,11 @@ def main() -> None:
     if not args.skip_gc:
         gc_res = G.run_all(run_dir=str(run_dir), data_root=cfg.data_root,
                            sigma_s=cfg.sigma_s, jitter_s=cfg.jitter_s,
-                           p_max=10, bootstrap_n=args.gc_bootstrap, fs=500.0,
+                           p_max=10, bootstrap_n=args.gc_bootstrap,
+                           fs=float(getattr(cfg, "fs", 500.0)),  # fmt 250 Hz 经 cfg 透传；旧范式无字段→500（零漂移）
                            nperseg=512, stride=cfg.stride, past_len=cfg.past_len,
-                           log=log, jsonl=jsonl)
+                           log=log, jsonl=jsonl,
+                           skip_gc=bool(args.skip_gc_only))  # D1 GC 对比阻塞（default-off：默认 False 原行为）
         summary["gc_psd"] = gc_res
     with open(run_dir / "eval" / "summary.json", "w") as f:
         json.dump(summary, f, indent=2, ensure_ascii=False)
