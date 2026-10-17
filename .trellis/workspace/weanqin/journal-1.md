@@ -92,3 +92,26 @@
 ### Next Steps
 
 - 下一任务（待用户启动）：5-fold 主实验——候选 {v1, v4a} × 5 折（口径：7/1/2 内层切分、早停 10、恒定 lr 1e-3、gen_lowpass 40 Hz；seed 数与评估范围 brainstorm 时定）
+
+
+## Session 4: edra-fmt 新范式 fold0 前置验证（任务 10-16-gpfm-mamba-fmt-f0）全程与收尾
+<!-- trellis-session: v=2 fp=d115160fb07340ae -->
+
+**Date**: 2026-10-17
+**Task**: edra-fmt 新范式 fold0 前置验证（任务 10-16-gpfm-mamba-fmt-f0）全程与收尾
+**Branch**: `main`
+
+### Summary
+
+v1-fmt/v4a-fmt（LayerNorm/p=25/无低通/genGC-realGC 阻塞口径，48 例 34/4/10，fold0 单 seed）完成 smoke→bench→主 Run（92/55ep 早停）→正式评估：指标1 FC 0.970/0.981、指标3 1–30Hz mean|Δlog10| 0.317/0.301 全过线；v4a-fmt 质量全维度最优（MAE 0.70565/CRPS 0.53912/逐通道 r 0.12335 超 GPR-r 0.116），候选排序与旧范式一致（判读权重向 v4a 侧）；无低通下生成侧 >40Hz 功率占比≈真实 3.0×（≈95% 在带内）；v4a-fmt R1 触发定性口径效应。跨范式=多变量设计（fs/预处理/48例/p/低通/norm/纪律），仅方向性判读。spec 回填：data/edra-fmt 契约、指标3 频段 1–30/40–Nyquist 适配、evaluation-calibers fmt 口径、reproducibility 钩子链、data-pipeline 整数分配语义；context/progress 同步。收尾：提交 136223e/3905177/fa06f85 + 归档 b2a7c89（D7 勾选、三套单测全绿门禁）。5-fold 范式与 GC 阻塞解除待用户拍板。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `fa06f85` | docs(fmt-f0): 判读回填（experiment.md 全 Run 块+跨范式对比/差异清单/>40Hz 观察）+ spec 回填（edra-fmt 契约/指标3 频段/fmt 口径/钩子链/整数分配语义）+ research 记忆同步（提交点④） |
+| `b2a7c89` | chore(task): 归档 10-16-gpfm-mamba-fmt-f0（edra-fmt fold0 前置验证通过：指标1/3 过线、v4a-fmt 全维度最优、GC 阻塞口径登记；5-fold 范式待拍板） |
+
+### Status
+
+[OK] **Completed**
