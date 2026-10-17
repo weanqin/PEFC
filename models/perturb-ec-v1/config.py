@@ -48,6 +48,12 @@ SEED = 2026              # 扰动侧统一 seed：eps/eta 生成（逐窗 SEED+�
 TAU_QUANTILES = (0.90, 0.95, 0.99)
 TAU_MAIN = 0.95
 
+# ---- τ v2 操作口径（design §2.3 v2，用户 2026-10-17 拍板；Run 004 readout-01 首次执行）----
+# 操作性 τ = 相对自响应比 D̃_{A→B}(r) = D̄_{A→B}(r)/D̄_{B→B}(r) 上的阈值 τ̃（主 0.25）；
+# 敏感性 0.50。绝对口径（null 分池分位）降为材质性观察照登（上方 TAU_QUANTILES/TAU_MAIN）。
+TAU_TILDE_MAIN = 0.25
+TAU_TILDE_SENS = 0.50
+
 # ---- 比较器契约（design §5 / evaluation-calibers Study II 节）----
 ORIENTATION = "larger_is_stronger"   # slope/auc 天然大=强免翻转；rstar 须调用方先翻转再存
 

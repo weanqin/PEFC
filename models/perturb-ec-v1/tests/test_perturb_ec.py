@@ -192,6 +192,22 @@ def test_readout_math() -> None:
     rstar[7, 9] = PC.R_MAX
     rstar[5, 5] = 0.04                                       # 对角（A=B）不算路径
     assert RO.effective_paths(rstar) == [(3, 40), (7, 9)]
+    # dtil_curves（τ v2 相对口径，Run 004）：合成 dbar9 [A, r, B]，自响应 = 2×跨通道
+    # → D̃ 跨通道 = 0.5、A=B = 1、r=0 槽 = 0；rstar 相对口径首档/全删失两分支
+    offdiag_t = ~np.eye(PC.N_SRC, dtype=bool)
+    dbar9 = np.zeros((PC.N_SRC, 9, PC.N_SRC))
+    for j in range(1, 9):
+        Mj = np.full((PC.N_SRC, PC.N_SRC), 2.0 * rg[j])
+        np.fill_diagonal(Mj, 4.0 * rg[j])
+        dbar9[:, j, :] = Mj
+    dtil = RO.dtil_curves(dbar9)
+    assert dtil.shape == (PC.N_SRC, PC.N_SRC, 9) and (dtil[..., 0] == 0).all()
+    assert np.allclose(dtil[..., 1:][offdiag_t], 0.5), "D̃ 跨通道解析值失配（2r/4r=0.5）"
+    assert np.allclose(np.diagonal(dtil[..., 1:]), 1.0), "D̃ 对角应 ≡ 1"
+    assert (RO.rstar_readout(dtil, 0.25)[offdiag_t] == rg[1]).all(), \
+        "τ̃=0.25 应首档即达（D̃=0.5）"
+    assert (RO.rstar_readout(dtil, 2.0)[offdiag_t] == PC.R_NEXT).all(), \
+        "τ̃=2.0 应全删失（D̃=0.5 < 2）"
     # load_ec_pert 契约 npz 往返（字段按 design §5 抄写；不 import baseline-ec-v1）
     rng = np.random.default_rng(PC.SEED)
     ec = rng.random((62, 62))
@@ -234,6 +250,7 @@ def test_readout_math() -> None:
         assert (Dc[a, :, other] == 0).all(), f"D[{a},:,{other}] 非源通道响应非零"
     print(f"[③ readout] D̄=2r → slope=2（主/敏感段）、AUC={PC.R_MAX}（解析）；τ=3.0 → r*={PC.R_NEXT}"
           f" → strength=0；翻转偏移 {PC.R_NEXT} 由 R_GRID 推导；有效路径对角/删失排除；"
+          f"D̃ 合成（跨 0.5/自 1/r=0 槽 0）+ 相对口径 r\* 两分支；"
           f"契约 npz 四字段往返；D/null 解析值（1.0/0.25/2.0）全中")
 
 

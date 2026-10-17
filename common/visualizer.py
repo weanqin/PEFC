@@ -18,6 +18,12 @@
   dose_response    扰动剂量-响应曲线 D̄(r)（多 (A→B) 边 + τ 阈值线；perturb-ec-v1 增量）
   qq_compare       子采样 vs 全集分位数 QQ 对比（代表性行抽查；perturb-ec-v1 增量）
   tau_preview      τ 口径决策预览（地板分离 / 相对口径 D̃ 箱线 / slope 分布；预览非 readout）
+  mono_r2          剂量-响应形态诊断：Spearman(D̄,r) 单调性 + 低剂量 OLS R² 分布（B4 增量）
+  floor_separation 噪声地板分离：各 r 档 D 分布 vs null 池 + τ 线 + 删失率柱（B4 增量）
+  spatial_decay    空间衰减 sanity：D̄(r_max) vs 通道对欧氏距离（散点+分箱 median；B4 增量）
+  diag_vs_cross    对角自响应 vs 跨通道量级 + 先验自响应分量解析对照（B4 增量）
+  ec_heatmap_grid  EC 矩阵热图网格（多 readout × 多例/组均；B4 增量）
+  compare_forest   比较器汇总 forest：readout × 参考法 ρ̄ + bootstrap CI（主比较/上下文分色；B5 增量）
 """
 
 from __future__ import annotations
@@ -92,7 +98,9 @@ class Visualizer:
     """
 
     FIG_TYPES = ("trajectories", "psd", "gc_matrix", "ec_matrix", "training_curves",
-                 "spatial_corr", "dose_response", "qq_compare", "tau_preview")
+                 "spatial_corr", "dose_response", "qq_compare", "tau_preview",
+                 "mono_r2", "floor_separation", "spatial_decay", "diag_vs_cross",
+                 "ec_heatmap_grid", "compare_forest")
 
     def __init__(self, out_dir: str, dpi: int = 300):
         self.out_dir = out_dir
@@ -495,6 +503,332 @@ class Visualizer:
         ax3.set_ylabel("density")
         ax3.set_title("slope readout (tau-free)", fontsize=6)
         add_panel_label(ax3, "c", dx=-0.22)
+        if data.get("note"):
+            fig.text(0.99, 0.005, data["note"], ha="right", va="bottom", fontsize=4.6,
+                     color=PALETTE["neutral_mid"])
+        fig.tight_layout()
+        return fig
+
+    # ---- ⑨ 剂量-响应形态诊断（perturb-ec-v1 B4 增量，2026-10-17，design §6-2）----
+    def _draw_mono_r2(self, data: Dict, **cfg) -> mpl.figure.Figure:
+        """data: {
+            spearman (n,) 跨例跨边 Spearman(D̄, r)（9 点含 r=0；预期全 1.0——照登）,
+            r2 (n,) 低剂量段 OLS R²（r ∈ {0,0.01,0.02,0.04,0.08}）,
+            mono_frac float 完全单调（8 档非降）边比例（面板 a 注记）,
+            n_subjects int（注记）, note str 可选
+        }；面板 a = Spearman 分布（0.9–1.0 限幅直方图）；面板 b = 低剂量 R² 分布。"""
+        sp = np.asarray(data["spearman"], dtype=float)
+        r2 = np.asarray(data["r2"], dtype=float)
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(5.6, 2.4))
+        ax1.hist(np.clip(sp, 0.9, 1.0), bins=np.linspace(0.9, 1.0, 41), density=True,
+                 color=PALETTE["teal"], alpha=0.75)
+        ax1.axvline(float(np.median(sp)), color=PALETTE["neutral_dark"], lw=0.8, ls="--")
+        ax1.set_xlim(0.9, 1.0)
+        ax1.set_xlabel(r"Spearman($\bar{D}$, r)  (clipped to [0.9, 1])")
+        ax1.set_ylabel("density")
+        ax1.set_title("monotonicity (all edges, all subjects)", fontsize=6)
+        mf = data.get("mono_frac")
+        txt = f"median={np.median(sp):.3f}"
+        if mf is not None:
+            txt += f"\nfully non-decreasing: {mf * 100:.1f}%"
+        if data.get("n_subjects") is not None:
+            txt += f"\nn={sp.size} edges ({data['n_subjects']} subjects)"
+        ax1.text(0.03, 0.95, txt, transform=ax1.transAxes, fontsize=4.6, va="top",
+                 color=PALETTE["neutral_dark"])
+        add_panel_label(ax1, "a", dx=-0.24)
+        ax2.hist(r2, bins=60, density=True, color=PALETTE["blue_main"], alpha=0.7)
+        ax2.axvline(float(np.median(r2)), color=PALETTE["neutral_dark"], lw=0.8, ls="--")
+        ax2.set_xlabel("low-dose OLS R$^2$  (r$\\leq$0.08)")
+        ax2.set_ylabel("density")
+        ax2.set_title("low-dose linearity (all edges)", fontsize=6)
+        ax2.text(0.03, 0.95, f"median={np.median(r2):.4f}\nq10={np.quantile(r2, 0.10):.4f}",
+                 transform=ax2.transAxes, fontsize=4.6, va="top",
+                 color=PALETTE["neutral_dark"])
+        add_panel_label(ax2, "b", dx=-0.24)
+        if data.get("note"):
+            fig.text(0.99, 0.005, data["note"], ha="right", va="bottom", fontsize=4.6,
+                     color=PALETTE["neutral_mid"])
+        fig.tight_layout()
+        return fig
+
+    # ---- ⑩ 噪声地板分离（perturb-ec-v1 B4 增量，2026-10-17，design §6-3）----
+    def _draw_floor_separation(self, data: Dict, **cfg) -> mpl.figure.Figure:
+        """data: {
+            r_labels (G-1,) 扰动档标签（r=0 不采样）,
+            d_boxes [(m,) ...] 各 r 档跨通道 D̄ 分布（跨例池）,
+            null_pool (n,) null 距离池（面板 a 首列箱线；自动子采样至 ~4 万点）,
+            taus dict {label: value} 绝对 τ 横线（面板 a 虚线，右端标注）,
+            censor_abs dict {label: rate}（面板 b 绝对口径删失率，中性灰族）,
+            censor_rel dict {label: rate}（面板 b 相对口径 τ̃ 删失率，蓝族）,
+            ylog bool 面板 a 对数 y（默认 True）, note str 可选
+        }；面板 a = null vs 各 r 档 D 分布（箱线，log-y）+ 绝对 τ 三线；面板 b = 删失率柱
+        （绝对 q90/95/99 与相对 τ̃ 0.25/0.50 两族并列）。"""
+        r_labels = data["r_labels"]
+        null_pool = np.asarray(data["null_pool"], dtype=float)
+        step = max(1, null_pool.size // 40000)                    # 箱线样本上限（分位数级无失真）
+        boxes = [null_pool[::step]] + [np.asarray(b, dtype=float) for b in data["d_boxes"]]
+        labels = ["null"] + list(r_labels)
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(6.2, 2.6),
+                                       gridspec_kw={"width_ratios": [1.6, 1.0]})
+        bp = ax1.boxplot(boxes, widths=0.55, patch_artist=True, showfliers=False,
+                         medianprops=dict(color=PALETTE["red_strong"], lw=0.9),
+                         whiskerprops=dict(lw=0.6), capprops=dict(lw=0.6))
+        for i, patch in enumerate(bp["boxes"]):
+            patch.set_facecolor(PALETTE["neutral_light"] if i == 0 else PALETTE["blue_main"])
+            patch.set_alpha(0.85 if i == 0 else 0.55)
+            patch.set_edgecolor(PALETTE["neutral_dark"])
+            patch.set_lw(0.6)
+        if data.get("ylog", True):
+            ax1.set_yscale("log")
+        for k, v in (data.get("taus") or {}).items():
+            ax1.axhline(float(v), color=PALETTE["neutral_dark"], lw=0.7, ls="--", zorder=1)
+        if data.get("taus"):
+            tau_txt = "abs tau:  " + "  ".join(f"{k}={float(v):.2f}"
+                                               for k, v in data["taus"].items())
+            ax1.text(0.02, 0.96, tau_txt, transform=ax1.transAxes, fontsize=4.6, va="top",
+                     color=PALETTE["neutral_dark"])
+        ax1.set_xticks(np.arange(1, len(boxes) + 1))
+        ax1.set_xticklabels(labels, rotation=45, ha="right")
+        ax1.set_ylabel(r"normalized distance / $\bar{D}(r)$  (log)")
+        ax1.set_title("noise floor vs response distributions", fontsize=6)
+        add_panel_label(ax1, "a", dx=-0.30)
+        bars, cols, labs = [], [], []
+        for k, v in (data.get("censor_abs") or {}).items():
+            bars.append(float(v)); cols.append(PALETTE["neutral_mid"]); labs.append(k)
+        for k, v in (data.get("censor_rel") or {}).items():
+            bars.append(float(v)); cols.append(PALETTE["blue_main"]); labs.append(k)
+        xs = np.arange(len(bars))
+        ax2.bar(xs, bars, width=0.62, color=cols, alpha=0.85)
+        for x, v in zip(xs, bars):
+            ax2.text(x, min(v, 1.0) + 0.015, f"{v * 100:.1f}%", ha="center", va="bottom",
+                     fontsize=4.6, color=PALETTE["neutral_dark"])
+        ax2.set_xticks(xs)
+        ax2.set_xticklabels(labs, rotation=45, ha="right")
+        ax2.set_ylim(0, 1.12)
+        ax2.set_ylabel("right-censoring rate")
+        ax2.set_title("censoring by caliber (grey=abs, blue=rel)", fontsize=6)
+        add_panel_label(ax2, "b", dx=-0.42)
+        if data.get("note"):
+            fig.text(0.99, 0.005, data["note"], ha="right", va="bottom", fontsize=4.6,
+                     color=PALETTE["neutral_mid"])
+        fig.tight_layout()
+        return fig
+
+    # ---- ⑪ 空间衰减 sanity（perturb-ec-v1 B4 增量，2026-10-17，design §6-4）----
+    def _draw_spatial_decay(self, data: Dict, **cfg) -> mpl.figure.Figure:
+        """data: {
+            dist (m,) 通道对欧氏距离 mm（跨例池，与 dmax 对齐；散点请先子采样）,
+            dmax (m,) 对应 D̄(r_max),
+            bins (B,) 分箱边界（缺省 12 箱线性）,
+            per_subject [{"sid": int, "dist": (m,), "dmax": (m,)} ...] 面板 b 细线（可缺省）,
+            rho float 全池 Spearman ρ（注记；定性 sanity 不作判据）, note str 可选
+        }；面板 a = 散点 + 分箱 median（粗线）+ IQR 带；面板 b = 逐例分箱 median 细线 + 组池粗线。"""
+        dist = np.asarray(data["dist"], dtype=float)
+        dmax = np.asarray(data["dmax"], dtype=float)
+        bins = np.asarray(data.get("bins", np.linspace(dist.min(), dist.max(), 13)), dtype=float)
+        centers = 0.5 * (bins[:-1] + bins[1:])
+
+        def _binned_q(vals, q, d_ref):
+            w_ = np.digitize(d_ref, bins) - 1
+            ok = (d_ref >= bins[0]) & (d_ref < bins[-1])
+            return np.array([np.quantile(vals[(w_ == b) & ok], q)
+                             if ((w_ == b) & ok).sum() >= 5 else np.nan
+                             for b in range(len(centers))])
+        med = _binned_q(dmax, 0.50, dist)
+        q1 = _binned_q(dmax, 0.25, dist)
+        q3 = _binned_q(dmax, 0.75, dist)
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(5.8, 2.5))
+        ax1.scatter(dist, dmax, s=1.2, alpha=0.12, color=PALETTE["blue_main"],
+                    rasterized=True, edgecolors="none")
+        ax1.plot(centers, med, color=PALETTE["red_strong"], lw=1.2, zorder=5,
+                 label="binned median")
+        ax1.fill_between(centers, q1, q3, color=PALETTE["red_strong"], alpha=0.15, lw=0,
+                         zorder=4, label="IQR")
+        rho = data.get("rho")
+        if rho is not None:
+            ax1.text(0.03, 0.95, f"Spearman rho={rho:.3f}", transform=ax1.transAxes,
+                     fontsize=4.6, va="top", color=PALETTE["neutral_dark"])
+        ax1.set_xlabel("channel-pair Euclidean distance (mm)")
+        ax1.set_ylabel(r"$\bar{D}(r_{max})$")
+        ax1.set_title("spatial decay (pooled, qualitative)", fontsize=6)
+        ax1.legend(loc="upper right", fontsize=4.6)
+        add_panel_label(ax1, "a", dx=-0.24)
+        for ps in data.get("per_subject", []):
+            m_ = _binned_q(np.asarray(ps["dmax"], float), 0.50, np.asarray(ps["dist"], float))
+            ax2.plot(centers, m_, lw=0.6, alpha=0.6, color=PALETTE["neutral_mid"])
+        ax2.plot(centers, med, lw=1.4, color=PALETTE["red_strong"], label="pooled median")
+        ax2.set_xlabel("channel-pair Euclidean distance (mm)")
+        ax2.set_ylabel(r"binned median $\bar{D}(r_{max})$")
+        ax2.set_title("per-subject binned medians", fontsize=6)
+        ax2.legend(loc="upper right", fontsize=4.6)
+        add_panel_label(ax2, "b", dx=-0.24)
+        if data.get("note"):
+            fig.text(0.99, 0.005, data["note"], ha="right", va="bottom", fontsize=4.6,
+                     color=PALETTE["neutral_mid"])
+        fig.tight_layout()
+        return fig
+
+    # ---- ⑫ 对角 vs 跨通道 + 先验分量对照（perturb-ec-v1 B4 增量，2026-10-17，design §6-5）----
+    def _draw_diag_vs_cross(self, data: Dict, **cfg) -> mpl.figure.Figure:
+        """data: {
+            r_grid (G,) 剂量网格（含 0）,
+            self_med/self_q1/self_q3 (G,) 对角自响应 D̄ 中位/IQR（跨例池）,
+            cross_med/cross_q1/cross_q3 (G,) 跨通道 D̄ 中位/IQR,
+            prior_med/prior_q1/prior_q3 (G,) 先验自响应分量（解析重建）中位/IQR（可缺省）,
+            share {"r_labels": [str], "boxes": [(n,)...]} 先验占比分布素材
+              （面板 b；share = D_prior/D_obs-self，1.0 虚线 = 先验全额解释）,
+            note str 可选
+        }；面板 a = 三族中位曲线 + IQR 带（self 红 / cross 蓝 / prior 灰虚线）；面板 b =
+        先验分量占比箱线 + 1.0 参考线 + 逐档 median 标注。"""
+        r = np.asarray(data["r_grid"], dtype=float)
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(6.0, 2.5))
+        for key, col, lab in (("cross", PALETTE["blue_main"], "cross (A$\\neq$B)"),
+                              ("self", PALETTE["red_strong"], "self (A=B)")):
+            med = np.asarray(data[f"{key}_med"], dtype=float)
+            ax1.plot(r, med, color=col, lw=1.1, marker="o", ms=2.2, label=lab)
+            ax1.fill_between(r, np.asarray(data[f"{key}_q1"], dtype=float),
+                             np.asarray(data[f"{key}_q3"], dtype=float),
+                             color=col, alpha=0.15, lw=0)
+        if "prior_med" in data:
+            ax1.plot(r, np.asarray(data["prior_med"], dtype=float), lw=1.0, ls="--",
+                     color=PALETTE["neutral_dark"], marker="s", ms=1.8,
+                     label="prior self component (analytic)")
+            ax1.fill_between(r, np.asarray(data["prior_q1"], dtype=float),
+                             np.asarray(data["prior_q3"], dtype=float),
+                             color=PALETTE["neutral_dark"], alpha=0.10, lw=0)
+        ax1.set_xlabel("perturbation gain r")
+        ax1.set_ylabel(r"$\bar{D}(r)$  (norm. RMS, median [IQR])")
+        ax1.set_title("diagonal vs cross-channel magnitude", fontsize=6)
+        ax1.legend(loc="upper left", fontsize=4.6)
+        add_panel_label(ax1, "a", dx=-0.24)
+        sh = data.get("share")
+        if sh:
+            boxes = [np.asarray(b, dtype=float) for b in sh["boxes"]]
+            ax2.boxplot(boxes, widths=0.5, patch_artist=True, showfliers=False,
+                        medianprops=dict(color=PALETTE["red_strong"], lw=1.0),
+                        boxprops=dict(facecolor=PALETTE["red_soft"], alpha=0.5,
+                                      edgecolor=PALETTE["neutral_dark"], lw=0.6),
+                        whiskerprops=dict(lw=0.6), capprops=dict(lw=0.6))
+            ax2.set_xticks(np.arange(1, len(boxes) + 1))
+            ax2.set_xticklabels(sh["r_labels"])
+            ax2.axhline(1.0, color=PALETTE["neutral_dark"], lw=0.7, ls="--")
+            ax2.text(0.99, 1.0, " prior explains all", transform=ax2.get_yaxis_transform(),
+                     ha="right", va="bottom", fontsize=4.6, color=PALETTE["neutral_dark"])
+            med = np.array([np.median(b) for b in boxes])
+            ax2.plot(np.arange(1, len(boxes) + 1), med, lw=0.9,
+                     color=PALETTE["red_strong"], marker="o", ms=2.0)
+            for x, v in zip(np.arange(1, len(boxes) + 1), med):
+                ax2.text(x, v, f" {v:.2f}", ha="left", va="bottom", fontsize=4.6,
+                         color=PALETTE["neutral_dark"])
+            ax2.set_ylabel("prior share  $\\bar{D}_{prior}/\\bar{D}_{self}$")
+            ax2.set_xlabel("perturbation gain r")
+            ax2.set_title("prior self-response share", fontsize=6)
+        add_panel_label(ax2, "b", dx=-0.30)
+        if data.get("note"):
+            fig.text(0.99, 0.005, data["note"], ha="right", va="bottom", fontsize=4.6,
+                     color=PALETTE["neutral_mid"])
+        fig.tight_layout()
+        return fig
+
+    # ---- ⑬ EC 矩阵热图网格（perturb-ec-v1 B4 增量，2026-10-17，design §6-6）----
+    def _draw_ec_heatmap_grid(self, data: Dict, **cfg) -> mpl.figure.Figure:
+        """data: {
+            rows: [{"label": str（行标题，readout 名）, "mats": [(C,C) ...]} ...],
+            col_labels [str ...]（列标题，如 group-mean / subject id）,
+            unit str 色标名（缺省 'strength'）, note str 可选
+        }；每行共享 vmax（行内例间可比），Blues 非负色标，行级 colorbar；行=源、列=靶。"""
+        rows, col_labels = data["rows"], data["col_labels"]
+        n_r, n_c = len(rows), len(col_labels)
+        fig, axes = plt.subplots(n_r, n_c, figsize=(2.1 * n_c, 1.9 * n_r + 0.3),
+                                 squeeze=False)
+        for ri, row in enumerate(rows):
+            mats = [np.clip(np.asarray(m, dtype=float), 0, None) for m in row["mats"]]
+            vmax = max((float(m.max()) if m.size else 0.0) for m in mats) or 1.0
+            for ci, m in enumerate(mats):
+                ax = axes[ri][ci]
+                im = ax.imshow(m, cmap="Blues", vmin=0, vmax=vmax, interpolation="nearest")
+                ax.set_xticks([])
+                ax.set_yticks([])
+                if ri == 0:
+                    ax.set_title(col_labels[ci], fontsize=5)
+                if ci == 0:
+                    ax.set_ylabel(f"{row['label']}\n(source rows)", fontsize=5)
+                if ci == n_c - 1:
+                    cb = fig.colorbar(im, ax=ax, shrink=0.8, pad=0.03)
+                    cb.ax.tick_params(labelsize=4)
+                    cb.set_label(data.get("unit", "strength"), fontsize=4.6)
+        for ci in range(n_c):
+            axes[0][ci].set_xlabel("target cols", fontsize=5)
+        if data.get("note"):
+            fig.text(0.99, 0.005, data["note"], ha="right", va="bottom", fontsize=4.6,
+                     color=PALETTE["neutral_mid"])
+        fig.tight_layout()
+        return fig
+
+    # ---- ⑭ 比较器汇总 forest（perturb-ec-v1 B5 增量，2026-10-17，design §5）----
+    def _draw_compare_forest(self, data: Dict, **cfg) -> mpl.figure.Figure:
+        """data: {
+            rows: [{"readout": str, "method": str, "rho": float, "ci": (lo, hi),
+                    "rho_raw": float 可选（未偏 ρ 上下文，空心方块）,
+                    "main": bool（主比较 Holm 族行 = True）,
+                    "holm_p": float 可选（仅主族行标注）,
+                    "ceiling_ratio": float 可选（行尾注记）} ...]
+              （y 轴自上而下按给定序；建议主 readout 置顶）,
+            n_subjects int, ceilings dict {method: value} 可选（注记）,
+            note str 可选（右下，ASCII——DejaVu 无 CJK）
+        }；水平 forest：x = 逐被试 ρ̄（点）+ 受试者 bootstrap 95% CI（线），ρ=0 参考虚线；
+        主比较行蓝、上下文行中性灰；行尾注记 ρ̄/CI/Holm p（主族）/ceiling 比值。"""
+        rows = data["rows"]
+        n = len(rows)
+        fig, ax = plt.subplots(figsize=(6.4, 0.62 * n + 1.1))
+        ys = np.arange(n)[::-1]                       # 首行置顶
+        xall = [0.0]
+        for row, y in zip(rows, ys):
+            lo, hi = row["ci"]
+            main = bool(row.get("main"))
+            col = PALETTE["blue_main"] if main else PALETTE["neutral_mid"]
+            ax.plot([lo, hi], [y, y], color=col, lw=1.2, solid_capstyle="butt", zorder=3)
+            ax.plot([lo, lo], [y - 0.14, y + 0.14], color=col, lw=1.0, zorder=3)
+            ax.plot([hi, hi], [y - 0.14, y + 0.14], color=col, lw=1.0, zorder=3)
+            ax.plot(row["rho"], y, marker="o", ms=4.2, color=col, zorder=4,
+                    markeredgecolor="white", markeredgewidth=0.5)
+            if row.get("rho_raw") is not None:
+                ax.plot(row["rho_raw"], y, marker="s", ms=3.0, linestyle="none",
+                        markerfacecolor="none", markeredgecolor=col, markeredgewidth=0.8,
+                        zorder=4)
+            xall += [row["rho"], lo, hi]
+        ax.axvline(0.0, color=PALETTE["neutral_dark"], lw=0.7, ls="--", zorder=1)
+        pad = max(0.05, 0.08 * (max(xall) - min(xall)))
+        ax.set_xlim(min(xall) - pad, max(xall) + pad)
+        ax.set_ylim(-0.7, n - 0.3)
+        labels = []
+        for row in rows:
+            lab = f"{row['readout']} x {row['method'].upper()}"
+            lab += "  [MAIN]" if row.get("main") else "  [context]"
+            labels.append(lab)
+        ax.set_yticks(ys)
+        ax.set_yticklabels(labels)
+        for row, y in zip(rows, ys):
+            lo, hi = row["ci"]
+            txt = f"rho={row['rho']:+.3f}  CI[{lo:+.3f},{hi:+.3f}]"
+            if row.get("holm_p") is not None:
+                txt += f"  Holm p={row['holm_p']:.3f}"
+            if row.get("ceiling_ratio") is not None:
+                txt += f"  ceil_ratio={row['ceiling_ratio']:.3f}"
+            ax.text(max(xall) + pad, y, txt, va="center", ha="left", fontsize=4.6,
+                    color=PALETTE["neutral_dark"])
+        ax.set_xlabel(r"per-subject distance-partial Spearman $\bar\rho$  (mean + bootstrap 95% CI)")
+        ax.set_title(f"EC_pert vs observational refs "
+                     f"(n={data.get('n_subjects', '?')} subjects)", fontsize=6)
+        handles = [
+            plt.Line2D([], [], color=PALETTE["blue_main"], marker="o", ms=4, lw=1.2,
+                       label="main comparison (Holm family)"),
+            plt.Line2D([], [], color=PALETTE["neutral_mid"], marker="o", ms=4, lw=1.2,
+                       label="context readout (not in family)"),
+            plt.Line2D([], [], color=PALETTE["neutral_dark"], marker="s", ms=3, lw=0,
+                       markerfacecolor="none", label="unpartial rho (context)"),
+        ]
+        ax.legend(handles=handles, loc="lower left", fontsize=4.6)
         if data.get("note"):
             fig.text(0.99, 0.005, data["note"], ha="right", va="bottom", fontsize=4.6,
                      color=PALETTE["neutral_mid"])

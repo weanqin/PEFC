@@ -20,6 +20,15 @@ main（B3，experiment.md Run 003）：fold0 test 10 例全量 × N_w=32 扰动�
 （例序 EXPECTED_TEST_IDS 升序、win_idx 跨例连续 0..319 → subject 10 ≡ bench-01
 逐位断言）；逐例落盘 + 断点续跑（done 标记跳过已完成例、例内 partial 逐窗续）。
 只落 D 曲线与 null 池（τ 无关数据）；readout/比较是 B4/B5，本 stage 不做。
+
+readout（B4，experiment.md Run 004）：从 main-01 产物（只读、不重采样、不加载网络）
+计算 τ v2 口径三 readout（slope 主 / AUC 次 / r\* 右删失 τ̃=0.25 主 + 0.50 敏感性 +
+绝对口径照登）→ 受试者级 EC 矩阵 + load_ec_pert 契约 npz ×3 ×10 + 有效路径集 +
+slope top-100（池 + 逐例）+ readout_metrics.json。
+
+figs（B4）：诊断七件套（design §6）——剂量-响应样例 ×3 例、单调性/R²、地板分离+
+删失率柱、空间衰减、对角 vs 跨通道（含先验自响应分量 x0 级解析重建，零网络前向）、
+EC 热图 3 readout、top-100 清单表 markdown。
 """
 
 from __future__ import annotations
@@ -51,6 +60,8 @@ import loader as LD    # noqa: E402  触发 v1 sample/data/model/gpr_prior 只�
 import perturb as PB   # noqa: E402
 import readout as RO   # noqa: E402
 import response as RS  # noqa: E402
+import sample as S     # noqa: E402  v1 sample.py（build_eval_prior；figs ⑤ 先验解析重建用，
+                       #           经 loader 装配后此处绑定同实例）
 
 _COMMON = _REPO / "common"                       # 统一 visualizer（visualization.md 正典路由）
 if str(_COMMON) not in sys.path:
@@ -970,6 +981,566 @@ def stage_main(run_id: str = "main-01", n_subjects: int = None) -> None:
         f"结果/结论回填 experiment.md Run 003")
 
 
+def _dist_mm_matrix(coords: np.ndarray) -> np.ndarray:
+    """通道对欧氏距离矩阵 (62,62) mm（design §6-4 空间衰减 sanity 用；coords 米 → mm）。"""
+    d = coords[:, None, :] - coords[None, :, :]
+    return np.sqrt((d ** 2).sum(-1)) * 1000.0
+
+
+def stage_readout(run_id: str = "readout-01", main_run_id: str = "main-01") -> None:
+    """B4 readout（implement.md B4 / experiment.md Run 004）：从 main-01 产物（只读、不重采样、
+    不加载 θ\* 网络）计算三 readout → 受试者级 EC 矩阵 + load_ec_pert 契约 npz ×3 readout
+    ×10 例 + 有效路径集（τ̃=0.25 主 / 0.50 敏感性 / slope top-100 池+逐例）+ 汇总指标。
+
+    τ v2 口径（design §2.3 v2）：操作性 τ = 相对自响应 τ̃=0.25（D̃ = D̄_{A→B}/D̄_{B→B}，
+    同 r 逐边），敏感性 0.50；绝对口径（D̄ ≥ null q95，逐例 τ）降材质性观察照登
+    （q90/q99 敏感性 + 逐通道 τ_B 落盘）。rstar 契约 npz 已翻转 strength = R_NEXT − r\*。
+    """
+    PC = PB.load_config()
+    main_dir = Path(PC.OUTPUTS_ROOT) / main_run_id
+    out = Path(PC.OUTPUTS_ROOT) / run_id
+    (out / "logs").mkdir(parents=True, exist_ok=True)
+    (out / "figs").mkdir(parents=True, exist_ok=True)
+    log = _logger(out / "logs" / "run.log")
+    t0 = time.time()
+    git_head = _git_head()
+    log(f"stage=readout run_id={run_id} main={main_run_id} outputs={out} git={git_head}")
+
+    sids = [int(s) for s in PC.EXPECTED_TEST_IDS]
+    offdiag = ~np.eye(PC.N_SRC, dtype=bool)
+    n_cross = int(offdiag.sum())
+    n_r = len(PC.R_GRID)
+    for sid in sids:                                   # 输入面完整性（main-01 只读）
+        for f in (main_dir / f"dbar_median_s{sid}.npy", main_dir / f"null_s{sid}.npy",
+                  main_dir / f"tau_s{sid}.json"):
+            assert f.exists(), f"main-01 产物缺失: {f}"
+    log(f"输入面齐备：{len(sids)} 例 × {{dbar_median/null/tau}}（{main_dir}，只读不重采样）；"
+        f"τ̃ 主={PC.TAU_TILDE_MAIN} / 敏感性={PC.TAU_TILDE_SENS}；绝对口径照登 q90/q95/q99")
+
+    coords = np.load(f"{LD.load_v4afmt_config().build_config().data_root}/chan_coords_62.npy")
+    dist_mm = _dist_mm_matrix(coords)
+
+    acc = {k: [] for k in ("slope", "slope_sens", "auc", "rstar_ttil025", "rstar_ttil050",
+                           "rstar_abs_q90", "rstar_abs_q95", "rstar_abs_q99", "strength025")}
+    paths = {f"ttil{PC.TAU_TILDE_MAIN:g}": {}, f"ttil{PC.TAU_TILDE_SENS:g}": {}}
+    taus_echo, tau_b_echo = {}, {}
+    dtil_sel = {f"r={r:g}": [] for r in (0.08, 0.32, 1.28)}
+
+    for si, sid in enumerate(sids):
+        dbar9 = np.load(main_dir / f"dbar_median_s{sid}.npy").astype(np.float64)
+        assert dbar9.shape == (PC.N_SRC, n_r, PC.N_SRC), \
+            f"subject {sid} dbar 形状 {dbar9.shape}（轴序 [A, r, B]）"
+        assert np.isfinite(dbar9).all() and (dbar9 >= 0).all()
+        taus = json.loads((main_dir / f"tau_s{sid}.json").read_text(encoding="utf-8"))["tau_quantiles"]
+        taus_echo[str(sid)] = taus
+        null_s = np.load(main_dir / f"null_s{sid}.npy")
+        tau_b = np.quantile(null_s.reshape(-1, PC.N_SRC), PC.TAU_MAIN, axis=0)
+        tau_b_echo[str(sid)] = {"q95_median_across_B": float(np.median(tau_b)),
+                                "q95_min": float(tau_b.min()), "q95_max": float(tau_b.max())}
+
+        dbar_rb = np.transpose(dbar9, (0, 2, 1))                    # (A, B, r)：readout 契约
+        slope = RO.slope_readout(dbar_rb)
+        slope_sens = RO.slope_readout(dbar_rb, seg=PC.SLOPE_SEG_SENS)
+        auc = RO.auc_readout(dbar_rb)
+        dtil = RO.dtil_curves(dbar9)                                # (A, B, r)
+        assert np.isfinite(dtil[..., 1:]).all(), f"subject {sid} D̃ 含 NaN（零自响应除零？）"
+        rs = {"ttil025": RO.rstar_readout(dtil, PC.TAU_TILDE_MAIN),
+              "ttil050": RO.rstar_readout(dtil, PC.TAU_TILDE_SENS),
+              "rstar_abs_q90": RO.rstar_readout(dbar_rb, taus["q90"]),
+              "rstar_abs_q95": RO.rstar_readout(dbar_rb, taus["q95"]),
+              "rstar_abs_q99": RO.rstar_readout(dbar_rb, taus["q99"])}
+        strength025 = RO.flip_rstar(rs["ttil025"])                  # 契约翻转（大=强）
+        assert np.isfinite(slope).all() and np.isfinite(auc).all() \
+            and np.isfinite(strength025).all() and (strength025 >= 0).all()
+
+        paths["ttil0.25"][sid] = RO.effective_paths(rs["ttil025"])
+        paths["ttil0.5"][sid] = RO.effective_paths(rs["ttil050"])
+        acc["slope"].append(slope)
+        acc["slope_sens"].append(slope_sens)
+        acc["auc"].append(auc)
+        acc["strength025"].append(strength025)
+        for k in ("ttil025", "ttil050", "rstar_abs_q90", "rstar_abs_q95", "rstar_abs_q99"):
+            acc["rstar_" + k if k.startswith("ttil") else k].append(rs[k])
+        for r in dtil_sel:
+            dtil_sel[r].append(dtil[:, :, PC.PERT_R_GRID.index(float(r[2:])) + 1][offdiag])
+
+        for name, m in (("slope", slope), ("auc", auc), ("rstar", strength025)):
+            RO.save_ec_pert_npz(out / f"ec_pert_{name}_s{sid}.npz", m, name, np.array([sid]))
+
+        cens = {k: float((v[offdiag] > PC.R_MAX).mean()) for k, v in rs.items()}
+        log(f"subject {sid}：slope cross median={np.median(slope[offdiag]):.4f}；"
+            f"auc median={np.median(auc[offdiag]):.4f}；删失率 τ̃0.25={cens['ttil025'] * 100:.1f}%"
+            f" / τ̃0.50={cens['ttil050'] * 100:.1f}% / 绝对 q95={cens['rstar_abs_q95'] * 100:.1f}%；"
+            f"有效路径 {len(paths['ttil0.25'][sid])}/{n_cross}（τ̃0.25）")
+
+    slope_all = np.stack(acc["slope"])                # (10, 62, 62)
+    slope_sens_all = np.stack(acc["slope_sens"])
+    auc_all = np.stack(acc["auc"])
+    rs_all = {k: np.stack(acc[k]) for k in
+              ("rstar_ttil025", "rstar_ttil050", "rstar_abs_q90", "rstar_abs_q95",
+               "rstar_abs_q99", "strength025")}
+    np.savez(out / "readout_products.npz",
+             subject_ids=np.array(sids), r_grid=np.array(PC.R_GRID),
+             slope=slope_all, slope_sens=slope_sens_all, auc=auc_all,
+             rstar_ttil025=rs_all["rstar_ttil025"], rstar_ttil050=rs_all["rstar_ttil050"],
+             rstar_abs_q90=rs_all["rstar_abs_q90"], rstar_abs_q95=rs_all["rstar_abs_q95"],
+             rstar_abs_q99=rs_all["rstar_abs_q99"], strength_ttil025=rs_all["strength025"],
+             ec_group_slope=slope_all.mean(0), ec_group_auc=auc_all.mean(0),
+             ec_group_rstar_strength=rs_all["strength025"].mean(0))
+    log(f"落盘 readout_products.npz（逐例三 readout + r\* 五口径 + 组均矩阵）+ 契约 npz ×"
+        f"{3 * len(sids)}（ec_pert_{{slope,auc,rstar}}_s*，rstar 已翻转）")
+
+    # ---- 汇总指标：删失率（两档 τ̃ + 绝对三档）/ r* 频次 / slope·AUC 分布 ----
+    def _cens(key):
+        per = {str(sid): float((rs_all[key][i][offdiag] > PC.R_MAX).mean())
+               for i, sid in enumerate(sids)}
+        pooled = float((rs_all[key][:, offdiag] > PC.R_MAX).mean())
+        return {"pooled": pooled, "per_subject": per}
+
+    censoring = {"ttil025": _cens("rstar_ttil025"), "ttil050": _cens("rstar_ttil050"),
+                 "abs_q90": _cens("rstar_abs_q90"), "abs_q95": _cens("rstar_abs_q95"),
+                 "abs_q99": _cens("rstar_abs_q99")}
+    grid_vals = list(PC.PERT_R_GRID) + [PC.R_NEXT]
+
+    def _freq(key):
+        v = rs_all[key][:, offdiag].ravel()
+        return {f"{g:g}": int((v == g).sum()) for g in grid_vals}
+
+    freq025, freq050 = _freq("rstar_ttil025"), _freq("rstar_ttil050")
+    tot = len(sids) * n_cross
+    n_first025 = freq025[f"{PC.PERT_R_GRID[0]:g}"]
+    n_cens025 = freq025[f"{PC.R_NEXT:g}"]
+    log(f"r\* 分布形态（τ̃0.25，{tot} 边·例）：首档 {PC.PERT_R_GRID[0]:g} = "
+        f"{n_first025}（{n_first025 / tot * 100:.1f}%）；中间档 = "
+        f"{tot - n_first025 - n_cens025}（{(tot - n_first025 - n_cens025) / tot * 100:.1f}%）；"
+        f"删失 {PC.R_NEXT:g} = {n_cens025}（{n_cens025 / tot * 100:.1f}%）——近二元形态如实登记")
+
+    def _dist_stats(a):
+        return {"median": float(np.median(a)), "q1": float(np.quantile(a, 0.25)),
+                "q3": float(np.quantile(a, 0.75)), "min": float(a.min()),
+                "max": float(a.max())}
+
+    slope_pooled = slope_all[:, offdiag].ravel()
+    diag_mask = np.eye(PC.N_SRC, dtype=bool)
+    metrics_dists = {
+        "slope_cross": _dist_stats(slope_pooled),
+        "slope_self": _dist_stats(slope_all[:, diag_mask].ravel()),
+        "slope_sens_cross": _dist_stats(slope_sens_all[:, offdiag].ravel()),
+        "auc_cross": _dist_stats(auc_all[:, offdiag].ravel()),
+        "auc_self": _dist_stats(auc_all[:, diag_mask].ravel()),
+        "dtil_cross": {k: _dist_stats(np.concatenate(v)) for k, v in dtil_sel.items()},
+    }
+    log(f"slope（主段 {PC.SLOPE_SEG}，跨通道池 {slope_pooled.size}）：median="
+        f"{metrics_dists['slope_cross']['median']:.4f}（Q1={metrics_dists['slope_cross']['q1']:.4f}，"
+        f"Q3={metrics_dists['slope_cross']['q3']:.4f}，min={metrics_dists['slope_cross']['min']:.4f}，"
+        f"max={metrics_dists['slope_cross']['max']:.4f}）；敏感性段 median="
+        f"{metrics_dists['slope_sens_cross']['median']:.4f}；AUC median="
+        f"{metrics_dists['auc_cross']['median']:.4f}")
+
+    # ---- 有效路径集 JSON（τ̃ 两档：逐例清单 + union/intersection/边频次）----
+    paths_json = {}
+    for tier, tt in (("ttil0.25", PC.TAU_TILDE_MAIN), ("ttil0.5", PC.TAU_TILDE_SENS)):
+        per = {str(sid): paths[tier][sid] for sid in sids}
+        sets = [set(map(tuple, per[str(sid)])) for sid in sids]
+        union = set().union(*sets)
+        inter = set.intersection(*sets)
+        cnt = {}
+        for s in sets:
+            for e in s:
+                cnt[e] = cnt.get(e, 0) + 1
+        hist = {}
+        for c in cnt.values():
+            hist[str(c)] = hist.get(str(c), 0) + 1
+        paths_json[tier] = {
+            "tau_tilde": tt, "caliber": "D̃>=tau_tilde 首达档 r*<=R_MAX（design §2.4 v2）",
+            "n_edges_total_per_subject": n_cross,
+            "sizes": {str(sid): len(per[str(sid)]) for sid in sids},
+            "pooled": {"union_size": len(union), "intersection_size": len(inter),
+                       "edge_in_n_subjects_histogram": dict(sorted(hist.items(),
+                                                                   key=lambda kv: int(kv[0]))),
+                       "union_edges": [list(e) for e in sorted(union)],
+                       "intersection_edges": [list(e) for e in sorted(inter)]},
+            "per_subject": per}
+    for tier, fname in (("ttil0.25", "effective_paths_ttil025.json"),
+                        ("ttil0.5", "effective_paths_ttil050.json")):
+        (out / fname).write_text(json.dumps(paths_json[tier], indent=1, ensure_ascii=False),
+                                 encoding="utf-8")
+    u25 = paths_json["ttil0.25"]
+    log(f"有效路径集：τ̃0.25 逐例 {min(u25['sizes'].values())}–{max(u25['sizes'].values())} 边、"
+        f"union {u25['pooled']['union_size']}、intersection {u25['pooled']['intersection_size']}；"
+        f"τ̃0.50 union {paths_json['ttil0.5']['pooled']['union_size']}（JSON 落盘）")
+
+    # ---- slope top-100（全 10 例池 = 逐边跨例 median 排序 + 逐例）----
+    import csv
+    slope_med = np.median(slope_all, axis=0)                        # (62,62) 跨例 median
+    reach025 = (rs_all["rstar_ttil025"] <= PC.R_MAX)                # (10,62,62) 非删失
+    aa, bb = np.nonzero(offdiag)
+
+    def _top_rows(mat, extra):
+        med = mat[aa, bb]
+        order = np.lexsort((bb, aa, -med))                          # med 降序，a/b 升序稳定
+        rows = []
+        for k in order[:100]:
+            a_, b_ = int(aa[k]), int(bb[k])
+            row = {"rank": len(rows) + 1, "src_A": a_, "tgt_B": b_,
+                   "slope": float(mat[a_, b_]), "dist_mm": float(dist_mm[a_, b_])}
+            row.update(extra(a_, b_))
+            rows.append(row)
+        return rows
+
+    pooled_rows = _top_rows(
+        slope_med, lambda a_, b_: {
+            "slope_median": float(slope_med[a_, b_]),
+            "slope_min": float(slope_all[:, a_, b_].min()),
+            "slope_max": float(slope_all[:, a_, b_].max()),
+            "rstar025_uncensored_n": int(reach025[:, a_, b_].sum())})
+    with open(out / "slope_top100_pooled.csv", "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=list(pooled_rows[0].keys()))
+        w.writeheader()
+        w.writerows(pooled_rows)
+    for i, sid in enumerate(sids):
+        rows_s = _top_rows(slope_all[i], lambda a_, b_: {
+            "auc": float(auc_all[i, a_, b_]),
+            "rstar_ttil025": float(rs_all["rstar_ttil025"][i, a_, b_]),
+            "censored": bool(rs_all["rstar_ttil025"][i, a_, b_] > PC.R_MAX)})
+        with open(out / f"slope_top100_s{sid}.csv", "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=list(rows_s[0].keys()))
+            w.writeheader()
+            w.writerows(rows_s)
+    log(f"slope top-100 落盘：pooled（跨例 median 排序）+ 逐例 ×{len(sids)} csv；"
+        f"pooled 首位 A{pooled_rows[0]['src_A']}→B{pooled_rows[0]['tgt_B']} "
+        f"slope_median={pooled_rows[0]['slope_median']:.4f}")
+
+    # ---- 汇总 metrics + config 快照 ----
+    metrics = {
+        "git_head": git_head, "stage": "readout", "run_id": run_id, "main_run_id": main_run_id,
+        "inputs": "main-01 dbar_median_s*/null_s*/tau_s*（只读，不重采样）",
+        "calibers": {
+            "tau_v2": f"D̃=D̄_AB(r)/D̄_BB(r)，τ̃ 主 {PC.TAU_TILDE_MAIN} / 敏感性 {PC.TAU_TILDE_SENS}"
+                      "（design §2.3 v2，用户 2026-10-17 拍板）",
+            "absolute": "D̄ ≥ null 分位（逐例 τ）——材质性观察照登，不进主判定",
+            "slope_seg": list(PC.SLOPE_SEG), "slope_seg_sens": list(PC.SLOPE_SEG_SENS),
+            "rnext": PC.R_NEXT, "flip": "strength = R_NEXT − r*（larger_is_stronger）"},
+        "censoring": censoring,
+        "rstar_freq": {"ttil025": freq025, "ttil050": freq050},
+        "rstar_shape": {"ttil025_first_grid_frac": n_first025 / tot,
+                        "ttil025_censored_frac": n_cens025 / tot,
+                        "ttil025_intermediate_frac": (tot - n_first025 - n_cens025) / tot},
+        "distributions": metrics_dists,
+        "tau_abs_per_subject": taus_echo, "tau_B_q95_summary": tau_b_echo,
+        "effective_paths": {t: {"sizes": v["sizes"], "union": v["pooled"]["union_size"],
+                                "intersection": v["pooled"]["intersection_size"]}
+                            for t, v in paths_json.items()},
+        "slope_top100_pooled_head": pooled_rows[:10],
+        "artifacts": ["readout_products.npz",
+                      "ec_pert_{slope,auc,rstar}_s{sid}.npz ×10",
+                      "effective_paths_ttil025.json", "effective_paths_ttil050.json",
+                      "slope_top100_pooled.csv", "slope_top100_s{sid}.csv ×10",
+                      "readout_metrics.json", "config_snapshot.json"],
+        "elapsed_s": round(time.time() - t0, 1),
+    }
+    (out / "readout_metrics.json").write_text(
+        json.dumps(metrics, indent=2, ensure_ascii=False), encoding="utf-8")
+    consts = {k: (list(v) if isinstance(v, tuple) else v)
+              for k, v in vars(PC).items()
+              if k.isupper() and isinstance(v, (int, float, str, bool, tuple))}
+    snap = {
+        "task": "10-17-perturb-ec-f0", "stage": "readout", "run_id": run_id,
+        "git_head": git_head, "main_run_id": main_run_id,
+        "calibers": "τ v2 操作口径（τ̃=0.25 主/0.50 敏感性）+ 绝对口径照登；三 readout；"
+                    "rstar 契约 npz 已翻转；输入 main-01 只读不重采样",
+        "constants": consts,
+        "data": {"subject_ids": sids, "dbar_axis_order": "[A, r(9 含 0 零列), B]"},
+        "env": {"python": sys.version.split()[0], "torch": torch.__version__,
+                "blas_threads": os.environ.get("OMP_NUM_THREADS", "?")},
+    }
+    (out / "config_snapshot.json").write_text(
+        json.dumps(snap, indent=2, ensure_ascii=False), encoding="utf-8")
+    log(f"readout 完成：总耗时 {time.time() - t0:.1f}s（纯 CPU）；结果/结论回填 experiment.md Run 004；"
+        f"figs stage 随后（诊断七件套）")
+
+
+def stage_figs(run_id: str = "readout-01", main_run_id: str = "main-01") -> None:
+    """B4 figs（implement.md B4 / experiment.md Run 004）：诊断七件套（design §6）。
+
+    输入 = readout-01/readout_products.npz + main-01 逐例 dbar/null（只读）+ chan_coords；
+    ⑤先验自响应分量 = x0 级解析重建（posterior_mean + 主 Run 同 CRN ε/η，**零网络前向**，
+    design §2.1「解析、零采样成本」）——D_prior = r·RMS_t(μ_A)/s_x0，s_x0 与
+    baseline_scale 同估计式；观测 D 的归一尺度为终样本 s_final（未落盘），share 读数
+    随附 scale 校正近似（s_final ≈ median(null)/√2）。图全走 common/visualizer（纯增量
+    类型），图注 ASCII。"""
+    PC = PB.load_config()
+    main_dir = Path(PC.OUTPUTS_ROOT) / main_run_id
+    out = Path(PC.OUTPUTS_ROOT) / run_id
+    log = _logger(out / "logs" / "run.log")
+    t0 = time.time()
+    git_head = _git_head()
+    prod_path = out / "readout_products.npz"
+    assert prod_path.exists(), "先跑 --stage readout（readout_products.npz 缺失）"
+    prod = np.load(prod_path)
+    log(f"stage=figs run_id={run_id} git={git_head}；输入 readout_products.npz + main-01 只读")
+
+    sids = [int(s) for s in prod["subject_ids"]]
+    offdiag = ~np.eye(PC.N_SRC, dtype=bool)
+    n_r = len(PC.R_GRID)
+    j_top = PC.N_R_PERT - 1
+    r_grid = np.asarray(PC.R_GRID, dtype=np.float64)
+    dbars = {sid: np.load(main_dir / f"dbar_median_s{sid}.npy").astype(np.float64)
+             for sid in sids}
+    nulls_pooled = np.concatenate(
+        [np.load(main_dir / f"null_s{sid}.npy").reshape(-1) for sid in sids])
+    taus_pooled = {f"q{int(q * 100)}": float(np.quantile(nulls_pooled, q))
+                   for q in PC.TAU_QUANTILES}
+    coords = np.load(f"{LD.load_v4afmt_config().build_config().data_root}/chan_coords_62.npy")
+    dist_mm = _dist_mm_matrix(coords)
+    import visualizer as VZ
+    viz = VZ.Visualizer(str(out / "figs"))
+    figs = {}
+
+    # ---- ① 剂量-响应样例曲线（3 例 × 20 组：self 2 + 跨通道强 6/中 6/弱 6）----
+    fig1_picks = {}
+    for sid in (sids[0], sids[len(sids) // 2], sids[-1]):
+        dbar9 = dbars[sid]
+        M = dbar9[:, j_top + 1, :]                                  # D̄(r_max)（含 0 零列后第 8 档）
+        self_r = np.diag(M)
+        pairs = np.argwhere(offdiag)
+        order = np.argsort(M[offdiag])[::-1]
+        n_pairs = len(order)
+        picks = [(int(np.argmax(self_r)), int(np.argmax(self_r))),
+                 (int(np.argsort(self_r)[len(self_r) // 2]),) * 2]
+        kinds_long = ["self", "self"]
+        for oi, grp in ([(o, "strong") for o in range(6)]
+                        + [(o, "mid") for o in range(n_pairs // 2 - 3, n_pairs // 2 + 3)]
+                        + [(o, "weak") for o in range(n_pairs - 6, n_pairs)]):
+            picks.append(tuple(map(int, pairs[order[oi]])))
+            kinds_long.append(grp)
+        fig1_picks[str(sid)] = {"picks": [list(p) for p in picks], "kinds": kinds_long}
+        curves, labels, kinds = [], [], []
+        for (a, b), grp in zip(picks, kinds_long):                  # 同组同 label → 图例去重
+            curves.append(dbar9[a, :, b])
+            labels.append(f"self A={a}" if grp == "self" else grp)
+            kinds.append("self" if grp == "self" else "cross")
+        figs[f"dose_response_s{sid}"] = viz.render("dose_response", {
+            "r_grid": r_grid, "curves": np.stack(curves), "labels": labels, "kinds": kinds,
+            "tau": taus_pooled["q95"],
+            "tau_label": "abs tau q95 (materiality)",
+            "tau_sens": {k: v for k, v in taus_pooled.items() if k != "q95"},
+            "note": f"subject {sid}; median of {PC.N_W} windows; edge ids in figs_metrics.json"},
+        f"dose_response_s{sid}.png")
+    log("① 剂量-响应样例曲线 ×3 例（s10/s28/s69，各 20 组）落盘")
+
+    # ---- ② 单调性 + 低剂量 R² 分布（跨例跨边池）----
+    from scipy.stats import rankdata
+    sp_all, r2_all, mono_n = [], [], 0
+    x = np.asarray(PC.SLOPE_SEG, dtype=np.float64)
+    xc = x - x.mean()
+    for sid in sids:
+        dbar9 = dbars[sid]
+        ranks = rankdata(dbar9, axis=1)                             # 沿 r 档逐 (A,B) 取秩
+        rr = np.arange(1.0, n_r + 1)
+        rr_c = (rr - rr.mean()).reshape(1, -1, 1)
+        rc = ranks - ranks.mean(axis=1, keepdims=True)
+        rho = (rc * rr_c).sum(axis=1) / np.sqrt((rc ** 2).sum(axis=1) * (rr_c ** 2).sum())
+        sp_all.append(rho[offdiag])
+        mono_n += int((np.diff(dbar9[:, 1:, :], axis=1) >= 0).all(axis=1)[offdiag].sum())
+        y = np.transpose(dbar9, (0, 2, 1))[..., : len(x)].astype(np.float64)
+        yc = y - y.mean(axis=-1, keepdims=True)
+        b_hat = (xc * yc).sum(-1) / (xc * xc).sum()                # 低剂量段 OLS 斜率
+        r2_all.append(1.0 - ((yc - b_hat[..., None] * xc) ** 2).sum(-1) / (yc ** 2).sum(-1))
+    sp_all = np.concatenate(sp_all)
+    r2_all = np.concatenate([v[offdiag] for v in r2_all])
+    mono_frac = mono_n / (len(sids) * int(offdiag.sum()))
+    figs["mono_r2"] = viz.render("mono_r2", {
+        "spearman": sp_all, "r2": r2_all, "mono_frac": mono_frac,
+        "n_subjects": len(sids),
+        "note": "Spearman over 9 grid points incl. r=0 (D=0 by CRN identity)"},
+        "mono_r2.png")
+    log(f"② 单调性/R²：Spearman median={np.median(sp_all):.4f}（完全非降 {mono_frac * 100:.1f}%）、"
+        f"低剂量 R² median={np.median(r2_all):.4f}——预期全 1.0，照登")
+
+    # ---- ③ 噪声地板分离 + 删失率柱 ----
+    d_boxes = [np.concatenate([dbars[sid][:, j + 1, :][offdiag] for sid in sids])
+               for j in range(PC.N_R_PERT)]
+    prod_rs = {k: prod["rstar_" + k] for k in ("ttil025", "ttil050", "abs_q90", "abs_q95", "abs_q99")}
+    figs["floor_separation"] = viz.render("floor_separation", {
+        "r_labels": [f"{r:g}" for r in PC.PERT_R_GRID],
+        "d_boxes": d_boxes, "null_pool": nulls_pooled, "taus": taus_pooled,
+        "censor_abs": {f"abs {k}": float((v[:, offdiag] > PC.R_MAX).mean())
+                       for k, v in (("q90", prod_rs["abs_q90"]), ("q95", prod_rs["abs_q95"]),
+                                    ("q99", prod_rs["abs_q99"]))},
+        "censor_rel": {f"ttil {PC.TAU_TILDE_MAIN:g}":
+                       float((prod_rs["ttil025"][:, offdiag] > PC.R_MAX).mean()),
+                       f"ttil {PC.TAU_TILDE_SENS:g}":
+                       float((prod_rs["ttil050"][:, offdiag] > PC.R_MAX).mean())},
+        "note": "pooled 10 subjects; boxes = cross-channel D-bar per r; null = independent "
+                "baseline sample pairs (same-window CRN); absolute tau lines for materiality"},
+        "floor_separation.png")
+    log(f"③ 地板分离：null q95={taus_pooled['q95']:.3f}（跨例池）vs D̄(r_max) 跨通道 median="
+        f"{np.median(d_boxes[-1]):.4f}；删失率柱（绝对 3 档 + τ̃ 两档）落盘")
+
+    # ---- ④ 空间衰减 sanity ----
+    from scipy.stats import spearmanr
+    dist_v = np.tile(dist_mm[offdiag], len(sids))
+    dmax_v = np.concatenate([dbars[sid][:, j_top + 1, :][offdiag] for sid in sids])
+    rho_sp = float(spearmanr(dist_v, dmax_v).statistic)
+    rng = np.random.default_rng(PC.SEED)
+    sub = rng.choice(dist_v.size, size=min(8000, dist_v.size), replace=False)
+    figs["spatial_decay"] = viz.render("spatial_decay", {
+        "dist": dist_v[sub], "dmax": dmax_v[sub],
+        "per_subject": [{"sid": sid, "dist": dist_mm[offdiag],
+                         "dmax": dbars[sid][:, j_top + 1, :][offdiag]} for sid in sids],
+        "rho": rho_sp,
+        "note": "pooled 10 subjects, scatter subsampled (seed 2026); qualitative sanity only"},
+        "spatial_decay.png")
+    log(f"④ 空间衰减：Spearman ρ(D̄(r_max), dist)={rho_sp:.3f}（定性 sanity，不作判据）")
+
+    # ---- ⑤ 对角 vs 跨通道 + 先验自响应分量解析量化（零网络前向）----
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    cfg = LD.load_v4afmt_config().build_config()
+    prior = S.build_eval_prior(cfg, device)
+    _loader_obj, test_ds = LD.load_test_loader(batch_size=4, num_workers=2)
+    subs = LD.subsample_windows_per_subject(test_ds)
+    sig_min = float(cfg.sigma_min)
+    ident_checked = False
+    rms_mu_all, s_x0_all = {}, {}
+    for si, sid in enumerate(sids):
+        win_global = [int(i) for i in subs[sid][:PC.N_W]]
+        rm, sx = [], []
+        for wseq, gidx in enumerate(win_global):
+            win_idx = si * PC.N_W + wseq
+            xp = test_ds[gidx][0].to(device)
+            eps, eta = RS.crn_noise(win_idx, PC.K, cfg.n_channels, cfg.future_len, device)
+            mu = prior.posterior_mean(xp.unsqueeze(0))              # (1,C,F)
+            if not ident_checked:                                   # 先验逐通道恒等运行时复验
+                r_chk = PC.PERT_R_GRID[-1]
+                pm_p = prior.posterior_mean(PB.apply_gain(xp, 0, r_chk).unsqueeze(0))
+                diff = pm_p - mu
+                assert torch.isclose(diff[0, 0], r_chk * mu[0, 0], rtol=1e-4, atol=1e-6).all() \
+                    and diff[0, 1:].abs().max().item() == 0.0, \
+                    "posterior_mean 扰动差 B≠A 非零（先验逐通道事实破坏，design §2.1）"
+                log(f"⑤ 先验恒等复验通过：μ 扰动差 = r·μ_A（A 通道）且 B≠A 严格为 0"
+                    f"（窗 win_idx={win_idx}，r={r_chk}）")
+                ident_checked = True
+            x0 = prior.bandlimit(mu.unsqueeze(1) + torch.einsum(
+                "ij,bqjk,lk->bqil", prior.L_s, eps, prior.L_t))
+            if sig_min > 0:
+                x0 = x0 + sig_min * eta
+            rm.append(mu.pow(2).mean(-1).sqrt()[0].double().cpu().numpy())
+            dev = x0 - x0.mean(dim=1, keepdim=True)                # 对 K 求均值（同 baseline_scale）
+            sx.append(dev.pow(2).mean(dim=(1, 3)).sqrt()[0].double().cpu().numpy())  # (C,)
+        rms_mu_all[sid] = np.stack(rm)                              # (32, 62)
+        s_x0_all[sid] = np.stack(sx)
+    ratio_w = {sid: rms_mu_all[sid] / s_x0_all[sid] for sid in sids}   # (32,62) RMS(μ)/s_x0
+    s_x0_med = float(np.median(np.concatenate([s_x0_all[sid].reshape(-1)
+                                               for sid in sids])))
+    s_fin_implied = float(np.median(nulls_pooled) / np.sqrt(2.0))
+    prior_by_r = {f"{r:g}": np.concatenate([r * np.median(ratio_w[sid], axis=0)
+                                            for sid in sids]) for r in PC.PERT_R_GRID}
+    share_by_r = {}
+    for r in PC.PERT_R_GRID:
+        j = PC.PERT_R_GRID.index(r) + 1
+        obs = np.concatenate([np.diag(dbars[sid][:, j, :]) for sid in sids])
+        share_by_r[f"{r:g}"] = prior_by_r[f"{r:g}"] / obs
+    sel_r = (0.08, 0.32, 1.28)
+    figs["diag_vs_cross"] = viz.render("diag_vs_cross", {
+        "r_grid": r_grid,
+        "self_med": np.array([0.0] + [np.median(np.concatenate(
+            [np.diag(dbars[sid][:, j + 1, :]) for sid in sids])) for j in range(PC.N_R_PERT)]),
+        "self_q1": np.array([0.0] + [np.quantile(np.concatenate(
+            [np.diag(dbars[sid][:, j + 1, :]) for sid in sids]), 0.25)
+            for j in range(PC.N_R_PERT)]),
+        "self_q3": np.array([0.0] + [np.quantile(np.concatenate(
+            [np.diag(dbars[sid][:, j + 1, :]) for sid in sids]), 0.75)
+            for j in range(PC.N_R_PERT)]),
+        "cross_med": np.array([0.0] + [np.median(np.concatenate(
+            [dbars[sid][:, j + 1, :][offdiag] for sid in sids]))
+            for j in range(PC.N_R_PERT)]),
+        "cross_q1": np.array([0.0] + [np.quantile(np.concatenate(
+            [dbars[sid][:, j + 1, :][offdiag] for sid in sids]), 0.25)
+            for j in range(PC.N_R_PERT)]),
+        "cross_q3": np.array([0.0] + [np.quantile(np.concatenate(
+            [dbars[sid][:, j + 1, :][offdiag] for sid in sids]), 0.75)
+            for j in range(PC.N_R_PERT)]),
+        "prior_med": np.array([0.0] + [np.median(prior_by_r[f"{r:g}"])
+                                       for r in PC.PERT_R_GRID]),
+        "prior_q1": np.array([0.0] + [np.quantile(prior_by_r[f"{r:g}"], 0.25)
+                                      for r in PC.PERT_R_GRID]),
+        "prior_q3": np.array([0.0] + [np.quantile(prior_by_r[f"{r:g}"], 0.75)
+                                      for r in PC.PERT_R_GRID]),
+        "share": {"r_labels": [f"{r:g}" for r in sel_r],
+                  "boxes": [share_by_r[f"{r:g}"] for r in sel_r]},
+        "note": ("prior self component = r*RMS(mu)/s_x0 (analytic x0-level rebuild, same CRN "
+                 "eps as main run, zero network passes);\nobserved D normalized by final-sample "
+                 f"s_final (not stored) -- scale context: median s_x0={s_x0_med:.3f}, implied "
+                 f"s_final~null/sqrt2={s_fin_implied:.3f}")},
+        "diag_vs_cross.png")
+    share_stats = {k: {"median": float(np.median(v)), "q1": float(np.quantile(v, 0.25)),
+                       "q3": float(np.quantile(v, 0.75))} for k, v in share_by_r.items()}
+    log(f"⑤ 对角 vs 跨通道：先验分量 share median（r=0.08/0.32/1.28）= "
+        f"{share_stats['0.08']['median']:.3f}/{share_stats['0.32']['median']:.3f}/"
+        f"{share_stats['1.28']['median']:.3f}；尺度：s_x0 中位 {s_x0_med:.3f} vs 隐含 s_final "
+        f"{s_fin_implied:.3f}（share 校正因子 ×{s_x0_med / s_fin_implied:.3f}）")
+
+    # ---- ⑥ EC 矩阵热图（3 readout × 组均 + s10 + s69）----
+    figs["ec_heatmaps"] = viz.render("ec_heatmap_grid", {
+        "rows": [{"label": "slope (main)", "mats": [prod["ec_group_slope"],
+                                                    prod["slope"][0], prod["slope"][-1]]},
+                 {"label": "AUC", "mats": [prod["ec_group_auc"],
+                                           prod["auc"][0], prod["auc"][-1]]},
+                 {"label": "rstar strength (tt0.25)",
+                  "mats": [prod["ec_group_rstar_strength"],
+                           prod["strength_ttil025"][0], prod["strength_ttil025"][-1]]}],
+        "col_labels": [f"group-mean (n={len(sids)})", f"s{sids[0]}", f"s{sids[-1]}"],
+        "unit": "strength (larger=stronger)",
+        "note": "rows = source, cols = target; per-row shared color scale"},
+        "ec_heatmaps.png")
+    log("⑥ EC 热图 3 readout ×（组均 + s10 + s69）落盘")
+
+    # ---- ⑦ top-100 有效路径清单表（markdown，数据 = readout 阶段 pooled csv）----
+    import csv as _csv
+    with open(out / "slope_top100_pooled.csv", encoding="utf-8") as f:
+        rows = list(_csv.DictReader(f))
+    md = ["# slope top-100 effective paths (pooled, 10 subjects)", "",
+          "- ranking: per-edge median slope across the 10 fold0-test subjects (main readout, "
+          "tau-free);", "  `n_reach` = subjects where r* <= r_max under tau-tilde 0.25 "
+          "(relative caliber); dist = channel-pair Euclidean distance (mm).", "",
+          "| rank | A->B | slope median | slope min-max | n_reach (of 10) | dist mm |",
+          "|---|---|---|---|---|---|"]
+    for r in rows:
+        md.append(f"| {r['rank']} | {r['src_A']}->{r['tgt_B']} | {float(r['slope_median']):.4f} | "
+                  f"{float(r['slope_min']):.4f}-{float(r['slope_max']):.4f} | "
+                  f"{r['rstar025_uncensored_n']} | {float(r['dist_mm']):.0f} |")
+    (out / "top100_paths_table.md").write_text("\n".join(md) + "\n", encoding="utf-8")
+    log(f"⑦ top-100 清单表 markdown 落盘（{len(rows)} 行；csv=清单主载体）")
+
+    prior_json = {
+        "git_head": git_head, "method": "x0-level analytic rebuild (posterior_mean + same CRN "
+        "eps/eta as main run, zero network passes); D_prior(A,r;w)=r*RMS_t(mu_A)/s_x0(w,A)",
+        "sigma_min": sig_min, "device": device,
+        "identity_check": "posterior_mean perturbation diff strictly zero for B!=A (passed)",
+        "s_x0_median": s_x0_med, "s_final_implied_sqrt2": s_fin_implied,
+        "scale_correction_factor_sx0_over_sfinal": s_x0_med / s_fin_implied,
+        "share_stats_by_r": share_stats,
+        "note": "observed D normalized by final-sample s_final (not stored, no resampling); "
+                "share_true ~ share * (s_x0/s_final)",
+    }
+    (out / "prior_component.json").write_text(
+        json.dumps(prior_json, indent=2, ensure_ascii=False), encoding="utf-8")
+    figs_list = (out / "figs_metrics.json")
+    figs_list.write_text(json.dumps({
+        "git_head": git_head, "stage": "figs", "run_id": run_id,
+        "figs": figs, "fig1_picks": fig1_picks,
+        "mono": {"spearman_median": float(np.median(sp_all)),
+                 "r2_median": float(np.median(r2_all)),
+                 "mono_frac": mono_frac},
+        "spatial": {"spearman_rho": rho_sp},
+        "prior": prior_json, "taus_pooled": taus_pooled,
+        "elapsed_s": round(time.time() - t0, 1)}, indent=2, ensure_ascii=False),
+        encoding="utf-8")
+    log(f"figs 完成：总耗时 {time.time() - t0:.1f}s；七件套图 {len(figs)} 文件落盘 "
+        f"figs/ + prior_component.json + top100_paths_table.md")
+
+
 def main() -> None:
     p = argparse.ArgumentParser(
         description="fold0 虚拟扰动→EC 有效路径推断（v4a-fmt 冻结代理脑，任务 10-17-perturb-ec-f0）")
@@ -989,8 +1560,12 @@ def main() -> None:
         stage_bench(run_id=args.run_id or "bench-01", n_subjects=args.subjects or 1)
     elif args.stage == "main":
         stage_main(run_id=args.run_id or "main-01", n_subjects=args.subjects)
+    elif args.stage == "readout":
+        stage_readout(run_id=args.run_id or "readout-01")
+    elif args.stage == "figs":
+        stage_figs(run_id=args.run_id or "readout-01")
     else:
-        print(f"[run] stage {args.stage!r} not implemented yet（implement.md B4/B5）")
+        print(f"[run] stage {args.stage!r} not implemented yet（implement.md B5）")
 
 
 if __name__ == "__main__":

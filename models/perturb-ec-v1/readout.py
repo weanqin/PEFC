@@ -66,6 +66,29 @@ def effective_paths(rstar):
     return [(int(a), int(b)) for a, b in zip(*np.nonzero(m))]
 
 
+def dtil_curves(dbar9):
+    """τ v2 相对自响应曲线（design §2.3 v2，Run 004）：D̃_{A→B}(r) = D̄_{A→B}(r)/D̄_{B→B}(r)。
+
+    输入 dbar9 (62, 9, 62) 索引 [A, r, B]（主 Run dbar_median_s*.npy 原生轴序）；输出
+    (62, 62, 9) 索引 [A, B, r]（readout 契约 r 末维）。分母 = 靶通道自响应 D̄_{B→B}(r)
+    （dbar9[B, j, B]，同 r 列对角）；r=0 槽置 0（D̄(0)=0 按构造，与 Run 002 预览实现
+    一致）；A=B 处 D̃≡1（r>0 槽，仅约定不进路径判定）。判读纪律（design §2.3）：
+    分母靶自响应偏小会放大比值，不将 D̃ 数值作跨靶比较。
+    """
+    dbar9 = np.asarray(dbar9, dtype=np.float64)
+    PC = PB.load_config()
+    n, g = PC.N_SRC, len(PC.R_GRID)
+    assert dbar9.shape == (n, g, n), f"dbar9 形状 {dbar9.shape} != ({n},{g},{n})"
+    dtil = np.zeros((n, n, g), dtype=np.float64)
+    idx = np.arange(n)
+    for j in range(1, g):                                  # r=0 槽保持 0
+        Mj = dbar9[:, j, :]                                # (A, B)
+        selfj = Mj[idx, idx]                               # D̄_{B→B}(r_j)
+        assert (selfj > 0).all(), f"r 档 {j} 存在零自响应（D̃ 除零）"
+        dtil[:, :, j] = Mj / selfj[None, :]
+    return dtil
+
+
 def save_ec_pert_npz(path, ec, readout: str, subject_ids):
     """load_ec_pert 契约 npz 落盘（比较器 = baseline-ec-v1 compare.py，**子进程/文件面
     交换**，进程内不 import；字段按 design §5 抄写）：
