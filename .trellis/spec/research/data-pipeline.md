@@ -15,4 +15,4 @@
 - 划分以**受试者**为单位：同一受试者的全部数据（含全部时间窗）必须落在同一折，禁止跨折（防泄漏）。
 - 划分确定后固定 fold 标识（fold id + 划分 seed）并登记，全程沿用；变更按 [evaluation-calibers.md](./evaluation-calibers.md) 口径变更纪律执行。
 - study1 前置验证固定使用 **fold0**（门禁见 [surrogate-brain-qualification.md](./surrogate-brain-qualification.md)）。
-- **fold0 内层长期口径（用户 2026-10-16 拍板，v4 系起累计）**：fold0 的训练折再切 **7/1/2 = 32/4/10 受试者**（train/val/test，经 `split_manifest_override` 固定 manifest 文件逐字节复用）；变体间对比一律同 manifest 同口径。此前 v1/v2 的 7/2/1（34/2/10）属历史口径，与 v4 系对比时须在判读随附口径差异清单（见任务 10-16 experiment.md）。
+- **fold0 内层长期口径（用户 2026-10-16 拍板，v4 系起累计）**：fold0 的训练折再切 **7/1/2 = 32/4/10 受试者**（train/val/test，经 `split_manifest_override` 固定 manifest 文件逐字节复用）；变体间对比一律同 manifest 同口径。此前 v1/v2 的 7/2/1（34/2/10）属历史口径，与 v4 系对比时须在判读随附口径差异清单（见任务 10-16 experiment.md）。**口径语义 = `n_val_subjects=4`（分层每类 2）+ fold0 测试折整折**，整数分配随数据集规模缩放（edra 46 例→32/4/10；edra-fmt 48 例→34/4/10，任务 10-16-gpfm-mamba-fmt-f0 实测）——「7/1/2」为比例语义，非固定整数。

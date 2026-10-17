@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/research/surrogate-brain-qualification.md", "reason": "检查 fold0 单 seed 门禁未越线（不得启动 5-fold）、三检验产物齐全性"}
+{"file": ".trellis/spec/research/path-isolation.md", "reason": "检查产物落点：全部在 declared 变体目录与新 outputs 根内；无跨变体写入、无旧任务目录污染"}
+{"file": ".trellis/spec/research/reproducibility.md", "reason": "检查 config_hash 零漂移单测、resolved config dump、seed 登记齐全"}
+{"file": ".trellis/spec/research/evaluation-calibers.md", "reason": "检查新口径登记与不可比声明（GC 阻塞/无低通/p=25/fs=250）随附于全部对比表"}
+{"file": ".trellis/spec/research/experiment-log.md", "reason": "检查 experiment.md Run 块四区齐全、无空块"}
+{"file": ".trellis/tasks/10-16-gpfm-mamba-fmt-f0/research/edra-fmt-dataset.md", "reason": "对照数据集事实卡核对实现（窗数 930/例、status_ok 过滤、勿动数据本体）"}

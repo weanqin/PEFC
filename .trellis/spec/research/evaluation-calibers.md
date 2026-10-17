@@ -37,3 +37,11 @@
 ## R1 触发解读规则（2026-10-13 登记，任务 10-12 实测沉淀）
 
 - R1 监控的「采样终点 MAE ≥ 训练末期 x̂1-MAE × 1.5」分支在**训练折拟合加深的模型上会机械触发**——分母（train 折一步 mae）变小而非分子（test 折终点）变差（实测 v2=1.532 / v3=1.555 触发，终点 MAE 均未劣化于对照）。**触发后定性流程**：先核对训练末期 mae 是否显著低于同折对照，再定性「高 t 欠约束风险」或「口径效应」；登记必须附分子分母两值与对照参考。
+
+## edra-fmt（新预处理范式）产物口径（2026-10-17 登记，任务 10-16-gpfm-mamba-fmt-f0，用户拍板）
+
+- **genGC vs real GC 一致性对比暂时阻塞**：`gc_psd.run_all(skip_gc=True)`（default-off 钩子；evaluate `--skip-gc-only`）——GC 一致性不出现在任何产物；PSD/空间归因照跑。解除时点未定，解除时须先拍板 250 Hz 下 GC 口径（VAR 阶数采样点 vs 墙钟、fs 透传）。
+- **生成侧不加 40 Hz 低通**：`gen_lowpass_hz=None`（真实侧本就 1–40 Hz 带限，直接观察模型是否自行待在带内；实测 fold0 单 seed 生成侧 >40 Hz 占比 ≈ 真实 3×，大体在带内）。**旧范式（edra 500 Hz）40 Hz 低通口径不变**；跨范式谱类对比须登记该差异。
+- **`period_p` 50→25**：fs 减半时 GPR 时间核 p 同步减半保物理时长（`gpr_prior.py` τ 网格采样点单位）。跨范式对比 = 数据+先验（+低通+norm+纪律）多变量同变，非单变量，判读只做方向性观察并随附差异清单。
+- **fs=250 全链透传**：config `fs` 字段经 `getattr(cfg, "fs", 500.0)` 进 PSD Welch 与轨迹图（旧变体无字段 = 500 零漂移）。指标3 频段边界适配见 surrogate-brain-qualification.md（判读窗 1–30 Hz、照登段 40–125）。
+- **norm RMSNorm→LayerNorm**（`norm_type` 钩子，默认 rmsnorm 零漂移）：fmt 两变体 5 个 norm 位全换；容量 +80（v1-fmt d16）/+310（v4a-fmt d62）。

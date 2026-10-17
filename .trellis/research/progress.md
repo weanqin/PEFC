@@ -4,14 +4,15 @@
 
 ## 当前状态
 
-- **阶段**：Study I H3 跨通道交互假设**完成并关闭**（任务 10-16 归档，用户 2026-10-16 拍板）——H3 判「不支持」：v4a rank-16 输入接口（GC r 0.092 ≈ v2）与 v4b cMLP 顶层读出（0.133/0.163）两臂均不回升（v1 0.2755），缺口指向损失侧（无跨通道时序监督）或「深度持续混合」；v4a 逐通道质量五方最优（MAE 0.69540 / 逐通道 r 0.18317 首超 GPR 基线）
-- **5-fold 候选集已拍板（用户 2026-10-16）：{v1, v4a}**——v1 = GC 一致性最高构型；v4a = 质量最优构型；v2/v4b-d1/d8 落选
-- **下一任务（待建）**：5-fold 主实验（候选 {v1, v4a} × 5 折 × 单 seed 起步；口径沿用 7/1/2 内层切分（fold0=32/4/10）、早停 10、恒定 lr 1e-3、gen_lowpass 40 Hz）
-- **最近节点**：2026-10-16 任务 10-16 收尾：v4b-d1/d8 与 v4a 主 Run + 正式评估（Run 013 五列对比）、H3 判定、5-fold 候选登记、spec 回填（data-pipeline 7/1/2 长期口径、reproducibility default-off 钩子惯例）
-- **待拍板**：5-fold 任务启动（brainstorm：折内切分/seed 数/评估范围）
+- **阶段**：Study I edra-fmt 新预处理范式 fold0 前置验证**完成**（任务 10-16-gpfm-mamba-fmt-f0，2026-10-17）——v1-fmt/v4a-fmt（LayerNorm、p=25、无低通、**genGC vs real GC 阻塞**口径，48 例 34/4/10）均过指标1（FC 0.970/0.981）与指标3（1–30 Hz 0.317/0.301）；v4a-fmt 质量全维度最优（MAE 0.70565 / 逐通道 r 0.12335 超 GPR-r 0.116），候选排序与旧范式一致；无低通生成侧 >40 Hz 占比 ≈ 真实 3×（大体在带内）
+- **5-fold 候选集（用户 2026-10-16 拍板）：{v1, v4a}**；fmt 范式迁移后排序不变（判读权重向 v4a 侧）
+- **下一任务（待建）**：5-fold 主实验——**范式选择待拍板**（edra 500 Hz 旧口径 vs edra-fmt 新口径 vs 双轨）、折数 × seed 数、GC 阻塞是否延续（fmt 侧解除须先定 250 Hz GC 口径）
+- **最近节点**：2026-10-17 任务 fmt-f0 收尾：双变体主 Run（92/55 ep 早停）+ 正式评估（GC 阻塞验收逐文件过）、spec 回填（data/edra-fmt 契约、指标3 频段 1–30 Hz/40–Nyquist 适配、evaluation-calibers fmt 口径、reproducibility 钩子链、data-pipeline 整数分配语义）
+- **待拍板**：①指标2 视觉人工判（figs/ 两套）；②5-fold 范式与口径；③GC 阻塞解除时点
 
 ## 里程碑（只增不改）
 
 - 2026-10-10 · 研究框架文档定稿（用户提供）；Trellis 科研工作流装配完成；研究记忆初始化 · docs/research/research-direction.md
 - 2026-10-16 · GPR+Mamba 可行性肯定（任务 10-12 归档：三检验通过、Q1 v2 最优 MAE 0.701 未超 GPR 基线）· 完整记录见 journal Session 2
 - 2026-10-16 · H3 判「不支持」：混合不可局部移植为 GC 载体（接口/读出两臂证伪），5-fold 候选集 {v1, v4a}（任务 10-16 归档）· 完整记录见 journal Session 3
+- 2026-10-17 · edra-fmt 新范式 fold0 前置验证通过（指标1/3 过线、v4a-fmt 全维度最优、GC 阻塞中；任务 10-16-gpfm-mamba-fmt-f0）· 完整记录见 journal Session 4
