@@ -82,3 +82,45 @@ def null_distances(base: torch.Tensor) -> torch.Tensor:
         for j in range(i + 1, n):
             rows.append((base[i] - base[j]).pow(2).mean(dim=-1).sqrt() / s)
     return torch.stack(rows)
+
+
+# ---- B2 bench 代表性抽查专用（design §7-7：930 窗全集 baseline 侧量，批实现）----
+
+@torch.no_grad()
+def sample_baseline_batch(sampler, x_past: torch.Tensor, win_seeds) -> torch.Tensor:
+    """多窗 baseline-only 批采样：x_past (Bw, C, P) **一次** `sample()` 调用 → (Bw, K, C, F)。
+
+    逐窗独立 eps/eta（win_seeds (Bw,) 逐窗种子 → crn_noise 同构生成后堆叠）——结果只依赖
+    逐窗种子，与窗所在的批划分无关（代表性对比的可复现前提）。与
+    sample_window_variants 的 baseline 行走同一 EulerSampler 路径（分布等价）；批形不同
+    ⇒ 无跨批形逐位不变性保证（design §7-5），故本族函数只供**分布级**比较（QQ/分位数/KS）。
+    """
+    PC = PB.load_config()
+    Bw, Cn, _P = x_past.shape
+    F = sampler.prior.future_len
+    eps = torch.empty(Bw, PC.K, Cn, F, device=x_past.device)
+    eta = torch.empty_like(eps)
+    for b, sd in enumerate(win_seeds):
+        e, h = crn_noise(0, PC.K, Cn, F, x_past.device, int(sd))
+        eps[b], eta[b] = e[0], h[0]
+    return sampler.sample(x_past, PC.K, eps=eps, eta=eta)
+
+
+def baseline_scale_batch(base: torch.Tensor) -> torch.Tensor:
+    """baseline_scale 批量版：base (Bw, K, C, F) → s (Bw, C)（公式逐元素同构）。"""
+    dev = base - base.mean(dim=1, keepdim=True)
+    return dev.pow(2).mean(dim=(1, 3)).sqrt()
+
+
+def null_distances_batch(base: torch.Tensor) -> torch.Tensor:
+    """null_distances 批量版：base (Bw, K, C, F) → (Bw, K(K−1)/2, C)。
+
+    对序 (i,j) 升序与逐窗版一致（逐元素同构；调用方首窗 allclose 断言把关）。
+    """
+    n = base.shape[1]
+    s = baseline_scale_batch(base)
+    rows = []
+    for i in range(n):
+        for j in range(i + 1, n):
+            rows.append((base[:, i] - base[:, j]).pow(2).mean(dim=-1).sqrt() / s)
+    return torch.stack(rows, dim=1)

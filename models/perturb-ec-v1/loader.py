@@ -89,6 +89,22 @@ def load_test_loader(batch_size: int = 4, num_workers: int = 2):
     return S.iterate_test_batches(cfg, Path(PC.RUN_DIR), batch_size, num_workers)
 
 
+def subject_window_slice(test_ds, subject_id: int) -> slice:
+    """受试者在数据集全局窗索引中的连续区段（B2 bench 代表性扫描用，design §7-7）。
+
+    前提 = EdraWindowsDataset 构造契约「窗按受试者连续」（与
+    subsample_windows_per_subject 同一断言口径）；返回 slice(base, base+n)。
+    """
+    per = test_ds.n_windows_per_subject()
+    base = 0
+    for si, e in enumerate(test_ds.subjects):
+        n = per[si]
+        if int(e["subject_id"]) == subject_id:
+            return slice(base, base + n)
+        base += n
+    raise KeyError(f"subject {subject_id} 不在 test_ds.subjects：{test_ds.subjects}")
+
+
 def subsample_windows_per_subject(test_ds, n_w: int = None, seed: int = None) -> dict:
     """逐被试确定性窗子采样（design §3：默认 N_w=32/例、seed 2026、逐例独立）。
 

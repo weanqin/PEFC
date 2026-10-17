@@ -15,6 +15,9 @@
   gc_matrix        GC 有向矩阵对比（真实/生成热图 + 散点）
   training_curves  训练曲线（四项损失+total / 按 t 分桶 mae / EMA 幅度监控）
   spatial_corr     零滞后空间相关三方对比热图（R̂ / K_s / 真实 R）
+  dose_response    扰动剂量-响应曲线 D̄(r)（多 (A→B) 边 + τ 阈值线；perturb-ec-v1 增量）
+  qq_compare       子采样 vs 全集分位数 QQ 对比（代表性行抽查；perturb-ec-v1 增量）
+  tau_preview      τ 口径决策预览（地板分离 / 相对口径 D̃ 箱线 / slope 分布；预览非 readout）
 """
 
 from __future__ import annotations
@@ -89,7 +92,7 @@ class Visualizer:
     """
 
     FIG_TYPES = ("trajectories", "psd", "gc_matrix", "ec_matrix", "training_curves",
-                 "spatial_corr")
+                 "spatial_corr", "dose_response", "qq_compare", "tau_preview")
 
     def __init__(self, out_dir: str, dpi: int = 300):
         self.out_dir = out_dir
@@ -328,4 +331,172 @@ class Visualizer:
                          fontsize=4.6, va="bottom", color=PALETTE["neutral_dark"])
         for ax, lab in zip(axes, "abc"):
             add_panel_label(ax, lab, dx=-0.28)
+        return fig
+
+    # ---- ⑥ 扰动剂量-响应曲线（perturb-ec-v1 Study II 增量，2026-10-17）----
+    def _draw_dose_response(self, data: Dict, **cfg) -> mpl.figure.Figure:
+        """data: {
+            r_grid (G,) 剂量网格（含 0 点，线性 x 轴），
+            curves (n, G) D̄(r) 响应曲线（首列 ≡ r=0 ≡ 0 按 CRN 恒等构造；note 请用
+              ASCII——DejaVu 字体无 CJK 字形，中文会渲染为缺字框），
+            labels (n,) 曲线标签（如 "A=5→B=17 (strong)"），
+            kinds (n,) 可选曲线类别：'self' 用生成红族，其余跨通道路径走蓝/青/紫/灰族
+              （缺省全按跨通道配色），
+            tau float 主阈值线（虚线，右端直接标注），
+            tau_label str（默认 'τ'），
+            tau_sens dict {label: value} 敏感性阈值细线（点线，浅灰），
+            note str 图内注记（如 smoke 小样本口径，右下角灰字）
+        }；单面板，x = 扰动增益 r，y = 归一化 RMS 响应 D̄。"""
+        r = np.asarray(data["r_grid"], dtype=float)
+        curves = np.asarray(data["curves"], dtype=float)
+        n, G = curves.shape
+        assert r.shape == (G,), f"r_grid {r.shape} 与曲线 {curves.shape} 末维不符"
+        kinds = data.get("kinds") or ["cross"] * n
+        cross_cycle = [PALETTE["blue_main"], PALETTE["teal"], PALETTE["violet"],
+                       PALETTE["neutral_mid"], PALETTE["blue_secondary"]]
+        fig, ax = plt.subplots(figsize=(3.2, 2.4))
+        ci = 0
+        for i in range(n):
+            if kinds[i] == "self":
+                col, lw, z = PALETTE["red_strong"], 1.2, 4
+            else:
+                col, lw, z = cross_cycle[ci % len(cross_cycle)], 0.8, 3
+                ci += 1
+            ax.plot(r, curves[i], color=col, lw=lw, marker="o", ms=2.2, zorder=z,
+                    label=data["labels"][i])
+        if "tau" in data and data["tau"] is not None:
+            tau = float(data["tau"])
+            ax.axhline(tau, color=PALETTE["neutral_dark"], lw=0.8, ls="--", zorder=2)
+            ax.text(0.99, tau, f" {data.get('tau_label', 'τ')}",
+                    transform=ax.get_yaxis_transform(), ha="right", va="bottom",
+                    fontsize=6, color=PALETTE["neutral_dark"])
+            for k, v in (data.get("tau_sens") or {}).items():
+                ax.axhline(float(v), color=PALETTE["neutral_light"], lw=0.6, ls=":",
+                           zorder=1)
+                ax.text(0.99, float(v), f" {k}", transform=ax.get_yaxis_transform(),
+                        ha="right", va="bottom", fontsize=5,
+                        color=PALETTE["neutral_mid"])
+        ax.set_xlabel("perturbation gain r")
+        ax.set_ylabel(r"response $\bar{D}(r)$  (norm. RMS)")
+        ax.legend(loc="upper left")
+        if data.get("note"):
+            ax.text(0.98, 0.02, data["note"], transform=ax.transAxes, fontsize=4.6,
+                    ha="right", va="bottom", color=PALETTE["neutral_mid"])
+        fig.tight_layout()
+        return fig
+
+    # ---- ⑦ 子采样 vs 全集 QQ 对比（perturb-ec-v1 Study II 增量，2026-10-17 B2）----
+    def _draw_qq_compare(self, data: Dict, **cfg) -> mpl.figure.Figure:
+        """data: {
+            panels: [ {"label": str（轴标签量名）, "title": str 可选,
+                       "sub": (n,) 子样本值, "full": (m,) 全集值,
+                       "stat_lines": [str, ...] 可选左上注记行}, ... ]（1–3 面板）,
+            qgrid (Q,) 分位数网格（缺省 linspace(0.005, 0.995, 199)）,
+            note str 可选右下注记
+        }；每面板 QQ 散点（x = 全集分位数、y = 子样本分位数）+ y=x 参考虚线。
+        代表性行抽查：子样本分位数贴近 y=x ⇒ 同分布。"""
+        panels = data["panels"]
+        qgrid = np.asarray(data.get("qgrid", np.linspace(0.005, 0.995, 199)), dtype=float)
+        fig, axes = plt.subplots(1, len(panels), figsize=(2.9 * len(panels), 2.7),
+                                 squeeze=False)
+        for ax, p in zip(axes[0], panels):
+            qf = np.quantile(np.asarray(p["full"], dtype=float), qgrid)
+            qs = np.quantile(np.asarray(p["sub"], dtype=float), qgrid)
+            ax.scatter(qf, qs, s=3, alpha=0.5, color=PALETTE["blue_main"], rasterized=True)
+            lim = max(float(qf.max()), float(qs.max())) * 1.05
+            ax.plot([0, lim], [0, lim], ls="--", lw=0.7, color=PALETTE["neutral_mid"])
+            ax.set_xlim(0, lim)
+            ax.set_ylim(0, lim)
+            ax.set_title(p.get("title", p["label"]), fontsize=6)
+            ax.set_xlabel(f"{p['label']}  (full-set quantile)")
+            ax.set_ylabel("subsample quantile")
+            stats = p.get("stat_lines") or []
+            if stats:
+                ax.text(0.04, 0.96, "\n".join(stats), transform=ax.transAxes,
+                        fontsize=4.6, va="top", color=PALETTE["neutral_dark"])
+        for ax, lab in zip(axes[0], "abc"[:len(panels)]):
+            add_panel_label(ax, lab, dx=-0.28)
+        if data.get("note"):
+            fig.text(0.99, 0.005, data["note"], ha="right", va="bottom", fontsize=4.6,
+                     color=PALETTE["neutral_mid"])
+        fig.tight_layout()
+        return fig
+
+    # ---- ⑧ τ 口径决策预览（perturb-ec-v1 Study II 增量，2026-10-17 B2；预览非 readout）----
+    def _draw_tau_preview(self, data: Dict, **cfg) -> mpl.figure.Figure:
+        """data: {
+            null_pool (n,) null 距离池（面板 a 直方图，中性灰）,
+            dbar_cross_rmax (m,) 跨通道 D̄(r_max)（面板 a 直方图，蓝）,
+            taus dict {label: value} 预注册 τ 横线（面板 a，右端标注）,
+            dtil {"r_labels": [str], "boxes": [(m,) ...], "lines": {label: value} τ̃ 横线,
+                   "censor_lines": [str]} 面板 b 素材（D̃(r) 分布 + 相对口径删失率注记）,
+            slope {"values": (m,), "stats": dict（median/q1/q3 数值线标注用）} 面板 c 素材,
+            note str 预览口径注记（右下）
+        }；面板 a = 噪声地板分离（密度直方图 log-y + τ 线）；面板 b = 相对口径 D̃(r) 箱线 +
+        τ̃ 线；面板 c = 低剂量 slope 分布直方图。**预览图：非 readout 承诺，τ 口径待拍板。**"""
+        fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(7.0, 2.5))
+        # (a) 地板分离
+        null_pool = np.asarray(data["null_pool"], dtype=float)
+        dmax = np.asarray(data["dbar_cross_rmax"], dtype=float)
+        bins = np.linspace(0, max(null_pool.max(), dmax.max()) * 1.02, 80)
+        ax1.hist(null_pool, bins=bins, density=True, color=PALETTE["neutral_light"],
+                 alpha=0.85, label="null pool (indep. pairs)")
+        ax1.hist(dmax, bins=bins, density=True, color=PALETTE["blue_main"], alpha=0.6,
+                 label=r"cross $\bar{D}(r_{max})$")
+        ax1.set_yscale("log")
+        ax1.set_xlim(0, bins[-1])                      # 非负量：压掉自动负 tick 余量
+        ymin, ymax = ax1.get_ylim()
+        for k, v in (data.get("taus") or {}).items():
+            ax1.axvline(float(v), color=PALETTE["neutral_dark"], lw=0.7, ls="--")
+            ax1.text(float(v), ymin, f"{k}={float(v):.2f}", rotation=90, fontsize=4.6,
+                     va="bottom", ha="right", color=PALETTE["neutral_dark"])
+        ax1.set_xlabel("normalized distance / response")
+        ax1.set_ylabel("density (log)")
+        ax1.set_title("noise floor separation", fontsize=6)
+        ax1.legend(loc="upper right", fontsize=4.6)
+        add_panel_label(ax1, "a", dx=-0.28)
+        # (b) 相对口径 D̃(r) 箱线
+        dtil = data["dtil"]
+        boxes = [np.asarray(b, dtype=float) for b in dtil["boxes"]]
+        ax2.boxplot(boxes, widths=0.5, patch_artist=True, showfliers=False,
+                    medianprops=dict(color=PALETTE["red_strong"], lw=1.0),
+                    boxprops=dict(facecolor=PALETTE["red_soft"], alpha=0.5,
+                                  edgecolor=PALETTE["neutral_dark"], lw=0.6),
+                    whiskerprops=dict(lw=0.6), capprops=dict(lw=0.6))
+        ax2.set_xticks(np.arange(1, len(boxes) + 1))
+        ax2.set_xticklabels(dtil["r_labels"])
+        ax2.set_ylim(0, None)                          # D̃ 非负：下界贴 0
+        for k, v in (dtil.get("lines") or {}).items():
+            ax2.axhline(float(v), color=PALETTE["neutral_dark"], lw=0.7, ls="--")
+            ax2.text(0.99, float(v), f" {k}", transform=ax2.get_yaxis_transform(),
+                     ha="right", va="bottom", fontsize=5, color=PALETTE["neutral_dark"])
+        cens = dtil.get("censor_lines") or []
+        if cens:
+            ax2.text(0.03, 0.97, "\n".join(cens), transform=ax2.transAxes, fontsize=4.6,
+                     va="top", color=PALETTE["neutral_dark"])
+        ax2.set_ylabel(r"relative response $\tilde{D}(r)$")
+        ax2.set_xlabel("perturbation gain r")
+        ax2.set_title("relative caliber (vs self-response)", fontsize=6)
+        add_panel_label(ax2, "b", dx=-0.22)
+        # (c) slope 分布
+        sl = data["slope"]
+        vals = np.asarray(sl["values"], dtype=float)
+        ax3.hist(vals, bins=60, density=True, color=PALETTE["teal"], alpha=0.7)
+        st = sl.get("stats", {})
+        for key, col in (("median", PALETTE["neutral_dark"]),
+                         ("q1", PALETTE["neutral_light"]), ("q3", PALETTE["neutral_light"])):
+            if key in st:
+                ax3.axvline(float(st[key]), color=col, lw=0.8 if key == "median" else 0.6,
+                            ls="-" if key == "median" else ":")
+        if "median" in st:
+            ax3.text(0.97, 0.95, f"median={st['median']:.4f}", transform=ax3.transAxes,
+                     fontsize=4.6, ha="right", va="top", color=PALETTE["neutral_dark"])
+        ax3.set_xlabel("low-dose slope (OLS, r$\\leq$0.08)")
+        ax3.set_ylabel("density")
+        ax3.set_title("slope readout (tau-free)", fontsize=6)
+        add_panel_label(ax3, "c", dx=-0.22)
+        if data.get("note"):
+            fig.text(0.99, 0.005, data["note"], ha="right", va="bottom", fontsize=4.6,
+                     color=PALETTE["neutral_mid"])
+        fig.tight_layout()
         return fig

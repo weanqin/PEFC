@@ -7,7 +7,7 @@
 ## Requirements
 
 - **R1 θ\* 冻结（只读）**：主模型 = `outputs/gpfm-mamba-fmt-f0/v4afmt-main-01/checkpoints/gpfm-mamba-v4a-fmt-best.pt`（best ep45，config_hash 05d9bb875a2c，EMA 权重）。本任务零训练、零微调、零模型侧改动。
-- **R2 四要素设计落地**：扰动算子 P(X,A,r)、响应度量 D、响应阈值 τ（数据驱动独立模块，区分自然波动与真实响应）、临界强度搜索（r 网格）全部**预注册**（design.md 定稿 + experiment.md 首个 Run 块登记），备选方案与口径变更纪律显式。
+- **R2 四要素设计落地**：扰动算子 P(X,A,r)、响应度量 D、响应阈值 τ（数据驱动独立模块；**操作性口径 = 相对自响应 τ̃=0.25，用户 2026-10-17 拍板**，绝对口径降为材质性观察照登——见 design §2.3 v2 变更登记）、临界强度搜索（r 网格）全部**预注册**（design.md 定稿 + experiment.md 首个 Run 块登记），备选方案与口径变更纪律显式。
 - **R3 readout 三件套按已登记约束实现**（evaluation-calibers.md「Study II 扰动 EC 对比口径」）：主 = 低剂量斜率（r 网格低密度段加密），次 = AUC，降级 = r\*（右删失标注 + τ 阈值敏感性登记）。
 - **R4 CRN 确定性契约**：baseline 与 perturbed 采样共享显式 eps/eta（`EulerSampler.sample` 已支持）；r=0 输出逐位恒等由单测锁定。
 - **R5 fold0 端到端**：fold0 test 10 例（subject IDs [10,11,12,17,24,28,30,44,61,69]，与 fmt 任务逐 ID 一致）跑通，产出逐受试者 62×62 EC_pert 矩阵（行=源、列=靶）+ 有效路径集（r\*≤r_max 的有向边 A→B，A≠B）。
@@ -27,7 +27,7 @@
 - [ ] AC1 四要素预注册完成：design.md 定稿 + experiment.md 首个 Run 块登记全部口径（含实现口径声明：seeds/通道顺序/对角处理/方向约定）
 - [ ] AC2 CRN 契约单测通过：r=0 输出逐位恒等；扰动仅改源通道输入；显式 eps/eta 确定性复现（同输入两次调用逐位相同）
 - [ ] AC3 端到端主 Run 在 fold0 test 10 例完成，产物完整落盘（窗级 D 曲线 npz、受试者级 EC 三 readout npz、load_ec_pert 契约 npz、有效路径集、诊断图）
-- [ ] AC4 噪声地板 null 分布与 τ 标定完成（95% 分位主口径 + 90%/99% 敏感性），响应-地板分离度与剂量-响应形态诊断登记
+- [ ] AC4 噪声地板 null 分布与 τ 标定完成：绝对口径三分位（q90/95/99，逐被试分池）与删失率照登（材质性观察）+ v2 相对口径 τ̃=0.25/0.50 的 r\* 与路径集敏感性；响应-地板分离度与剂量-响应形态诊断登记
 - [ ] AC5 比较器完整运行：主指标偏相关 ρ + 未偏 ρ 上下文 + t×Holm + bootstrap CI + **split-half 天花板 fmt 10 例重算**（必做，review 对齐预登记口径）与 ρ̄/ceiling 比值登记
 - [ ] AC6 结论判定明确：主 readout（低剂量斜率）对两参考法结构收敛性是否达初步证据门槛（ρ̄>0 且 Holm 校正 p<0.05）**如实判定**；未达门槛则交付缺口诊断与下一步选项，不宣称成功
 - [ ] AC7 experiment.md Run 块完整回填；Study II 四要素首版流程规范沉淀列入 3.3 spec 更新候选
