@@ -14,7 +14,7 @@
 
 | 路线 | 一句话方法 | 代码位置 | 状态 |
 |---|---|---|---|
-| Study I：EEG Conditional Future Generation | 训练代理脑 X_past→X_future（时序预测/条件生成/时间修补三视角），含 EEG 表征、未来生成、代理脑有效性三层次 | `models/gpfm-mamba-v1/`（+v2/v4b/v4a/v1-fmt/v4a-fmt 变体目录） | gpfm-mamba v1/v2/v4 已实现，fold0 单 seed 前置验证（任务 10-12）与 H3 消融（任务 10-16）完成；**5-fold 候选集已拍板 {v1, v4a}**；新范式 edra-fmt fold0 前置验证完成（任务 10-16-gpfm-mamba-fmt-f0，2026-10-17，LayerNorm/p=25/无低通/GC 阻塞口径）；5-fold 主实验待启动 |
+| Study I：EEG Conditional Future Generation | 训练代理脑 X_past→X_future（时序预测/条件生成/时间修补三视角），含 EEG 表征、未来生成、代理脑有效性三层次 | `models/gpfm-mamba-v1/`（+v2/v4b/v4a/v1-fmt/v4a-fmt/v4a-fmt-adaln 变体目录） | gpfm-mamba v1/v2/v4 已实现，fold0 单 seed 前置验证（任务 10-12）与 H3 消融（任务 10-16）完成；**5-fold 候选集已拍板 {v1, v4a}**；新范式 edra-fmt fold0 前置验证完成（任务 10-16-gpfm-mamba-fmt-f0，2026-10-17，LayerNorm/p=25/无低通/GC 阻塞口径）；adaLN(t) 消融中性结果（任务 10-17-gpfm-mamba-adaln-f0，2026-10-17，排序不变）；5-fold 主实验待启动 |
 | Study II：Critical Perturbation Connectivity Inference | 固定 θ* 后扰动源节点 A→测目标节点 B 响应→搜临界强度 r*_A→B=inf{r:Δ(r)≥τ}→临界扰动矩阵→连接强度 | 依赖 Study I | 四要素均未定义 |
 
 Study I 是 Study II 的前置（先建立可信代理脑，再做虚拟扰动）。注意：**预测质量 ≠ Surrogate Brain Validity**，须作为两个独立问题评价。
@@ -32,6 +32,8 @@ Study I 是 Study II 的前置（先建立可信代理脑，再做虚拟扰动�
 2026-10-16 H3 判定（任务 10-16 归档，用户拍板）：**「跨通道混合可局部移植为 GC 载体」不支持**——v4a rank-16 输入接口（GC r 0.092，五方最低、≈v2 CI 重叠）与 v4b cMLP 顶层读出（d1 0.133 / d8 0.163）两臂均不回升（v1 0.2755），缺口共同指向**损失侧**（无跨通道时序监督）或 v1 优势载体「深度持续混合」（16 维贯穿 trunk 全深，原 C 方案域不追）。v4a 逐通道质量五方最优（MAE 0.69540 / CRPS 0.52392 / 逐通道 r 0.18317 首超 GPR 均值基线），GC 缺口与质量缺口解耦。**5-fold 候选集 = {v1, v4a}**（v2/v4b-d1/d8 落选）。fold0 累计口径：32/4/10 划分、早停 10、恒定 lr 1e-3、gen_lowpass 40 Hz。
 
 2026-10-17 edra-fmt 新范式 fold0 前置验证（任务 10-16-gpfm-mamba-fmt-f0，单 seed，LayerNorm/p=25/无低通/**genGC vs real GC 阻塞**口径）：v1-fmt/v4a-fmt 均过指标1（FC 0.970/0.981）与指标3（1–30 Hz |Δlog10| 0.317/0.301）；**v4a-fmt 质量全维度最优**（MAE 0.70565 / CRPS 0.53912 / 逐通道 r 0.12335 超 GPR-r 0.116），候选排序与旧范式一致（判读权重向 v4a 侧——v1 侧跨范式叠加纪律变量）；无低通下生成侧 >40 Hz 功率占比 ≈ 真实 3.0×（≈95% 功率在带内，大体自行待在带内）；v4a-fmt R1 触发定性为口径效应（登记三值）。跨范式 = 多变量设计（fs/预处理/48例/p/低通/norm/纪律），仅方向性判读。5-fold（何范式/口径）待用户拍板。
+
+2026-10-17 adaLN(t) 调制归一化消融（任务 10-17-gpfm-mamba-adaln-f0，v4a-fmt 基座 fold0 单 seed，A 案 scale/shift + fork_rng 恒等初始化）：**中性结果**——与 v4afmt-main-01 全维度持平（MAE 0.70571 vs 0.70565、FC 0.9797 vs 0.98147、指标3 0.30605 vs 0.30134 均 ✓，Δ≤0.005 单 seed 噪声框内），无维度方向性改善；过散/高频尾微加重（+44.5%→+47.0%、gen>40Hz 4.92%→5.19%）。两 Run 同 seed 初始权重逐位相同（fork_rng 契约，epoch-0 step-1 损失逐位相等 1.4787474870681763），分叉恰为处理效应——**该规模（140k）与纪律下，速度网络未从 norm 仿射 t 条件化获得超出输入侧 temb 注入的可用信息**。候选集 {v1, v4a} 排序不变；RNG 中性构建惯例已入 reproducibility.md。
 
 ## 待用户拍板
 

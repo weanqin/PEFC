@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/research/reproducibility.md", "reason": "default-off config 钩子 + getattr 透传总纲：cond_adaln 钩子须默认分支逐位一致、旧变体 config_hash 零漂移单测"}
+{"file": ".trellis/spec/research/path-isolation.md", "reason": "薄变体协议：config 完整副本 + wrapper 三要素 + run_id 前缀守卫 + 独立 outputs 根"}
+{"file": ".trellis/spec/research/data-pipeline.md", "reason": "fold0 划分口径与 manifest 固化语义（34/4/10，split_manifest_override 逐字节复用）"}
+{"file": ".trellis/spec/data/edra-fmt.md", "reason": "数据集契约：930 窗/例、status_ok 过滤、fs=250、禁改数据本体"}
+{"file": ".trellis/spec/research/surrogate-brain-qualification.md", "reason": "study1 门禁：fold0 单 seed 前置验证不越 5-fold；三检验口径"}
+{"file": ".trellis/spec/research/visualization.md", "reason": "指标2 轨迹图等产图规范（evaluate 产物图，250 Hz 标秒）"}
+{"file": ".trellis/tasks/10-17-gpfm-mamba-adaln-f0/research/adaln-adaptation.md", "reason": "adaLN 适配研究：钩子签名/state_dict 键/初始化/参数核算/风险清单，实现直接依据（design §1 同源）"}

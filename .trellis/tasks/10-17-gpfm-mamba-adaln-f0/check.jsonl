@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/research/surrogate-brain-qualification.md", "reason": "检查 fold0 单 seed 门禁未越线、三检验产物齐全性"}
+{"file": ".trellis/spec/research/path-isolation.md", "reason": "检查产物落点：全部在 declared 变体目录与新 outputs 根内"}
+{"file": ".trellis/spec/research/reproducibility.md", "reason": "检查零漂移单测面（六旧变体 hash pin）、恒等初始化等价断言、seed 登记"}
+{"file": ".trellis/spec/research/evaluation-calibers.md", "reason": "检查指标3 频段口径（1–30 判读/40–125 照登）与 GC 阻塞口径随附"}
+{"file": ".trellis/spec/research/experiment-log.md", "reason": "检查 experiment.md Run 块四区齐全、无空块"}
+{"file": ".trellis/tasks/10-17-gpfm-mamba-adaln-f0/research/adaln-adaptation.md", "reason": "对照研究键表/参数 pin/机制登记核对实现与判读"}
