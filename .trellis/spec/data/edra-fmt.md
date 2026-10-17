@@ -31,5 +31,5 @@
 ## 5. 下游消费规则
 
 - dataloader 零修改加载（`models/gpfm-mamba-v1/data.py` 契约兼容，2026-10-16 冒烟通过）
-- 变体目录：`models/gpfm-mamba-v1-fmt/`、`models/gpfm-mamba-v4a-fmt/`（LayerNorm/p=25/无低通口径）；产物根 `/root/npi/outputs/gpfm-mamba-fmt-f0/`
+- 变体目录：`models/gpfm-mamba-v1-fmt/`、`models/gpfm-mamba-v4a-fmt/`（LayerNorm/p=25/无低通口径）；产物根 `/root/npi/outputs/gpfm-mamba-fmt-f0/`；`models/bivar-gc-ec-v1/`（双变量 GC 观测参考，48 例全量 125 Hz 口径）；产物根另含 `/root/npi/outputs/bivar-gc-ec-fmt/`（任务 10-17-bivar-gc-ec-fmt，2026-10-17）
 - 变更本契约任何口径 → 逐项排查下游影响并告知用户后方可生效

@@ -152,3 +152,24 @@ v4a-fmt 基座上把 5 个 LayerNorm 位换 adaLN（emb(t)→逐 site SiLU→Lin
 ### Status
 
 [OK] **Completed**
+
+## Session 7: 双变量 GC 观测参考落地（任务 10-17-bivar-gc-ec-fmt）全程
+<!-- trellis-session: v=2 fp=bivar-gc-ec-fmt -->
+
+**Date**: 2026-10-17
+**Task**: edra-fmt 48 例成对双变量 GC 计算 EC（任务 10-17-bivar-gc-ec-fmt，study2 路由）
+**Branch**: `main`
+
+### Summary
+
+用户四轮拍板收敛任务口径（①edra-fmt/48 例全量/125 Hz 降采/逐对 BIC/ln(SSR)/默认代码落点；②fmt 条件 GC 滞后；③split-half 认可；④**不做 EC_pert 与 GC 比较**——比较器接入整体移出范围）。规划三件套 + jsonl 后 1.4 启动。实现 B0-B5：bivar-gc-ec-v1 变体（全通道滞后 Gram 一次构建 + 逐无序对逐阶 slice 快路径 + naive lstsq 等价性单测；OLS 无收缩依据=二通道 pair-Gram 条件数实测 1e5-1e7 vs 全模型 62ch ~1e18；offdiag≥0 样本内必然断言）。关键节点：G1 复核抓获派发提示 4p+1 维数笔误（正确 2p+1）；refs-01 首跑 48 例计算完整但聚合段 `ec_all[~np.eye]` 布尔索引错位崩（stderr 丢弃教训→离线复现定位→修复批次维广播→同 run_id 重跑 36 s 产物逐字一致）；split-half 天花板 0.9243±0.0447（v4 条件 GC 0.9003±0.0296 同量级，方向性对照只登记）；**BIC 100% 顶格 p\*=24**（48 例 × 1891 对，n≈3 万惩罚项极小）如实登记为实测事实，网格扩展未决。图走 visualizer 纯复用（ec_matrix 三面板/ec_heatmap_grid），阶数分布退化单点不为单柱图扩共享文件。trellis-check PASS-with-minors（3 处自修：experiment 命令登记失实×2、data_io 句柄；无 Major）。spec 更新：evaluation-calibers「双变量 GC 观测参考口径」条目 + edra-fmt 下游消费行；context/progress 同步。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| （本表由提交后回填） | feat(bivar-gc-ec-fmt): ... |
+
+### Status
+
+[OK] **Completed**

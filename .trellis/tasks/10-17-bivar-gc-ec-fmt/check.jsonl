@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/research/path-isolation.md", "reason": "路径扫描依据：唯一共享写入点=common/visualizer 纯增量（design §1 声明）；数据集与旧任务 outputs 只读"}
+{"file": ".trellis/spec/research/reproducibility.md", "reason": "BLAS 护栏/逐位复现/唯一名装载合规核查"}
+{"file": ".trellis/spec/research/evaluation-calibers.md", "reason": "observational reference 术语纪律与 GC 口径登记合规核查（本任务无比较运行）"}
+{"file": ".trellis/spec/research/experiment-log.md", "reason": "experiment.md Run 块回填完整性与先写后跑纪律核查"}
+{"file": ".trellis/spec/research/artifacts-management.md", "reason": "产物布局/元数据/命名合规与旧 Run 原口径不动核查"}
+{"file": ".trellis/spec/data/edra-fmt.md", "reason": "数据契约合规：不重复滤波/字段断言/48 例口径核查"}
+{"file": ".trellis/spec/research/visualization.md", "reason": "图产物经 visualizer 正典路由核查"}

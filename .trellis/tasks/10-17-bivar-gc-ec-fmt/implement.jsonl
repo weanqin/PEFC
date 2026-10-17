@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/data/edra-fmt.md", "reason": "数据集契约：48 例/250 Hz/字段断言/不重复滤波/npz 键与已知坑（本任务唯一数据源）"}
+{"file": ".trellis/spec/research/path-isolation.md", "reason": "变体目录 models/bivar-gc-ec-v1 与只读复用边界（baseline-ec-v1 仅 compare 经子进程隔离）"}
+{"file": ".trellis/spec/research/reproducibility.md", "reason": "BLAS 五变量护栏/唯一名 config 装载/逐位复现/RNG 惯例（B1 单测与入口脚本）"}
+{"file": ".trellis/spec/research/evaluation-calibers.md", "reason": "observational directed-connectivity reference 术语纪律与 GC 口径登记惯例（本任务不做 EC_pert 比较，仅术语与后续比较口径衔接背景）"}
+{"file": ".trellis/spec/research/experiment-template.md", "reason": "experiment.md Run 块四要素（口径/输入/产物/判读）先写后跑格式（B2 起各 Run）"}
+{"file": ".trellis/spec/research/artifacts-management.md", "reason": "outputs/bivar-gc-ec-fmt/<run_id>/{data,refs,logs,figs} 布局与产物命名/元数据要求"}
+{"file": ".trellis/spec/research/visualization.md", "reason": "图一律经 common/visualizer 正典路由；ec_matrix 复用与纯增量扩展纪律（B0 盘点/B4 落图）"}
