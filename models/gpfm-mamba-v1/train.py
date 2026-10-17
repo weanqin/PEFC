@@ -277,6 +277,7 @@ def main() -> None:
         use_fast_path=cfg.use_fast_path,
         bottleneck_rank=getattr(cfg, "bottleneck_rank", None),  # v4a 变体启用；v1/v2/v3 配置无此字段→None
         norm_type=str(getattr(cfg, "norm_type", "rmsnorm")),    # fmt 变体启用（D4）；旧 config 无此字段→rmsnorm 零漂移
+        cond_adaln=str(getattr(cfg, "cond_adaln", "off")),     # adaln 变体启用（A 案）；旧 config 无此字段→off 零漂移
     ).to(device)
     ema = EMA(model, decay=cfg.ema_decay)
     opt = torch.optim.AdamW(model.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay)
