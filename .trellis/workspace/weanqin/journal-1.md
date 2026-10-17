@@ -168,7 +168,7 @@ v4a-fmt 基座上把 5 个 LayerNorm 位换 adaLN（emb(t)→逐 site SiLU→Lin
 
 | Hash | Message |
 |------|---------|
-| （本表由提交后回填） | feat(bivar-gc-ec-fmt): ... |
+| `58fe4bc` | feat(bivar-gc-ec-fmt): 48 例双变量 GC EC 矩阵 + 天花板 + spec/记忆同步（全文见 git log） |
 
 ### Status
 
