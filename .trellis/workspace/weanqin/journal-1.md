@@ -221,3 +221,26 @@ v4a-fmt 基座上把 5 个 LayerNorm 位换 adaLN（emb(t)→逐 site SiLU→Lin
 ### Status
 
 [OK] **Completed**
+
+## Session 10: latent_flow 先前原型移植为 study1 目标实现路径（latent-flow-v1）
+<!-- trellis-session: v=2 fp=8f31c2a4d09be1e7 -->
+
+**Date**: 2026-10-18
+**Task**: 10-18-latent-flow-port（移植 /root/autodl-tmp/latent_flow 先前研究代码库进 /root/npi）
+**Branch**: `main`
+
+### Summary
+
+单任务全链完成（规划→评审→用户拍板→实施→check→归档）。源库为同一研究思路 2026-06~08 先前原型（Windows/Python 3.13/torch 2.12）：OC-LatentFlow 两阶段潜空间流代理 + bisection σ 扰动归因→有向 EC + GC/TE 基线。trellis-research 适配研究（含 /tmp 影子沙箱实测）定落位=嵌套包、基线=HEAD 9efe1e3+工作树、环境零源码改动；两轮 trellis-review（A 方案方法论/B 实施风险）各出 2 Major（裁剪闭包失效/训练冒烟数据阻断/dos2unix 缺失/行尾方向倒置），修订后复审通过。用户拍板：裁剪 A（黑名单删 de/dysib/dcgnn/fm_gate 终止线 75 文件/29,864 行，判决文档全保留）+ git bundle 备份源库（1.1GB）、路由 study1、checkpoints 558MB 留 autodl-tmp 原位、AC3 冒烟改道 shape_check。实施 S0–S3 全过：data/ 9 加载器 git show 物化恢复（逐字节核零 diff）、行尾统一 LF、冻结 keep/delete 清单裁剪（comm 零差）、run.py 包装（BLAS 守卫≤8 + python -m 转译）、README-port；G1 三判据（pytest 67P/0F/17S 对齐冻结 per-file 口径、31 脚本 import 冒烟零失败、CRLF=0）+ G2（shape_check GPU 前向 5.36M 参数 + OMP=8 自检）全过；trellis-check AC1–AC5 通过（1 Minor=design §6 补数据盘写入路径，已修）。意外收获：MODMA zip「ENOENT 异常」实为文件名误拼（真实 modda→modma_resting_process.zip），已解压 /root/autodl-tmp/modma/{HC29,MDD24}——MODMA 原生线数据在位。边界登记：EDRA npz shim、MODMA 线训练/归因补跑、旧 θ* 资格重验均属后续任务；σ 二分与 perturb-ec-v1 四要素差异表随档。registry 回填 latent-flow 为 study1 并列候选。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `99f6983` | chore(env): 补登 pytest 9.1.1 安装事实（前会话遗留未提交行） |
+| `4852f86` | feat(latent-flow-v1): 移植 latent_flow 先前原型为 study1 目标实现路径（任务 10-18-latent-flow-port） |
+| `60b3b42` | chore(task): 归档 10-18-latent-flow-port（执行链完成 + trellis-check AC1–AC5 通过） |
+
+### Status
+
+[OK] **Completed**
