@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/research/perturb-ec-pipeline.md", "reason": "核查 CRN/单次 sample()/算子三契约（只动源通道、r=0 恒等、新张量）与本规范一致"}
+{"file": ".trellis/spec/research/evaluation-calibers.md", "reason": "核查方向约定与术语纪律（不得称 ground-truth/恢复真实因果）；筛选结论表述约束"}
+{"file": ".trellis/spec/research/path-isolation.md", "reason": "核查只写 models/perturb-search-v1/ 与 outputs/perturb-search-f0/，旧任务目录零写入"}
+{"file": ".trellis/spec/research/reproducibility.md", "reason": "核查 seed/eps-eta 确定性、config_hash 校验、两次调用逐位复现证据"}
+{"file": ".trellis/spec/research/experiment-log.md", "reason": "核查两阶段 Run 块完整回填且保持简洁（汇总级）"}

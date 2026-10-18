@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/research/perturb-ec-pipeline.md", "reason": "Study II 前序规范：CRN 契约/单次 sample() 批采样纪律/隔离矩阵/τ 双口径——本任务搜索的算子 P 与度量 D 即该规范两要素的迭代，CRN 与确定性纪律直接沿用"}
+{"file": ".trellis/spec/research/evaluation-calibers.md", "reason": "Study II 扰动 EC 对比口径总纲：方向约定（行=源列=靶）、术语纪律、口径变更纪律"}
+{"file": ".trellis/spec/research/path-isolation.md", "reason": "新变体目录 models/perturb-search-v1/ 的只读复用（gpfm-mamba-v1 共享件 / v1-fmt config+splits / perturb-ec-v1 叶子函数）与禁写边界"}
+{"file": ".trellis/spec/research/reproducibility.md", "reason": "seed/显式 eps-eta 确定性/config_hash 校验/env_snapshot/BLAS 护栏惯例"}
+{"file": ".trellis/spec/research/data-pipeline.md", "reason": "fmt 范式数据契约（fs=250/1–40 Hz 带限/48 例）、EdraWindowsDataset 接口、z-score 统计口径"}
+{"file": ".trellis/spec/research/experiment-log.md", "reason": "experiment.md Run 块格式契约（跑前目的+配置/跑后结果+结论）"}
+{"file": ".trellis/spec/research/artifacts-management.md", "reason": "outputs/perturb-search-f0/ 产物布局与命名惯例"}
