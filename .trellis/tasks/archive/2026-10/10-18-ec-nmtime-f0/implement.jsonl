@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/research/path-isolation.md", "reason": "变体目录与产物目录隔离契约（models/ec-nmtime-v1 + outputs/ec-nmtime-f0）"}
+{"file": ".trellis/spec/research/evaluation-calibers.md", "reason": "EC_pert readout 契约（slope 主/AUC 次/r* 降级删失 + 比较器 npz 接口）与 τ v2 相对自响应口径"}
+{"file": ".trellis/spec/research/perturb-ec-pipeline.md", "reason": "扰动-响应-CRN 管线契约（批构造/跨批形逐位性边界/算子契约）"}
+{"file": ".trellis/spec/research/reproducibility.md", "reason": "CRN 显式噪声/seed 纪律与跨 Run 复现断言口径"}
+{"file": ".trellis/spec/research/experiment-log.md", "reason": "Run 块登记契约（跑前配置/跑后回填不留空块）"}
