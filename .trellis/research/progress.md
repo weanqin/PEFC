@@ -4,12 +4,12 @@
 
 ## 当前状态
 
-- **阶段**：双变量 GC 观测参考 250 Hz 原始全长档落地（任务 10-18-bivar-gc-fmt-250，2026-10-18 完成）——edra-fmt 48 例 250 Hz 不降采不切窗双变量 GC EC 矩阵（`outputs/bivar-gc-ec-fmt-250/refs-01/`，offdiag 0.0010/0.0189/0.4103）+ split-half 天花板 0.8981±0.1414 + rev-01 时间反转指纹（ρ=0.66）已落盘；条件数 1e13–5e15 越限经主会话代决策按原 OLS 口径继续（fast↔naive 逐 Run 校验 GC ≤1.5e-3）；与 125 Hz 档（任务 10-17）口径隔离、不做对比交付
-- **5-fold 候选集（用户 2026-10-16 拍板）：{v1, v4a}**；fmt 范式与 adaLN 消融后排序均不变
+- **阶段**：latent-flow 先前原型移植完成（任务 10-18-latent-flow-port，2026-10-18）——OC-LatentFlow 两阶段潜空间流代理 + bisection σ 归因代码面落入 `models/latent-flow-v1/`（裁剪 A：74 py/17,232 行 + 20 份判决笔记；源锚点 `9efe1e3` + bundle 备份），当前环境零源码改动可跑（G1 pytest 67P/0F/17S 冻结口径 / 31 脚本 import 冒烟 / G2 shape_check GPU + BLAS 守卫全过，trellis-check 通过 AC1–AC5）；study1 新候选路径登记 registry
+- **latent-flow 边界（沿 design）**：EDRA npz shim 与 MODMA 线训练/归因补跑属后续任务；旧 θ\*（558 MB autodl-tmp 原位）不继承代理脑资格；train --smoke 数据阻塞待 shim 后补；MODMA 数据已解压在位（`/root/autodl-tmp/modma/`，勘误：真实文件名 modma_resting_process.zip）
+- **5-fold 候选集（用户 2026-10-16 拍板）：{v1, v4a}**；fmt 范式与 adaLN 消融后排序均不变；latent-flow 为新增并列候选（未参与既有排序）
 - **Study II 状态（沿用户 2026-10-17 定论）**：当前方法（v4a-fmt θ\*）EC 完全不可用、不在此 θ\* 上继续，优化留待后续任务；流程/四要素契约/规范首版已沉淀可复用
-- **下一任务（待建）**：①5-fold 主实验——范式选择待拍板（edra 旧口径 vs edra-fmt vs 双轨）、GC 阻塞是否延续；②或 Study I 损失侧迭代（跨通道特异性，Study II 缺口判据驱动）——先后关系待拍板
-- **最近节点**：2026-10-18 bivar-gc-fmt-250 完成（B0–B5 全链：smoke-01 条件数门禁→代决策续跑→refs-01 主交付 + AC6 raw bytes 级复现 → rev-01 指纹 → sh-01 天花板；evaluation-calibers 250 Hz 条目登记）
-- **待拍板**：①下一任务先后关系（5-fold vs Study I 跨通道迭代）；②指标2 视觉人工判；③GC 阻塞解除时点；④r\*→连接强度最终映射；⑤fmt 条件 GC/比较器接入时点 + 双变量 BIC 网格扩展（滞后决策）
+- **下一任务（待建）**：①latent-flow 数据接入（EDRA npz shim 或 MODMA 原生线）；②5-fold 主实验——范式选择待拍板（edra 旧口径 vs edra-fmt vs 双轨）、GC 阻塞是否延续；③Study I 损失侧迭代——先后关系待拍板
+- **待拍板**：①下一任务先后关系（latent-flow 数据接入 vs 5-fold vs 跨通道迭代）；②指标2 视觉人工判；③GC 阻塞解除时点；④r\*→连接强度最终映射；⑤fmt 条件 GC/比较器接入时点 + 双变量 BIC 网格扩展（滞后决策）
 
 ## 里程碑（只增不改）
 
@@ -21,3 +21,4 @@
 - 2026-10-17 · Study II 流程首验证：四要素首版 + 端到端跑通 + AC6 如实阴性（缺口=θ\* 跨通道弥散，四重证据）；流程规范首版沉淀 spec/research/perturb-ec-pipeline.md（任务 10-17-perturb-ec-f0）· 完整记录见 journal Session 6
 - 2026-10-17 · 双变量 GC 观测参考落地：48 例 EC 矩阵 + 天花板 0.9243±0.0447（BIC 顶格 p\*=24 如实登记；不做 EC_pert 比较）· 完整记录见 journal Session 7
 - 2026-10-18 · 双变量 GC 观测参考 250 Hz 原始全长档落地：refs-01 48 例 + 天花板 0.8981±0.1414 + rev-01 指纹 + AC6 raw bytes 级复现（条件数越限代决策续跑如实登记；不做跨口径对比）· 完整记录见任务 `.trellis/tasks/10-18-bivar-gc-fmt-250/experiment.md`
+- 2026-10-18 · latent-flow 先前原型移植完成（study1 新候选路径）：OC-LatentFlow 代理 + bisection σ 归因代码面入 `models/latent-flow-v1/`，裁剪 A+bundle 备份、零源码改动、G1/G2 全过、trellis-check AC1–AC5 通过；MODMA 勘误（modma_resting_process.zip 可读，已解压在位）· 完整记录见任务 `.trellis/tasks/10-18-latent-flow-port/experiment.md`

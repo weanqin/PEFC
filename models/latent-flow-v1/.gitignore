@@ -1,0 +1,8 @@
+# 变体级补充排除（npi 根 .gitignore 之外）：
+# - results/：baseline 系脚本（run_baseline_connectivity.py 等）默认写 cwd 相对路径 results/，
+#   防止 -m 直跑时把产物散落入库（见 README-port.md 警告）
+# - .pytest_cache/：pytest 运行缓存
+results/
+.pytest_cache/
+__pycache__/
+*.pyc

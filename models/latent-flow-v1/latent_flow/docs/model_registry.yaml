@@ -1,0 +1,147 @@
+# Model Registry — checkpoint version + status index
+# 生成于迁移任务 08-01-migrate-to-latent-flow (2026-08-01)。
+# 每个 checkpoint 标注 version / status / fold / dataset，便于调用方判断是否过时。
+# status: active (当前 SOTA/在用) | superseded (被更新版取代，留作复现) | deprecated (ADR-0004 弃用，勿用于新工作)
+# 规范见 .trellis/spec/experiments/registry.md
+
+# =============================================================================
+# ACTIVE — OC-LatentFlow 主模型 (MODMA)
+# 当前 SOTA: fold2 r_abs(GC)=0.585 (mexhat screg l0.01 w0.1 nosc 变体)
+# =============================================================================
+
+- name: oc_latent_flow_vae
+  version: v1.0.0
+  ckpt: checkpoints/fold{0-4}_oc_latent_flow_vae_best.pt
+  stage: stage1
+  dataset: modma
+  fold: 0-4
+  status: active
+  notes: "Stage-1 VAE (encoder+proj+decoder), 5 folds 完整"
+
+- name: oc_latent_flow_flow
+  version: v1.0.0
+  ckpt: checkpoints/fold{0-4}_oc_latent_flow_flow_best_graph_mexhat_screg_l0.01_w0.1.pt
+  stage: stage2
+  dataset: modma
+  fold: 0-4
+  status: active
+  variant: graph_mexhat_screg_l0.01_w0.1
+  notes: "Stage-2 flow, mexhat graph-mixer + SC-reg, 5 folds ablation 主线"
+
+- name: oc_latent_flow_flow_ablation
+  version: v1.0.0
+  ckpts:
+    - checkpoints/fold{0-4}_oc_latent_flow_flow_best_graph_mexhat_screg_l0.01_w0.1_nomexhat.pt
+    - checkpoints/fold{0-4}_oc_latent_flow_flow_best_graph_mexhat_screg_l0.01_w0.1_nosc.pt
+    - checkpoints/fold{0-4}_oc_latent_flow_flow_best_graph_mexhat_screg_l0.01_w0.1_now.pt
+  stage: stage2
+  dataset: modma
+  fold: 0-4
+  status: superseded
+  notes: "组件消融 (nomexhat/nosc/now), 用于定位 channel-selectivity 根因 (task 06-29)"
+
+# =============================================================================
+# ACTIVE — OC-LatentFlow (EDRA)
+# 当前 SOTA: r_abs(GC)=0.413 (Ricker mexhat, lr=2e-3, 200ep)
+# =============================================================================
+
+- name: oc_latent_flow_edra_vae
+  version: v1.0.0
+  ckpt: checkpoints/edra/fold0_oc_latent_flow_vae_best.pt
+  stage: stage1
+  dataset: edra
+  fold: 0
+  status: active
+  notes: "EDRA stage-1 VAE"
+
+- name: oc_latent_flow_edra_flow
+  version: v1.0.0
+  ckpt: checkpoints/edra/fold0_oc_latent_flow_flow_best_graph_mexhat.pt
+  stage: stage2
+  dataset: edra
+  fold: 0
+  status: active
+  variant: graph_mexhat (Ricker)
+  notes: "EDRA SOTA: Ricker kernel, lr=2e-3, 200ep. 勿用 cosine/lr5e3/DoG 超越 (见 domain.md)"
+
+- name: oc_latent_flow_edra_variants
+  version: v1.0.0
+  ckpts:
+    - checkpoints/edra/fold0_oc_latent_flow_flow_best_graph_dog.pt
+    - checkpoints/edra/fold0_oc_latent_flow_flow_best_graph_mexhat_k3.pt
+    - checkpoints/edra/fold0_oc_latent_flow_flow_best_graph_mexhat_lr5e3.pt
+  stage: stage2
+  dataset: edra
+  fold: 0
+  status: superseded
+  notes: "EDRA DoG/k3/lr5e3 变体, 均不如 Ricker baseline (domain.md A_eff 结构教训)"
+
+# =============================================================================
+# SUPERSEDED — MODMA fold0 早期变体 (被 mexhat_screg 系列取代)
+# =============================================================================
+
+- name: oc_latent_flow_dense
+  ckpt: checkpoints/fold0_oc_latent_flow_flow_best.pt
+  stage: stage2
+  dataset: modma
+  fold: 0
+  status: superseded
+  notes: "Dense flow (无 graph-mixer), 早期基线"
+
+- name: oc_latent_flow_gaussian
+  ckpt: checkpoints/fold0_oc_latent_flow_flow_best_graph.pt
+  stage: stage2
+  dataset: modma
+  fold: 0
+  status: superseded
+  notes: "Gaussian graph-mixer (低通, 被 mexhat 取代)"
+
+- name: oc_latent_flow_mexhat_variants
+  ckpts:
+    - checkpoints/fold0_oc_latent_flow_flow_best_graph_mexhat_directed.pt
+    - checkpoints/fold0_oc_latent_flow_flow_best_graph_mexhat_screg_l0.01_w0.25.pt
+    - checkpoints/fold0_oc_latent_flow_flow_best_graph_mexhat_screg_l0.1.pt
+  stage: stage2
+  dataset: modma
+  fold: 0
+  status: superseded
+  notes: "MODMA fold0 directed/screg-sweep 变体"
+
+# =============================================================================
+# DEPRECATED — SC 相关 (SC 先验已弃用, ckpt 仍可加载但 SC 贡献被丢弃)
+# =============================================================================
+
+- name: oc_latent_flow_scbase
+  ckpts:
+    - checkpoints/fold0_oc_latent_flow_flow_best_graph_mexhat_scbase_g1.0_w0.5.pt
+    - checkpoints/fold0_oc_latent_flow_flow_best_graph_mexhat_scbase_g1.5.pt
+    - checkpoints/fold0_oc_latent_flow_flow_best_graph_mexhat_scinit.pt
+  stage: stage2
+  dataset: modma
+  fold: 0
+  status: deprecated
+  notes: "SC-base/scinit 变体, SC 先验弃用 (Phase 3). 加载时 sc_base buffer 被丢弃"
+
+# =============================================================================
+# DEPRECATED — 非 OC 模型 (代码已归档, ckpt 留作历史)
+# =============================================================================
+
+- name: gru_forecaster
+  ckpt: checkpoints/fold0_gru_forecaster_best.pt
+  status: deprecated
+  notes: "GRU 基线 (M1), 代码已归档 archive/models/gru_forecaster.py"
+
+- name: var_forecaster
+  ckpt: checkpoints/fold0_var_forecaster_order8.pt
+  status: deprecated
+  notes: "VAR 基线 (M2), 代码已归档 archive/models/var_forecaster.py"
+
+- name: hveegnet_legacy
+  ckpts:
+    - checkpoints/hveegnet_forecast_best.pt
+    - checkpoints/hveegnet_ncde_deep_best.pt
+  status: deprecated
+  notes: "hvEEGNet/NCDE backbone (ADR-0004 弃用)"
+
+# archive/checkpoints/ 下的 JET/latent_flow(v1-3)/NCDE/UDE/Mamba ckpt
+# 全部 status: deprecated, 不逐一列出, 见 archive/checkpoints/

@@ -1,0 +1,827 @@
+path,type,size_bytes,mtime,purpose,activity
+.agents,dir,0,,目录,active
+.agents/skills,dir,0,,目录,active
+.agents/skills/paperbanana,dir,0,,目录,active
+.agents/skills/paperbanana/assets,dir,0,,目录,active
+.agents/skills/paperbanana/assets/neurips2025_diagram_style_guide.md,config,6410,2026-06-25,平台/工具配置,uncertain
+.agents/skills/paperbanana/assets/neurips2025_plot_style_guide.md,config,5314,2026-06-25,平台/工具配置,uncertain
+.agents/skills/paperbanana/references,dir,0,,目录,active
+.agents/skills/paperbanana/references/agent_prompts.md,config,15064,2026-06-25,平台/工具配置,uncertain
+.agents/skills/paperbanana/scripts,dir,0,,目录,active
+.agents/skills/paperbanana/scripts/parse_json.py,code,4099,2026-06-25,项目源码,uncertain
+.agents/skills/paperbanana/scripts/retrieve.py,code,7516,2026-06-25,项目源码,uncertain
+.agents/skills/paperbanana/SKILL.md,config,11503,2026-06-25,平台/工具配置,uncertain
+.agents/skills/trellis-before-dev,dir,0,,目录,active
+.agents/skills/trellis-before-dev/SKILL.md,config,1852,2026-06-23,平台/工具配置,uncertain
+.agents/skills/trellis-brainstorm,dir,0,,目录,active
+.agents/skills/trellis-brainstorm/SKILL.md,config,10393,2026-07-22,平台/工具配置,active
+.agents/skills/trellis-break-loop,dir,0,,目录,active
+.agents/skills/trellis-break-loop/SKILL.md,config,6963,2026-06-23,平台/工具配置,uncertain
+.agents/skills/trellis-channel,dir,0,,目录,active
+.agents/skills/trellis-channel/references,dir,0,,目录,active
+.agents/skills/trellis-channel/references/command-reference.md,config,17365,2026-06-23,平台/工具配置,uncertain
+.agents/skills/trellis-channel/references/forum.md,config,7970,2026-06-23,平台/工具配置,uncertain
+.agents/skills/trellis-channel/references/progress-debugging.md,config,8495,2026-06-23,平台/工具配置,uncertain
+.agents/skills/trellis-channel/references/workers.md,config,11151,2026-06-23,平台/工具配置,uncertain
+.agents/skills/trellis-channel/references/workflows.md,config,4488,2026-06-23,平台/工具配置,uncertain
+.agents/skills/trellis-channel/SKILL.md,config,4872,2026-06-23,平台/工具配置,uncertain
+.agents/skills/trellis-check,dir,0,,目录,active
+.agents/skills/trellis-check/SKILL.md,config,2813,2026-06-23,平台/工具配置,uncertain
+.agents/skills/trellis-continue,dir,0,,目录,active
+.agents/skills/trellis-continue/SKILL.md,config,2660,2026-07-22,平台/工具配置,active
+.agents/skills/trellis-finish-work,dir,0,,目录,active
+.agents/skills/trellis-finish-work/SKILL.md,config,3696,2026-06-23,平台/工具配置,uncertain
+.agents/skills/trellis-meta,dir,0,,目录,active
+.agents/skills/trellis-meta/references,dir,0,,目录,active
+.agents/skills/trellis-meta/references/customize-local,dir,0,,目录,active
+.agents/skills/trellis-meta/references/customize-local/add-project-local-conventions.md,config,2506,2026-06-23,平台/工具配置,uncertain
+.agents/skills/trellis-meta/references/customize-local/change-agents.md,config,2663,2026-07-22,平台/工具配置,active
+.agents/skills/trellis-meta/references/customize-local/change-context-loading.md,config,3302,2026-06-23,平台/工具配置,uncertain
+.agents/skills/trellis-meta/references/customize-local/change-hooks.md,config,2332,2026-07-22,平台/工具配置,active
+.agents/skills/trellis-meta/references/customize-local/change-skills-or-commands.md,config,6957,2026-07-22,平台/工具配置,active
+.agents/skills/trellis-meta/references/customize-local/change-spec-structure.md,config,2384,2026-06-23,平台/工具配置,uncertain
+.agents/skills/trellis-meta/references/customize-local/change-task-lifecycle.md,config,4592,2026-06-23,平台/工具配置,uncertain
+.agents/skills/trellis-meta/references/customize-local/change-workflow.md,config,4284,2026-06-23,平台/工具配置,uncertain
+.agents/skills/trellis-meta/references/customize-local/overview.md,config,2867,2026-06-23,平台/工具配置,uncertain
+.agents/skills/trellis-meta/references/local-architecture,dir,0,,目录,active
+.agents/skills/trellis-meta/references/local-architecture/bundled-skills.md,config,11624,2026-07-22,平台/工具配置,active
+.agents/skills/trellis-meta/references/local-architecture/context-injection.md,config,4065,2026-06-23,平台/工具配置,uncertain
+.agents/skills/trellis-meta/references/local-architecture/generated-files.md,config,3937,2026-07-22,平台/工具配置,active
+.agents/skills/trellis-meta/references/local-architecture/multi-agent-channel.md,config,6785,2026-06-23,平台/工具配置,uncertain
+.agents/skills/trellis-meta/references/local-architecture/overview.md,config,3747,2026-06-23,平台/工具配置,uncertain
+.agents/skills/trellis-meta/references/local-architecture/spec-system.md,config,3434,2026-06-23,平台/工具配置,uncertain
+.agents/skills/trellis-meta/references/local-architecture/task-system.md,config,6104,2026-06-23,平台/工具配置,uncertain
+.agents/skills/trellis-meta/references/local-architecture/workflow.md,config,3756,2026-06-23,平台/工具配置,uncertain
+.agents/skills/trellis-meta/references/local-architecture/workspace-memory.md,config,2764,2026-06-23,平台/工具配置,uncertain
+.agents/skills/trellis-meta/references/platform-files,dir,0,,目录,active
+.agents/skills/trellis-meta/references/platform-files/agents.md,config,4067,2026-07-25,平台/工具配置,active
+.agents/skills/trellis-meta/references/platform-files/hooks-and-settings.md,config,4382,2026-07-22,平台/工具配置,active
+.agents/skills/trellis-meta/references/platform-files/overview.md,config,3535,2026-07-25,平台/工具配置,active
+.agents/skills/trellis-meta/references/platform-files/platform-map.md,config,6982,2026-07-25,平台/工具配置,active
+.agents/skills/trellis-meta/references/platform-files/skills-and-commands.md,config,4037,2026-07-22,平台/工具配置,active
+.agents/skills/trellis-meta/SKILL.md,config,12757,2026-07-22,平台/工具配置,active
+.agents/skills/trellis-session-insight,dir,0,,目录,active
+.agents/skills/trellis-session-insight/references,dir,0,,目录,active
+.agents/skills/trellis-session-insight/references/cli-quick-reference.md,config,6834,2026-06-23,平台/工具配置,uncertain
+.agents/skills/trellis-session-insight/references/triggering-patterns.md,config,4058,2026-06-23,平台/工具配置,uncertain
+.agents/skills/trellis-session-insight/SKILL.md,config,6682,2026-07-22,平台/工具配置,active
+.agents/skills/trellis-spec-bootstrap,dir,0,,目录,active
+.agents/skills/trellis-spec-bootstrap/references,dir,0,,目录,active
+.agents/skills/trellis-spec-bootstrap/references/mcp-setup.md,config,2766,2026-06-23,平台/工具配置,uncertain
+.agents/skills/trellis-spec-bootstrap/references/repository-analysis.md,config,2745,2026-06-23,平台/工具配置,uncertain
+.agents/skills/trellis-spec-bootstrap/references/spec-task-planning.md,config,2231,2026-06-23,平台/工具配置,uncertain
+.agents/skills/trellis-spec-bootstrap/references/spec-writing.md,config,2176,2026-06-23,平台/工具配置,uncertain
+.agents/skills/trellis-spec-bootstrap/SKILL.md,config,2679,2026-06-23,平台/工具配置,uncertain
+.agents/skills/trellis-start,dir,0,,目录,active
+.agents/skills/trellis-start/SKILL.md,config,2828,2026-07-22,平台/工具配置,active
+.agents/skills/trellis-update-spec,dir,0,,目录,active
+.agents/skills/trellis-update-spec/SKILL.md,config,10109,2026-06-23,平台/工具配置,uncertain
+.claude,dir,0,,目录,active
+.claude/agents,dir,0,,目录,active
+.claude/agents/trellis-check.md,config,3609,2026-07-24,平台/工具配置,active
+.claude/agents/trellis-implement.md,config,3408,2026-07-24,平台/工具配置,active
+.claude/agents/trellis-research.md,config,3819,2026-07-24,平台/工具配置,active
+.claude/commands,dir,0,,目录,active
+.claude/commands/trellis,dir,0,,目录,active
+.claude/commands/trellis/continue.md,config,2357,2026-07-24,平台/工具配置,active
+.claude/commands/trellis/finish-work.md,config,3425,2026-06-11,平台/工具配置,uncertain
+.claude/hooks,dir,0,,目录,active
+.claude/hooks/inject-subagent-context.py,code,35512,2026-07-25,项目源码,active
+.claude/hooks/inject-workflow-state.py,code,18042,2026-07-25,项目源码,active
+.claude/hooks/session-start.py,code,31215,2026-07-24,项目源码,active
+.claude/scheduled_tasks.lock,config,91,2026-05-21,平台/工具配置,uncertain
+.claude/settings.json,config,1515,2026-06-11,平台/工具配置,uncertain
+.claude/settings.local.json,config,4979,2026-06-11,平台/工具配置,uncertain
+.claude/skills,dir,0,,目录,active
+.claude/skills/trellis-before-dev,dir,0,,目录,active
+.claude/skills/trellis-before-dev/SKILL.md,config,1852,2026-07-24,平台/工具配置,active
+.claude/skills/trellis-brainstorm,dir,0,,目录,active
+.claude/skills/trellis-brainstorm/SKILL.md,config,10393,2026-07-24,平台/工具配置,active
+.claude/skills/trellis-break-loop,dir,0,,目录,active
+.claude/skills/trellis-break-loop/SKILL.md,config,6963,2026-07-24,平台/工具配置,active
+.claude/skills/trellis-channel,dir,0,,目录,active
+.claude/skills/trellis-channel/references,dir,0,,目录,active
+.claude/skills/trellis-channel/references/command-reference.md,config,17365,2026-06-23,平台/工具配置,uncertain
+.claude/skills/trellis-channel/references/forum.md,config,7970,2026-06-23,平台/工具配置,uncertain
+.claude/skills/trellis-channel/references/progress-debugging.md,config,8495,2026-06-23,平台/工具配置,uncertain
+.claude/skills/trellis-channel/references/workers.md,config,11151,2026-06-23,平台/工具配置,uncertain
+.claude/skills/trellis-channel/references/workflows.md,config,4488,2026-06-23,平台/工具配置,uncertain
+.claude/skills/trellis-channel/SKILL.md,config,4872,2026-06-23,平台/工具配置,uncertain
+.claude/skills/trellis-check,dir,0,,目录,active
+.claude/skills/trellis-check/SKILL.md,config,2813,2026-07-24,平台/工具配置,active
+.claude/skills/trellis-meta,dir,0,,目录,active
+.claude/skills/trellis-meta/references,dir,0,,目录,active
+.claude/skills/trellis-meta/references/customize-local,dir,0,,目录,active
+.claude/skills/trellis-meta/references/customize-local/add-project-local-conventions.md,config,2506,2026-06-11,平台/工具配置,uncertain
+.claude/skills/trellis-meta/references/customize-local/change-agents.md,config,2663,2026-07-24,平台/工具配置,active
+.claude/skills/trellis-meta/references/customize-local/change-context-loading.md,config,3302,2026-07-24,平台/工具配置,active
+.claude/skills/trellis-meta/references/customize-local/change-hooks.md,config,2332,2026-07-24,平台/工具配置,active
+.claude/skills/trellis-meta/references/customize-local/change-skills-or-commands.md,config,6957,2026-07-24,平台/工具配置,active
+.claude/skills/trellis-meta/references/customize-local/change-spec-structure.md,config,2384,2026-07-24,平台/工具配置,active
+.claude/skills/trellis-meta/references/customize-local/change-task-lifecycle.md,config,4592,2026-06-11,平台/工具配置,uncertain
+.claude/skills/trellis-meta/references/customize-local/change-workflow.md,config,4284,2026-07-24,平台/工具配置,active
+.claude/skills/trellis-meta/references/customize-local/overview.md,config,2867,2026-07-24,平台/工具配置,active
+.claude/skills/trellis-meta/references/local-architecture,dir,0,,目录,active
+.claude/skills/trellis-meta/references/local-architecture/bundled-skills.md,config,11624,2026-07-22,平台/工具配置,active
+.claude/skills/trellis-meta/references/local-architecture/context-injection.md,config,4065,2026-07-24,平台/工具配置,active
+.claude/skills/trellis-meta/references/local-architecture/generated-files.md,config,3937,2026-07-24,平台/工具配置,active
+.claude/skills/trellis-meta/references/local-architecture/multi-agent-channel.md,config,6785,2026-06-23,平台/工具配置,uncertain
+.claude/skills/trellis-meta/references/local-architecture/overview.md,config,3747,2026-07-24,平台/工具配置,active
+.claude/skills/trellis-meta/references/local-architecture/spec-system.md,config,3434,2026-07-24,平台/工具配置,active
+.claude/skills/trellis-meta/references/local-architecture/task-system.md,config,6104,2026-07-24,平台/工具配置,active
+.claude/skills/trellis-meta/references/local-architecture/workflow.md,config,3756,2026-06-11,平台/工具配置,uncertain
+.claude/skills/trellis-meta/references/local-architecture/workspace-memory.md,config,2764,2026-06-11,平台/工具配置,uncertain
+.claude/skills/trellis-meta/references/platform-files,dir,0,,目录,active
+.claude/skills/trellis-meta/references/platform-files/agents.md,config,4067,2026-07-25,平台/工具配置,active
+.claude/skills/trellis-meta/references/platform-files/hooks-and-settings.md,config,4382,2026-07-24,平台/工具配置,active
+.claude/skills/trellis-meta/references/platform-files/overview.md,config,3535,2026-07-25,平台/工具配置,active
+.claude/skills/trellis-meta/references/platform-files/platform-map.md,config,6982,2026-07-25,平台/工具配置,active
+.claude/skills/trellis-meta/references/platform-files/skills-and-commands.md,config,4037,2026-07-24,平台/工具配置,active
+.claude/skills/trellis-meta/SKILL.md,config,12757,2026-07-24,平台/工具配置,active
+.claude/skills/trellis-session-insight,dir,0,,目录,active
+.claude/skills/trellis-session-insight/references,dir,0,,目录,active
+.claude/skills/trellis-session-insight/references/cli-quick-reference.md,config,6834,2026-06-23,平台/工具配置,uncertain
+.claude/skills/trellis-session-insight/references/triggering-patterns.md,config,4058,2026-06-23,平台/工具配置,uncertain
+.claude/skills/trellis-session-insight/SKILL.md,config,6682,2026-07-22,平台/工具配置,active
+.claude/skills/trellis-spec-bootstrap,dir,0,,目录,active
+.claude/skills/trellis-spec-bootstrap/references,dir,0,,目录,active
+.claude/skills/trellis-spec-bootstrap/references/mcp-setup.md,config,2766,2026-06-23,平台/工具配置,uncertain
+.claude/skills/trellis-spec-bootstrap/references/repository-analysis.md,config,2745,2026-06-23,平台/工具配置,uncertain
+.claude/skills/trellis-spec-bootstrap/references/spec-task-planning.md,config,2231,2026-06-23,平台/工具配置,uncertain
+.claude/skills/trellis-spec-bootstrap/references/spec-writing.md,config,2176,2026-06-23,平台/工具配置,uncertain
+.claude/skills/trellis-spec-bootstrap/SKILL.md,config,2679,2026-06-23,平台/工具配置,uncertain
+.claude/skills/trellis-update-spec,dir,0,,目录,active
+.claude/skills/trellis-update-spec/SKILL.md,config,10054,2026-06-11,平台/工具配置,uncertain
+.codex,dir,0,,目录,active
+.codex/agents,dir,0,,目录,active
+.codex/agents/trellis-check.toml,config,2815,2026-07-25,平台/工具配置,active
+.codex/agents/trellis-implement.toml,config,2251,2026-07-25,平台/工具配置,active
+.codex/agents/trellis-research.toml,config,2425,2026-07-25,平台/工具配置,active
+.codex/config.toml,config,2184,2026-07-22,平台/工具配置,active
+.codex/hooks,dir,0,,目录,active
+.codex/hooks/inject-subagent-context.py,code,35512,2026-07-25,项目源码,active
+.codex/hooks/inject-workflow-state.py,code,18042,2026-07-25,项目源码,active
+.codex/hooks/session-start.py,code,19518,2026-07-22,项目源码,active
+.codex/hooks.json,config,572,2026-07-22,平台/工具配置,active
+.trellis,dir,0,,目录,active
+.trellis/.developer,trellis,57,2026-06-11,Trellis 工作流,active
+.trellis/.template-hashes.json,trellis,30461,2026-07-25,Trellis 工作流,active
+.trellis/.version,trellis,5,2026-07-25,Trellis 工作流,active
+.trellis/agents,dir,0,,目录,active
+.trellis/agents/check.md,trellis,2537,2026-06-23,Trellis 工作流,active
+.trellis/agents/implement.md,trellis,2344,2026-06-23,Trellis 工作流,active
+.trellis/config.yaml,trellis,7027,2026-07-25,Trellis 工作流,active
+.trellis/legacy-index.md,trellis,2220,2026-06-11,Trellis 工作流,active
+.trellis/scripts,dir,0,,目录,active
+.trellis/scripts/__init__.py,code,105,2026-06-11,项目源码,active
+.trellis/scripts/add_session.py,code,23742,2026-07-25,项目源码,active
+.trellis/scripts/common,dir,0,,目录,active
+.trellis/scripts/common/__init__.py,code,2771,2026-06-11,项目源码,active
+.trellis/scripts/common/active_task.py,code,21873,2026-07-25,项目源码,active
+.trellis/scripts/common/cli_adapter.py,code,33397,2026-07-24,项目源码,active
+.trellis/scripts/common/config.py,code,18244,2026-07-25,项目源码,active
+.trellis/scripts/common/developer.py,code,5163,2026-06-11,项目源码,active
+.trellis/scripts/common/git.py,code,2197,2026-07-24,项目源码,active
+.trellis/scripts/common/git_context.py,code,3074,2026-06-11,项目源码,active
+.trellis/scripts/common/io.py,code,1680,2026-07-24,项目源码,active
+.trellis/scripts/common/log.py,code,1119,2026-06-11,项目源码,active
+.trellis/scripts/common/packages_context.py,code,7868,2026-06-11,项目源码,active
+.trellis/scripts/common/paths.py,code,12458,2026-06-11,项目源码,active
+.trellis/scripts/common/safe_commit.py,code,11377,2026-07-24,项目源码,active
+.trellis/scripts/common/session_context.py,code,26030,2026-07-24,项目源码,active
+.trellis/scripts/common/task_context.py,code,10761,2026-07-25,项目源码,active
+.trellis/scripts/common/task_queue.py,code,5009,2026-06-11,项目源码,active
+.trellis/scripts/common/task_store.py,code,34717,2026-07-25,项目源码,active
+.trellis/scripts/common/task_utils.py,code,9677,2026-07-24,项目源码,active
+.trellis/scripts/common/tasks.py,code,3178,2026-06-11,项目源码,active
+.trellis/scripts/common/trellis_config.py,code,4057,2026-07-25,项目源码,active
+.trellis/scripts/common/types.py,code,2951,2026-06-11,项目源码,active
+.trellis/scripts/common/workflow_phase.py,code,6989,2026-07-24,项目源码,active
+.trellis/scripts/get_context.py,code,318,2026-06-11,项目源码,active
+.trellis/scripts/get_developer.py,code,446,2026-06-11,项目源码,active
+.trellis/scripts/hooks,dir,0,,目录,active
+.trellis/scripts/hooks/linear_sync.py,code,7676,2026-06-11,项目源码,active
+.trellis/scripts/init_developer.py,code,1054,2026-06-11,项目源码,active
+.trellis/scripts/task.py,code,23055,2026-07-25,项目源码,active
+.trellis/spec,dir,0,,目录,active
+.trellis/spec/data,dir,0,,目录,active
+.trellis/spec/data/cross-validation.md,trellis,3571,2026-08-01,Trellis 工作流,active
+.trellis/spec/data/index.md,trellis,2441,2026-08-01,Trellis 工作流,active
+.trellis/spec/data/integrity.md,trellis,3698,2026-08-01,Trellis 工作流,active
+.trellis/spec/data/loading.md,trellis,7123,2026-08-01,Trellis 工作流,active
+.trellis/spec/decisions.md,trellis,2265,2026-08-01,Trellis 工作流,active
+.trellis/spec/domain.md,trellis,100845,2026-08-01,Trellis 工作流,active
+.trellis/spec/evaluation,dir,0,,目录,active
+.trellis/spec/evaluation/fold-aggregation.md,trellis,2871,2026-08-01,Trellis 工作流,active
+.trellis/spec/evaluation/index.md,trellis,2166,2026-08-01,Trellis 工作流,active
+.trellis/spec/evaluation/metrics.md,trellis,4713,2026-08-01,Trellis 工作流,active
+.trellis/spec/experiments,dir,0,,目录,active
+.trellis/spec/experiments/index.md,trellis,3515,2026-08-01,Trellis 工作流,active
+.trellis/spec/experiments/registry.md,trellis,3805,2026-08-01,Trellis 工作流,active
+.trellis/spec/experiments/reproducibility.md,trellis,4932,2026-08-01,Trellis 工作流,active
+.trellis/spec/experiments/tracking.md,trellis,6836,2026-08-01,Trellis 工作流,active
+.trellis/spec/guides,dir,0,,目录,active
+.trellis/spec/guides/code-reuse-thinking-guide.md,trellis,5996,2026-08-01,Trellis 工作流,active
+.trellis/spec/guides/cross-layer-thinking-guide.md,trellis,7150,2026-08-01,Trellis 工作流,active
+.trellis/spec/guides/discipline-thinking-guide.md,trellis,5223,2026-08-01,Trellis 工作流,active
+.trellis/spec/guides/index.md,trellis,4667,2026-08-01,Trellis 工作流,active
+.trellis/spec/layout,dir,0,,目录,active
+.trellis/spec/layout/index.md,trellis,3336,2026-08-01,Trellis 工作流,active
+.trellis/spec/layout/structure.md,trellis,9858,2026-08-01,Trellis 工作流,active
+.trellis/spec/layout/style.md,trellis,8193,2026-08-01,Trellis 工作流,active
+.trellis/spec/models,dir,0,,目录,active
+.trellis/spec/models/architecture.md,trellis,4036,2026-08-01,Trellis 工作流,active
+.trellis/spec/models/index.md,trellis,2612,2026-08-01,Trellis 工作流,active
+.trellis/spec/training,dir,0,,目录,active
+.trellis/spec/training/index.md,trellis,2690,2026-08-01,Trellis 工作流,active
+.trellis/spec/training/infrastructure.md,trellis,6235,2026-08-01,Trellis 工作流,active
+.trellis/spec/training/numerics.md,trellis,4334,2026-08-01,Trellis 工作流,active
+.trellis/tasks,dir,0,,目录,active
+.trellis/tasks/08-01-migrate-to-latent-flow,dir,0,,目录,active
+.trellis/tasks/08-01-migrate-to-latent-flow/check.jsonl,trellis,684,2026-08-01,Trellis 工作流,active
+.trellis/tasks/08-01-migrate-to-latent-flow/design.md,trellis,9821,2026-08-01,Trellis 工作流,active
+.trellis/tasks/08-01-migrate-to-latent-flow/implement.jsonl,trellis,990,2026-08-01,Trellis 工作流,active
+.trellis/tasks/08-01-migrate-to-latent-flow/implement.md,trellis,6573,2026-08-01,Trellis 工作流,active
+.trellis/tasks/08-01-migrate-to-latent-flow/prd.md,trellis,10177,2026-08-01,Trellis 工作流,active
+.trellis/tasks/08-01-migrate-to-latent-flow/task.json,trellis,580,2026-08-01,Trellis 工作流,active
+.trellis/tasks/archive,dir,0,,目录,active
+.trellis/tasks/archive/2026-06,dir,0,,目录,active
+.trellis/tasks/archive/2026-06/00-bootstrap-guidelines,dir,0,,目录,active
+.trellis/tasks/archive/2026-06/00-bootstrap-guidelines/prd.md,trellis,4880,2026-06-11,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/00-bootstrap-guidelines/task.json,trellis,723,2026-06-11,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-11-migrate-artifacts-to-trellis,dir,0,,目录,active
+.trellis/tasks/archive/2026-06/06-11-migrate-artifacts-to-trellis/check.jsonl,trellis,125,2026-06-11,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-11-migrate-artifacts-to-trellis/implement.jsonl,trellis,258,2026-06-11,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-11-migrate-artifacts-to-trellis/prd.md,trellis,2714,2026-06-11,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-11-migrate-artifacts-to-trellis/task.json,trellis,634,2026-06-11,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-11-migrate-to-trellis,dir,0,,目录,active
+.trellis/tasks/archive/2026-06/06-11-migrate-to-trellis/check.jsonl,trellis,113,2026-06-11,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-11-migrate-to-trellis/implement.jsonl,trellis,285,2026-06-11,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-11-migrate-to-trellis/prd.md,trellis,4156,2026-06-11,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-11-migrate-to-trellis/task.json,trellis,596,2026-06-11,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-12-diagnose-fold-generalization,dir,0,,目录,active
+.trellis/tasks/archive/2026-06/06-12-diagnose-fold-generalization/check.jsonl,trellis,290,2026-06-12,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-12-diagnose-fold-generalization/implement.jsonl,trellis,507,2026-06-12,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-12-diagnose-fold-generalization/prd.md,trellis,2385,2026-06-12,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-12-diagnose-fold-generalization/task.json,trellis,617,2026-06-12,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-13-init-git-repo,dir,0,,目录,active
+.trellis/tasks/archive/2026-06/06-13-init-git-repo/check.jsonl,trellis,457,2026-06-13,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-13-init-git-repo/implement.jsonl,trellis,599,2026-06-13,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-13-init-git-repo/prd.md,trellis,4793,2026-06-13,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-13-init-git-repo/task.json,trellis,547,2026-06-15,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-15-improve-jet-cross-subject-generalization,dir,0,,目录,active
+.trellis/tasks/archive/2026-06/06-15-improve-jet-cross-subject-generalization/check.jsonl,trellis,945,2026-06-15,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-15-improve-jet-cross-subject-generalization/implement.jsonl,trellis,1634,2026-06-15,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-15-improve-jet-cross-subject-generalization/prd.md,trellis,6683,2026-06-15,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-15-improve-jet-cross-subject-generalization/task.json,trellis,628,2026-06-16,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-16-dropout-entropy-attribution,dir,0,,目录,active
+.trellis/tasks/archive/2026-06/06-16-dropout-entropy-attribution/check.jsonl,trellis,1016,2026-06-16,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-16-dropout-entropy-attribution/implement.jsonl,trellis,2119,2026-06-16,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-16-dropout-entropy-attribution/prd.md,trellis,13953,2026-06-16,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-16-dropout-entropy-attribution/task.json,trellis,621,2026-06-18,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-19-improve-forecast-channel-connectivity,dir,0,,目录,active
+.trellis/tasks/archive/2026-06/06-19-improve-forecast-channel-connectivity/check.jsonl,trellis,254,2026-06-19,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-19-improve-forecast-channel-connectivity/implement.jsonl,trellis,254,2026-06-19,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-19-improve-forecast-channel-connectivity/prd.md,trellis,5524,2026-06-19,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-19-improve-forecast-channel-connectivity/task.json,trellis,650,2026-06-29,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-22-ablate-z-obs-injection,dir,0,,目录,active
+.trellis/tasks/archive/2026-06/06-22-ablate-z-obs-injection/check.jsonl,trellis,254,2026-06-22,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-22-ablate-z-obs-injection/implement.jsonl,trellis,254,2026-06-22,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-22-ablate-z-obs-injection/prd.md,trellis,5084,2026-06-22,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-22-ablate-z-obs-injection/task.json,trellis,711,2026-06-23,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-23-new-latent-flow-arch,dir,0,,目录,active
+.trellis/tasks/archive/2026-06/06-23-new-latent-flow-arch/check.jsonl,trellis,254,2026-06-23,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-23-new-latent-flow-arch/design.md,trellis,13923,2026-06-23,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-23-new-latent-flow-arch/implement.jsonl,trellis,254,2026-06-23,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-23-new-latent-flow-arch/implement.md,trellis,7179,2026-06-23,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-23-new-latent-flow-arch/prd.md,trellis,16274,2026-06-23,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-23-new-latent-flow-arch/task.json,trellis,610,2026-06-25,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-25-oc-latentflow-connectivity-bisect,dir,0,,目录,active
+.trellis/tasks/archive/2026-06/06-25-oc-latentflow-connectivity-bisect/check.jsonl,trellis,254,2026-06-25,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-25-oc-latentflow-connectivity-bisect/design.md,trellis,9148,2026-06-25,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-25-oc-latentflow-connectivity-bisect/implement.jsonl,trellis,254,2026-06-25,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-25-oc-latentflow-connectivity-bisect/implement.md,trellis,4870,2026-06-25,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-25-oc-latentflow-connectivity-bisect/prd.md,trellis,7002,2026-06-26,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-25-oc-latentflow-connectivity-bisect/task.json,trellis,643,2026-06-28,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-28-baseline-directed-connectivity,dir,0,,目录,active
+.trellis/tasks/archive/2026-06/06-28-baseline-directed-connectivity/check.jsonl,trellis,254,2026-06-28,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-28-baseline-directed-connectivity/implement.jsonl,trellis,254,2026-06-28,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-28-baseline-directed-connectivity/prd.md,trellis,3216,2026-06-28,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-28-baseline-directed-connectivity/task.json,trellis,801,2026-06-28,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-29-channel-selectivity-rootcause,dir,0,,目录,active
+.trellis/tasks/archive/2026-06/06-29-channel-selectivity-rootcause/check.jsonl,trellis,254,2026-06-29,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-29-channel-selectivity-rootcause/design.md,trellis,9807,2026-06-29,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-29-channel-selectivity-rootcause/implement.jsonl,trellis,254,2026-06-29,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-29-channel-selectivity-rootcause/implement.md,trellis,9132,2026-06-29,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-29-channel-selectivity-rootcause/prd.md,trellis,25995,2026-06-30,Trellis 工作流,active
+.trellis/tasks/archive/2026-06/06-29-channel-selectivity-rootcause/task.json,trellis,639,2026-06-30,Trellis 工作流,active
+.trellis/tasks/archive/2026-07,dir,0,,目录,active
+.trellis/tasks/archive/2026-07/07-02-sc-init-w,dir,0,,目录,active
+.trellis/tasks/archive/2026-07/07-02-sc-init-w/check.jsonl,trellis,254,2026-07-02,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-02-sc-init-w/design.md,trellis,8122,2026-07-02,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-02-sc-init-w/implement.jsonl,trellis,254,2026-07-02,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-02-sc-init-w/implement.md,trellis,5828,2026-07-02,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-02-sc-init-w/prd.md,trellis,8221,2026-07-02,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-02-sc-init-w/task.json,trellis,563,2026-07-04,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-02-sc-prior-lead-field,dir,0,,目录,active
+.trellis/tasks/archive/2026-07/07-02-sc-prior-lead-field/check.jsonl,trellis,254,2026-07-02,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-02-sc-prior-lead-field/design.md,trellis,9106,2026-07-02,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-02-sc-prior-lead-field/implement.jsonl,trellis,254,2026-07-02,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-02-sc-prior-lead-field/implement.md,trellis,5818,2026-07-02,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-02-sc-prior-lead-field/prd.md,trellis,7480,2026-07-02,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-02-sc-prior-lead-field/task.json,trellis,592,2026-07-02,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-04-de-vs-baseline-zero-corr,dir,0,,目录,active
+.trellis/tasks/archive/2026-07/07-04-de-vs-baseline-zero-corr/check.jsonl,trellis,254,2026-07-04,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-04-de-vs-baseline-zero-corr/design.md,trellis,6646,2026-07-04,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-04-de-vs-baseline-zero-corr/implement.jsonl,trellis,254,2026-07-04,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-04-de-vs-baseline-zero-corr/implement.md,trellis,5245,2026-07-04,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-04-de-vs-baseline-zero-corr/prd.md,trellis,7482,2026-07-04,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-04-de-vs-baseline-zero-corr/task.json,trellis,859,2026-07-04,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-04-global-tau-sigma,dir,0,,目录,active
+.trellis/tasks/archive/2026-07/07-04-global-tau-sigma/check.jsonl,trellis,254,2026-07-04,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-04-global-tau-sigma/design.md,trellis,6445,2026-07-04,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-04-global-tau-sigma/implement.jsonl,trellis,254,2026-07-04,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-04-global-tau-sigma/implement.md,trellis,4455,2026-07-04,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-04-global-tau-sigma/prd.md,trellis,4760,2026-07-04,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-04-global-tau-sigma/task.json,trellis,985,2026-07-05,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-04-redesign-bisection-paradigm,dir,0,,目录,active
+.trellis/tasks/archive/2026-07/07-04-redesign-bisection-paradigm/check.jsonl,trellis,254,2026-07-04,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-04-redesign-bisection-paradigm/design.md,trellis,6746,2026-07-04,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-04-redesign-bisection-paradigm/implement.jsonl,trellis,254,2026-07-04,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-04-redesign-bisection-paradigm/implement.md,trellis,5633,2026-07-04,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-04-redesign-bisection-paradigm/prd.md,trellis,4948,2026-07-04,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-04-redesign-bisection-paradigm/task.json,trellis,980,2026-07-04,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-05-de-connection-sign,dir,0,,目录,active
+.trellis/tasks/archive/2026-07/07-05-de-connection-sign/check.jsonl,trellis,254,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-05-de-connection-sign/implement.jsonl,trellis,254,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-05-de-connection-sign/prd.md,trellis,7204,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-05-de-connection-sign/task.json,trellis,1010,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-15-graph-module-ablation,dir,0,,目录,active
+.trellis/tasks/archive/2026-07/07-15-graph-module-ablation/check.jsonl,trellis,254,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-15-graph-module-ablation/design.md,trellis,13606,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-15-graph-module-ablation/implement.jsonl,trellis,254,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-15-graph-module-ablation/implement.md,trellis,15314,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-15-graph-module-ablation/prd.md,trellis,5992,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-15-graph-module-ablation/task.json,trellis,601,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-19-dcm-ec-baseline,dir,0,,目录,active
+.trellis/tasks/archive/2026-07/07-19-dcm-ec-baseline/break-loop-map-failure.md,trellis,3538,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-19-dcm-ec-baseline/break-loop-vl-gradient.md,trellis,4151,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-19-dcm-ec-baseline/check.jsonl,trellis,254,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-19-dcm-ec-baseline/design.md,trellis,9751,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-19-dcm-ec-baseline/implement.jsonl,trellis,254,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-19-dcm-ec-baseline/implement.md,trellis,5810,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-19-dcm-ec-baseline/OUTCOME.md,trellis,4446,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-19-dcm-ec-baseline/prd.md,trellis,7244,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-19-dcm-ec-baseline/research-eeg-specific-dcm.md,trellis,35023,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-19-dcm-ec-baseline/research-spm-spectral-dcm.md,trellis,35607,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-19-dcm-ec-baseline/task.json,trellis,622,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-21-arch-checkpoint-seam,dir,0,,目录,active
+.trellis/tasks/archive/2026-07/07-21-arch-checkpoint-seam/check.jsonl,trellis,254,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-21-arch-checkpoint-seam/design.md,trellis,16246,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-21-arch-checkpoint-seam/implement.jsonl,trellis,254,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-21-arch-checkpoint-seam/implement.md,trellis,7427,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-21-arch-checkpoint-seam/prd.md,trellis,4927,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-21-arch-checkpoint-seam/task.json,trellis,830,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-22-fc-correlation-real-vs-generated,dir,0,,目录,active
+.trellis/tasks/archive/2026-07/07-22-fc-correlation-real-vs-generated/check.jsonl,trellis,254,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-22-fc-correlation-real-vs-generated/implement.jsonl,trellis,254,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-22-fc-correlation-real-vs-generated/prd.md,trellis,4956,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-22-fc-correlation-real-vs-generated/task.json,trellis,678,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-23-de-directional-noise-sign,dir,0,,目录,active
+.trellis/tasks/archive/2026-07/07-23-de-directional-noise-sign/check.jsonl,trellis,533,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-23-de-directional-noise-sign/design.md,trellis,5724,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-23-de-directional-noise-sign/implement.jsonl,trellis,692,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-23-de-directional-noise-sign/implement.md,trellis,2856,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-23-de-directional-noise-sign/prd.md,trellis,3988,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-23-de-directional-noise-sign/task.json,trellis,646,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-23-ec-method-survey-beyond-gc-te-dcm,dir,0,,目录,active
+.trellis/tasks/archive/2026-07/07-23-ec-method-survey-beyond-gc-te-dcm/check.jsonl,trellis,254,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-23-ec-method-survey-beyond-gc-te-dcm/implement.jsonl,trellis,254,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-23-ec-method-survey-beyond-gc-te-dcm/prd.md,trellis,2478,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-23-ec-method-survey-beyond-gc-te-dcm/research-gpdc-recommendation.md,trellis,10551,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-23-ec-method-survey-beyond-gc-te-dcm/task.json,trellis,666,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-23-gpd-ec-baseline,dir,0,,目录,active
+.trellis/tasks/archive/2026-07/07-23-gpd-ec-baseline/check.jsonl,trellis,254,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-23-gpd-ec-baseline/implement.jsonl,trellis,254,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-23-gpd-ec-baseline/prd.md,trellis,3139,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-23-gpd-ec-baseline/task.json,trellis,615,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-23-gpdc-128ch-ec-acceleration,dir,0,,目录,active
+.trellis/tasks/archive/2026-07/07-23-gpdc-128ch-ec-acceleration/check.jsonl,trellis,254,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-23-gpdc-128ch-ec-acceleration/implement.jsonl,trellis,254,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-23-gpdc-128ch-ec-acceleration/prd.md,trellis,1316,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-23-gpdc-128ch-ec-acceleration/task.json,trellis,649,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-23-gpdc-zero-correlation-rootcause,dir,0,,目录,active
+.trellis/tasks/archive/2026-07/07-23-gpdc-zero-correlation-rootcause/check.jsonl,trellis,254,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-23-gpdc-zero-correlation-rootcause/implement.jsonl,trellis,254,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-23-gpdc-zero-correlation-rootcause/prd.md,trellis,5799,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-23-gpdc-zero-correlation-rootcause/task.json,trellis,673,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-24-sc-injection-correlation-improvement,dir,0,,目录,active
+.trellis/tasks/archive/2026-07/07-24-sc-injection-correlation-improvement/check.jsonl,trellis,254,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-24-sc-injection-correlation-improvement/design.md,trellis,5535,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-24-sc-injection-correlation-improvement/implement.jsonl,trellis,254,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-24-sc-injection-correlation-improvement/implement.md,trellis,3477,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-24-sc-injection-correlation-improvement/prd.md,trellis,4640,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-24-sc-injection-correlation-improvement/task.json,trellis,634,2026-07-24,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-25-de-injection-ablation,dir,0,,目录,active
+.trellis/tasks/archive/2026-07/07-25-de-injection-ablation/check.jsonl,trellis,254,2026-07-25,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-25-de-injection-ablation/design.md,trellis,7732,2026-07-25,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-25-de-injection-ablation/implement.jsonl,trellis,254,2026-07-25,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-25-de-injection-ablation/implement.md,trellis,6167,2026-07-25,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-25-de-injection-ablation/prd.md,trellis,10189,2026-07-25,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-25-de-injection-ablation/task.json,trellis,585,2026-07-26,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-26-two-model-comparison,dir,0,,目录,active
+.trellis/tasks/archive/2026-07/07-26-two-model-comparison/check.jsonl,trellis,254,2026-07-26,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-26-two-model-comparison/design.md,trellis,10279,2026-07-26,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-26-two-model-comparison/implement.jsonl,trellis,254,2026-07-26,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-26-two-model-comparison/implement.md,trellis,5477,2026-07-26,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-26-two-model-comparison/prd.md,trellis,6476,2026-07-26,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-26-two-model-comparison/task.json,trellis,579,2026-07-31,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-28-edra-dataset-adaptation,dir,0,,目录,active
+.trellis/tasks/archive/2026-07/07-28-edra-dataset-adaptation/check.jsonl,trellis,653,2026-07-28,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-28-edra-dataset-adaptation/design.md,trellis,12009,2026-07-28,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-28-edra-dataset-adaptation/implement.jsonl,trellis,962,2026-07-28,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-28-edra-dataset-adaptation/implement.md,trellis,6183,2026-07-28,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-28-edra-dataset-adaptation/prd.md,trellis,10644,2026-07-28,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-28-edra-dataset-adaptation/task.json,trellis,607,2026-07-30,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-30-dog-kernel-learnable-params,dir,0,,目录,active
+.trellis/tasks/archive/2026-07/07-30-dog-kernel-learnable-params/check.jsonl,trellis,254,2026-07-30,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-30-dog-kernel-learnable-params/design.md,trellis,6074,2026-07-30,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-30-dog-kernel-learnable-params/implement.jsonl,trellis,254,2026-07-30,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-30-dog-kernel-learnable-params/implement.md,trellis,10387,2026-07-31,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-30-dog-kernel-learnable-params/prd.md,trellis,6940,2026-07-30,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-30-dog-kernel-learnable-params/task.json,trellis,609,2026-07-31,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-31-ec-graph-classification,dir,0,,目录,active
+.trellis/tasks/archive/2026-07/07-31-ec-graph-classification/check.jsonl,trellis,254,2026-07-31,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-31-ec-graph-classification/design.md,trellis,11001,2026-07-31,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-31-ec-graph-classification/implement.jsonl,trellis,254,2026-07-31,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-31-ec-graph-classification/implement.md,trellis,8171,2026-07-31,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-31-ec-graph-classification/prd.md,trellis,10994,2026-07-31,Trellis 工作流,active
+.trellis/tasks/archive/2026-07/07-31-ec-graph-classification/task.json,trellis,601,2026-07-31,Trellis 工作流,active
+.trellis/workflow.md,trellis,40077,2026-08-01,Trellis 工作流,active
+.trellis/workspace,dir,0,,目录,active
+.trellis/workspace/index.md,trellis,2307,2026-06-11,Trellis 工作流,active
+.trellis/workspace/weanqin,dir,0,,目录,active
+.trellis/workspace/weanqin/index.md,trellis,3310,2026-07-31,Trellis 工作流,active
+.trellis/workspace/weanqin/journal-1.md,trellis,49579,2026-07-31,Trellis 工作流,active
+.vscode,dir,0,,目录,active
+.vscode/settings.json,config,135,2026-05-19,平台/工具配置,uncertain
+.zcode,dir,0,,目录,active
+.zcode/agents,dir,0,,目录,active
+.zcode/agents/trellis-check.md,config,3021,2026-07-22,平台/工具配置,active
+.zcode/agents/trellis-implement.md,config,3329,2026-07-22,平台/工具配置,active
+.zcode/agents/trellis-recorder.md,config,8428,2026-08-01,平台/工具配置,active
+.zcode/agents/trellis-research.md,config,3696,2026-07-22,平台/工具配置,active
+.zcode/cli,dir,0,,目录,active
+.zcode/cli/agents,dir,0,,目录,active
+.zcode/cli/agents/trellis-check.md,config,4255,2026-06-23,平台/工具配置,uncertain
+.zcode/cli/agents/trellis-implement.md,config,4355,2026-06-23,平台/工具配置,uncertain
+.zcode/commands,dir,0,,目录,active
+.zcode/commands/trellis,dir,0,,目录,active
+.zcode/commands/trellis/continue.md,config,2356,2026-06-23,平台/工具配置,uncertain
+.zcode/commands/trellis/finish-work.md,config,3425,2026-06-23,平台/工具配置,uncertain
+.zcode/commands/trellis/start.md,config,2437,2026-06-23,平台/工具配置,uncertain
+.zcode/config.json,config,959,2026-07-22,平台/工具配置,active
+.zcode/hooks,dir,0,,目录,active
+.zcode/hooks/inject-subagent-context.py,code,35512,2026-07-25,项目源码,active
+.zcode/hooks/inject-workflow-state.py,code,18042,2026-07-25,项目源码,active
+.zcode/hooks/session-start.py,code,31215,2026-07-22,项目源码,active
+.zcode/plans,dir,0,,目录,active
+.zcode/plans/plan-sess_7f296642-a686-4458-acd8-c4b47368a815.md,config,7145,2026-07-20,平台/工具配置,active
+.zcode/plans/plan-sess_a5fb2029-26d8-4d58-aff7-18461232d72e.md,config,8679,2026-08-01,平台/工具配置,active
+.zcode/plans/plan-sess_b07f7797-c496-4774-8373-75b1b71a6cda.md,config,6670,2026-07-18,平台/工具配置,active
+.zcode/skills,dir,0,,目录,active
+.zcode/skills/nature-figure,dir,0,,目录,active
+.zcode/skills/nature-figure/assets,dir,0,,目录,active
+.zcode/skills/nature-figure/assets/chart-atlas,dir,0,,目录,active
+.zcode/skills/nature-figure/assets/chart-atlas/atlas-01-bar-charts.png,config,125370,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/chart-atlas/atlas-02-line-trends.png,config,423651,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/chart-atlas/atlas-03-heatmaps.png,config,159834,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/chart-atlas/atlas-04-scatter-bubble.png,config,485091,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/chart-atlas/atlas-05-radar-polar.png,config,630054,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/chart-atlas/atlas-06-distributions.png,config,233827,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/chart-atlas/atlas-07-forest-interval.png,config,270166,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/chart-atlas/atlas-08-area-stacked.png,config,334735,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/chart-atlas/atlas-09-image-plates.png,config,359027,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/chart-atlas/atlas-10-network-matrix.png,config,312125,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/figures4papers,dir,0,,目录,active
+.zcode/skills/nature-figure/assets/figures4papers/assets,dir,0,,目录,active
+.zcode/skills/nature-figure/assets/figures4papers/assets/Dispersion_motivation.png,config,837657,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/figures4papers/assets/Dispersion_observation.png,config,808992,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/figures4papers/assets/Dispersion_observation_distillation.png,config,616612,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/figures4papers/assets/ImmunoStruct_contrastive.png,config,502211,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/figures4papers/assets/ImmunoStruct_schematic.png,config,972870,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/figures4papers/assets/RNAGenScape_schematic.png,config,1000298,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_brainteaser,dir,0,,目录,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_brainteaser/figures,dir,0,,目录,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_brainteaser/figures/brute_force.png,config,1753162,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_brainteaser/figures/correctness_by_category.png,config,655498,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_brainteaser/figures/correctness_by_subcategory.png,config,1100554,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_brainteaser/figures/rewriting.png,config,410105,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_brainteaser/figures/selfcorrection_math.png,config,611488,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_brainteaser/plot_brute_force.py,code,10181,2026-07-15,项目源码,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_brainteaser/plot_correctness_by_category.py,code,6403,2026-07-15,项目源码,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_brainteaser/plot_correctness_by_subcategory.py,code,6505,2026-07-15,项目源码,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_brainteaser/plot_rewriting.py,code,3694,2026-07-15,项目源码,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_brainteaser/plot_selfcorrection_math.py,code,4015,2026-07-15,项目源码,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_CellSpliceNet,dir,0,,目录,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_CellSpliceNet/figures,dir,0,,目录,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_CellSpliceNet/figures/ablation.png,config,355284,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_CellSpliceNet/figures/comparison.png,config,813084,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_CellSpliceNet/figures/comparison_human.png,config,880800,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_CellSpliceNet/figures/comparison_worm.png,config,925266,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_CellSpliceNet/plot_ablation.py,code,2964,2026-07-15,项目源码,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_CellSpliceNet/plot_comparison.py,code,3909,2026-07-15,项目源码,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_CellSpliceNet/plot_comparison_cross_species.py,code,6532,2026-07-15,项目源码,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_Cflows,dir,0,,目录,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_Cflows/diffusion_swiss_roll.py,code,3545,2026-07-15,项目源码,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_Cflows/figures,dir,0,,目录,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_Cflows/figures/diffusion_swiss_roll.png,config,1794980,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_Cflows/figures/fig2_comparison_GeneRegulatory.pdf,config,24757,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_Cflows/figures/fig2_comparison_GeneRegulatory.png,config,287419,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_Cflows/figures/fig2_comparison_Trajectory.pdf,config,19791,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_Cflows/figures/fig2_comparison_Trajectory.png,config,388293,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_Cflows/figures/figX_comparison_Ablation.pdf,config,19233,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_Cflows/figures/figX_comparison_Ablation.png,config,328952,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_Cflows/plot_comparison_Ablation.py,code,2506,2026-07-15,项目源码,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_Cflows/plot_comparison_GeneRegulatory.py,code,3022,2026-07-15,项目源码,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_Cflows/plot_comparison_Trajectory.py,code,2941,2026-07-15,项目源码,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_Dispersion,dir,0,,目录,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_Dispersion/figures,dir,0,,目录,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_Dispersion/figures/idea.png,config,384839,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_Dispersion/figures/illustration.png,config,762950,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_Dispersion/plot_idea.py,code,2432,2026-07-15,项目源码,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_Dispersion/plot_illustration.py,code,15472,2026-07-15,项目源码,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_FPGM,dir,0,,目录,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_FPGM/figures,dir,0,,目录,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_FPGM/figures/freq_prior.png,config,641033,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_FPGM/plot_freq_prior.py,code,6578,2026-07-15,项目源码,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_ImmunoStruct,dir,0,,目录,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_ImmunoStruct/figures,dir,0,,目录,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_ImmunoStruct/figures/bars_ablation_Cancer.png,config,816715,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_ImmunoStruct/figures/bars_ablation_IEDB.png,config,1160225,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_ImmunoStruct/figures/bars_comparison_Cancer.png,config,799770,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_ImmunoStruct/figures/bars_comparison_IEDB.png,config,757551,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_ImmunoStruct/plot_bars.py,code,7707,2026-07-15,项目源码,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_ImmunoStruct/raw_data.py,code,4459,2026-07-15,项目源码,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_ophthal_review,dir,0,,目录,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_ophthal_review/figures,dir,0,,目录,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_ophthal_review/figures/composition_heatmap.png,config,279533,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_ophthal_review/figures/trend_by_month.png,config,364102,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_ophthal_review/plot_composition.py,code,3032,2026-07-15,项目源码,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_ophthal_review/plot_trend.py,code,5531,2026-07-15,项目源码,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_RNAGenScape,dir,0,,目录,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_RNAGenScape/figures,dir,0,,目录,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_RNAGenScape/figures/manifold.png,config,108276,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_RNAGenScape/figures/manifold_holes.png,config,1019896,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_RNAGenScape/plot_comparison.py,code,11236,2026-07-15,项目源码,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_RNAGenScape/plot_hole_manifold.py,code,2547,2026-07-15,项目源码,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_RNAGenScape/plot_manifold.py,code,1811,2026-07-15,项目源码,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_RNAGenScape/plot_sweep.py,code,2873,2026-07-15,项目源码,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_VIGIL,dir,0,,目录,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_VIGIL/figures,dir,0,,目录,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_VIGIL/figures/ablation_curves.png,config,600708,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_VIGIL/figures/comparison_posttraining.png,config,249289,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_VIGIL/figures/comparison_radar.png,config,809841,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_VIGIL/figures/concept.png,config,1643817,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_VIGIL/plot_ablation.py,code,6038,2026-07-15,项目源码,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_VIGIL/plot_comparison_radar.py,code,7397,2026-07-15,项目源码,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_VIGIL/plot_concept.py,code,9205,2026-07-15,项目源码,active
+.zcode/skills/nature-figure/assets/figures4papers/figure_VIGIL/plot_posttraining.py,code,2948,2026-07-15,项目源码,active
+.zcode/skills/nature-figure/assets/gallery,dir,0,,目录,active
+.zcode/skills/nature-figure/assets/gallery/fig1-material-mechanism-rich.png,config,570018,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/gallery/fig2-spatial-imaging-rich.png,config,643666,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/gallery/fig3-in-vivo-efficacy-rich.png,config,371419,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/gallery/fig4-single-cell-systems-rich.png,config,392735,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/assets/gallery/fig5-validation-perturbation-rich.png,config,408275,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/evals,dir,0,,目录,active
+.zcode/skills/nature-figure/evals/evals.json,config,2127,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/manifest.yaml,config,4593,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/README.md,config,3832,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/README_EN.md,config,4200,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/references,dir,0,,目录,active
+.zcode/skills/nature-figure/references/api.md,config,13552,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/references/backend-selection.md,config,5091,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/references/chart-types.md,config,11335,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/references/common-patterns.md,config,9950,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/references/demos.md,config,4633,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/references/design-theory.md,config,15620,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/references/figure-contract.md,config,3970,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/references/figure-legend-conventions.md,config,3607,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/references/nature-2026-observations.md,config,5622,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/references/openrouter-image-generation.md,config,4343,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/references/qa-contract.md,config,4736,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/references/r-template-index.md,config,3903,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/references/r-workflow.md,config,5275,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/references/tutorials.md,config,8169,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/scripts,dir,0,,目录,active
+.zcode/skills/nature-figure/scripts/generate_openrouter_schematic.py,code,9132,2026-07-15,项目源码,active
+.zcode/skills/nature-figure/scripts/nature_figure_backend.py,code,2708,2026-07-15,项目源码,active
+.zcode/skills/nature-figure/SKILL.md,config,6840,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/static,dir,0,,目录,active
+.zcode/skills/nature-figure/static/core,dir,0,,目录,active
+.zcode/skills/nature-figure/static/core/contract.md,config,3527,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/static/core/stance.md,config,3371,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/static/fragments,dir,0,,目录,active
+.zcode/skills/nature-figure/static/fragments/backend,dir,0,,目录,active
+.zcode/skills/nature-figure/static/fragments/backend/python.md,config,1936,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-figure/static/fragments/backend/r.md,config,2075,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-literature-pipeline,dir,0,,目录,active
+.zcode/skills/nature-literature-pipeline/README.md,config,2111,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-literature-pipeline/README_EN.md,config,2340,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-literature-pipeline/references,dir,0,,目录,active
+.zcode/skills/nature-literature-pipeline/references/cron-setup.md,config,3075,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-literature-pipeline/references/gap-analysis.md,config,2442,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-literature-pipeline/references/note-template.md,config,4332,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-literature-pipeline/references/push-format.md,config,3456,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-literature-pipeline/references/review-compilation-workflow.md,config,4204,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-literature-pipeline/references/scoring-system.md,config,2503,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-literature-pipeline/SKILL.md,config,4788,2026-07-15,平台/工具配置,active
+.zcode/skills/nature-literature-pipeline/templates,dir,0,,目录,active
+.zcode/skills/nature-literature-pipeline/templates/literature-push-template.md,config,5009,2026-07-15,平台/工具配置,active
+.zcode/skills/trellis-before-dev,dir,0,,目录,active
+.zcode/skills/trellis-before-dev/SKILL.md,config,1852,2026-07-22,平台/工具配置,active
+.zcode/skills/trellis-brainstorm,dir,0,,目录,active
+.zcode/skills/trellis-brainstorm/SKILL.md,config,10393,2026-07-22,平台/工具配置,active
+.zcode/skills/trellis-break-loop,dir,0,,目录,active
+.zcode/skills/trellis-break-loop/SKILL.md,config,6963,2026-07-22,平台/工具配置,active
+.zcode/skills/trellis-channel,dir,0,,目录,active
+.zcode/skills/trellis-channel/references,dir,0,,目录,active
+.zcode/skills/trellis-channel/references/command-reference.md,config,17365,2026-07-22,平台/工具配置,active
+.zcode/skills/trellis-channel/references/forum.md,config,7970,2026-07-22,平台/工具配置,active
+.zcode/skills/trellis-channel/references/progress-debugging.md,config,8495,2026-07-22,平台/工具配置,active
+.zcode/skills/trellis-channel/references/workers.md,config,11151,2026-07-22,平台/工具配置,active
+.zcode/skills/trellis-channel/references/workflows.md,config,4488,2026-07-22,平台/工具配置,active
+.zcode/skills/trellis-channel/SKILL.md,config,4872,2026-07-22,平台/工具配置,active
+.zcode/skills/trellis-check,dir,0,,目录,active
+.zcode/skills/trellis-check/SKILL.md,config,2813,2026-07-22,平台/工具配置,active
+.zcode/skills/trellis-meta,dir,0,,目录,active
+.zcode/skills/trellis-meta/references,dir,0,,目录,active
+.zcode/skills/trellis-meta/references/customize-local,dir,0,,目录,active
+.zcode/skills/trellis-meta/references/customize-local/add-project-local-conventions.md,config,2506,2026-07-22,平台/工具配置,active
+.zcode/skills/trellis-meta/references/customize-local/change-agents.md,config,2663,2026-07-22,平台/工具配置,active
+.zcode/skills/trellis-meta/references/customize-local/change-context-loading.md,config,3302,2026-07-22,平台/工具配置,active
+.zcode/skills/trellis-meta/references/customize-local/change-hooks.md,config,2332,2026-07-22,平台/工具配置,active
+.zcode/skills/trellis-meta/references/customize-local/change-skills-or-commands.md,config,6957,2026-07-22,平台/工具配置,active
+.zcode/skills/trellis-meta/references/customize-local/change-spec-structure.md,config,2384,2026-07-22,平台/工具配置,active
+.zcode/skills/trellis-meta/references/customize-local/change-task-lifecycle.md,config,4592,2026-07-22,平台/工具配置,active
+.zcode/skills/trellis-meta/references/customize-local/change-workflow.md,config,4284,2026-07-22,平台/工具配置,active
+.zcode/skills/trellis-meta/references/customize-local/overview.md,config,2867,2026-07-22,平台/工具配置,active
+.zcode/skills/trellis-meta/references/local-architecture,dir,0,,目录,active
+.zcode/skills/trellis-meta/references/local-architecture/bundled-skills.md,config,11624,2026-07-22,平台/工具配置,active
+.zcode/skills/trellis-meta/references/local-architecture/context-injection.md,config,4065,2026-07-22,平台/工具配置,active
+.zcode/skills/trellis-meta/references/local-architecture/generated-files.md,config,3937,2026-07-22,平台/工具配置,active
+.zcode/skills/trellis-meta/references/local-architecture/multi-agent-channel.md,config,6785,2026-07-22,平台/工具配置,active
+.zcode/skills/trellis-meta/references/local-architecture/overview.md,config,3747,2026-07-22,平台/工具配置,active
+.zcode/skills/trellis-meta/references/local-architecture/spec-system.md,config,3434,2026-07-22,平台/工具配置,active
+.zcode/skills/trellis-meta/references/local-architecture/task-system.md,config,6104,2026-07-22,平台/工具配置,active
+.zcode/skills/trellis-meta/references/local-architecture/workflow.md,config,3756,2026-07-22,平台/工具配置,active
+.zcode/skills/trellis-meta/references/local-architecture/workspace-memory.md,config,2764,2026-07-22,平台/工具配置,active
+.zcode/skills/trellis-meta/references/platform-files,dir,0,,目录,active
+.zcode/skills/trellis-meta/references/platform-files/agents.md,config,4067,2026-07-25,平台/工具配置,active
+.zcode/skills/trellis-meta/references/platform-files/hooks-and-settings.md,config,4382,2026-07-22,平台/工具配置,active
+.zcode/skills/trellis-meta/references/platform-files/overview.md,config,3535,2026-07-25,平台/工具配置,active
+.zcode/skills/trellis-meta/references/platform-files/platform-map.md,config,6982,2026-07-25,平台/工具配置,active
+.zcode/skills/trellis-meta/references/platform-files/skills-and-commands.md,config,4037,2026-07-22,平台/工具配置,active
+.zcode/skills/trellis-meta/SKILL.md,config,12757,2026-07-22,平台/工具配置,active
+.zcode/skills/trellis-session-insight,dir,0,,目录,active
+.zcode/skills/trellis-session-insight/references,dir,0,,目录,active
+.zcode/skills/trellis-session-insight/references/cli-quick-reference.md,config,6834,2026-07-22,平台/工具配置,active
+.zcode/skills/trellis-session-insight/references/triggering-patterns.md,config,4058,2026-07-22,平台/工具配置,active
+.zcode/skills/trellis-session-insight/SKILL.md,config,6682,2026-07-22,平台/工具配置,active
+.zcode/skills/trellis-spec-bootstrap,dir,0,,目录,active
+.zcode/skills/trellis-spec-bootstrap/references,dir,0,,目录,active
+.zcode/skills/trellis-spec-bootstrap/references/mcp-setup.md,config,2766,2026-07-22,平台/工具配置,active
+.zcode/skills/trellis-spec-bootstrap/references/repository-analysis.md,config,2745,2026-07-22,平台/工具配置,active
+.zcode/skills/trellis-spec-bootstrap/references/spec-task-planning.md,config,2231,2026-07-22,平台/工具配置,active
+.zcode/skills/trellis-spec-bootstrap/references/spec-writing.md,config,2176,2026-07-22,平台/工具配置,active
+.zcode/skills/trellis-spec-bootstrap/SKILL.md,config,2679,2026-07-22,平台/工具配置,active
+.zcode/skills/trellis-update-spec,dir,0,,目录,active
+.zcode/skills/trellis-update-spec/SKILL.md,config,10054,2026-07-22,平台/工具配置,active
+__init__.py,code,1336,2026-08-01,项目源码,active
+AGENTS.md,trellis,1073,2026-06-11,Trellis 工作流,uncertain
+archive,dir,0,,目录,active
+archive/baseline,dir,0,,目录,archive
+archive/baseline/dcm.py,archive,55289,2026-08-01,归档(弃用/历史),archive
+archive/models,dir,0,,目录,archive
+archive/models/aal_atlas.py,archive,7364,2026-07-02,归档(弃用/历史),archive
+archive/models/gru_forecaster.py,archive,8118,2026-08-01,归档(弃用/历史),archive
+archive/models/sc_leadfield.pt,archive,51596,2026-07-02,归档(弃用/历史),archive
+archive/models/var_forecaster.py,archive,13625,2026-08-01,归档(弃用/历史),archive
+archive/scripts,dir,0,,目录,archive
+archive/scripts/_compare_signed_de_baselines.py,archive,7866,2026-08-01,归档(弃用/历史),archive
+archive/scripts/_per_subject_correlations.py,archive,7943,2026-08-01,归档(弃用/历史),archive
+archive/scripts/_plot_global_tau_zscore.py,archive,4193,2026-08-01,归档(弃用/历史),archive
+archive/scripts/_plot_latent_q025_vs_aeff.py,archive,3199,2026-08-01,归档(弃用/历史),archive
+archive/scripts/_plot_latent_q075_vs_aeff.py,archive,3199,2026-08-01,归档(弃用/历史),archive
+archive/scripts/_plot_latent_three_q_vs_aeff.py,archive,3585,2026-08-01,归档(弃用/历史),archive
+archive/scripts/_plot_scbase_signal_vs_latent.py,archive,3177,2026-08-01,归档(弃用/历史),archive
+archive/scripts/_probe_sign_candidates.py,archive,7179,2026-08-01,归档(弃用/历史),archive
+archive/scripts/_summarize_de_injection_ablation.py,archive,15119,2026-08-01,归档(弃用/历史),archive
+archive/scripts/build_sc_leadfield.py,archive,18626,2026-08-01,归档(弃用/历史),archive
+archive/scripts/compare_params_vs_behavior.py,archive,16775,2026-08-01,归档(弃用/历史),archive
+archive/scripts/compare_params_vs_sc.py,archive,18654,2026-08-01,归档(弃用/历史),archive
+archive/scripts/plot_directed_aeff_compare.py,archive,8705,2026-08-01,归档(弃用/历史),archive
+archive/scripts/plot_loss_curves.py,archive,4766,2026-08-01,归档(弃用/历史),archive
+archive/scripts/plot_sc_fusion_ablation.py,archive,10975,2026-08-01,归档(弃用/历史),archive
+archive/scripts/plot_stage2_compare.py,archive,6308,2026-08-01,归档(弃用/历史),archive
+archive/scripts/plot_two_model_connectivity.py,archive,9509,2026-08-01,归档(弃用/历史),archive
+archive/scripts/probe_sc_osf.py,archive,20931,2026-08-01,归档(弃用/历史),archive
+archive/scripts/run_oc_connectivity_attribution.py,archive,7785,2026-08-01,归档(弃用/历史),archive
+archive/scripts/run_oc_connectivity_latent.py,archive,8961,2026-08-01,归档(弃用/历史),archive
+archive/scripts/run_two_model_comparison.py,archive,26409,2026-08-01,归档(弃用/历史),archive
+archive/scripts/train_gru_forecaster.py,archive,8332,2026-08-01,归档(弃用/历史),archive
+archive/scripts/train_var_forecaster.py,archive,8270,2026-08-01,归档(弃用/历史),archive
+archive/tests,dir,0,,目录,archive
+archive/tests/test_dcm_gpu.py,archive,8165,2026-08-01,归档(弃用/历史),archive
+archive/tests/test_dcm_kernel.py,archive,11380,2026-08-01,归档(弃用/历史),archive
+archive/tests/test_two_model_comparison.py,archive,5205,2026-08-01,归档(弃用/历史),archive
+attribution,dir,0,,目录,active
+attribution/__init__.py,code,0,2026-06-16,项目源码,active
+attribution/bisect_sigma.py,code,59510,2026-07-24,项目源码,active
+baseline,dir,0,,目录,active
+baseline/__init__.py,code,1488,2026-07-24,项目源码,active
+baseline/compare_baseline_vs_oc.py,code,4569,2026-08-01,项目源码,active
+baseline/data_utils.py,code,3158,2026-08-01,项目源码,active
+baseline/gpdc.py,code,7076,2026-07-24,项目源码,active
+baseline/granger.py,code,13098,2026-08-01,项目源码,active
+baseline/plot_subject_compare.py,code,4457,2026-08-01,项目源码,active
+baseline/run_baseline_connectivity.py,code,16528,2026-08-01,项目源码,active
+baseline/transfer_entropy.py,code,7911,2026-08-01,项目源码,active
+config.py,code,2483,2026-08-01,项目源码,active
+configs,dir,0,,目录,active
+data,dir,0,,目录,active
+data/__init__.py,code,0,2026-05-20,项目源码,active
+data/brainvision.py,code,4910,2026-07-28,项目源码,active
+data/datasets.py,code,3601,2026-07-28,项目源码,active
+data/de_features.py,code,5251,2026-07-31,项目源码,active
+data/electrode_positions.py,code,5184,2026-07-28,项目源码,active
+data/splitter.py,code,3424,2026-05-21,项目源码,active
+data/subject_classification.py,code,23081,2026-08-01,项目源码,active
+docs,dir,0,,目录,active
+docs/inventory.csv,result,68216,2026-08-01,实验结果,active
+docs/path_mapping.csv,result,2467,2026-08-01,实验结果,active
+karpathy-guidelines,dir,0,,目录,active
+karpathy-guidelines/SKILL.md,trellis,2518,2026-08-01,Trellis 工作流,active
+models,dir,0,,目录,active
+models/__init__.py,code,0,2026-05-20,项目源码,active
+models/dcgnn_classifier.py,code,11506,2026-07-31,项目源码,active
+models/graph_utils.py,code,6528,2026-08-01,项目源码,active
+models/oc_latent_flow.py,code,59885,2026-08-01,项目源码,active
+README.md,trellis,6084,2026-08-01,Trellis 工作流,active
+requirements.txt,other,843,2026-08-01,其他,active
+requirements_raw.txt,other,13609,2026-08-01,其他,active
+scripts,dir,0,,目录,active
+scripts/__init__.py,code,0,2026-05-20,项目源码,active
+scripts/_compare_signed_de_ablation.py,code,14827,2026-08-01,项目源码,active
+scripts/_connectivity_driver.py,code,23610,2026-08-01,项目源码,active
+scripts/_plot_ablation_connectivity.py,code,4595,2026-08-01,项目源码,active
+scripts/_plot_de_signed_heatmaps.py,code,11518,2026-08-01,项目源码,active
+scripts/_run_signed_de_ablation.py,code,3887,2026-08-01,项目源码,active
+scripts/_summarize_ablation.py,code,12858,2026-08-01,项目源码,active
+scripts/build_edra_geometry.py,code,4210,2026-08-01,项目源码,active
+scripts/compare_params_vs_baseline.py,code,6115,2026-08-01,项目源码,active
+scripts/diag_de_vs_baseline.py,code,37371,2026-08-01,项目源码,active
+scripts/diag_oc_latent_flow.py,code,7566,2026-08-01,项目源码,active
+scripts/eval_fc_correlation.py,code,14866,2026-08-01,项目源码,active
+scripts/eval_oc_latent_flow.py,code,5807,2026-08-01,项目源码,active
+scripts/extract_graph_connectivity.py,code,6893,2026-08-01,项目源码,active
+scripts/plot_component_ablation.py,code,5066,2026-08-01,项目源码,active
+scripts/plot_edra_training.py,code,9936,2026-08-01,项目源码,active
+scripts/plot_fc_correlation.py,code,12055,2026-08-01,项目源码,active
+scripts/plot_oc_latent_flow.py,code,10636,2026-08-01,项目源码,active
+scripts/probe_component_ablation.py,code,14355,2026-08-01,项目源码,active
+scripts/probe_oc_latent_flow.py,code,16317,2026-08-01,项目源码,active
+scripts/probe_oc_latent_flow_latent.py,code,18805,2026-08-01,项目源码,active
+scripts/run_ablation_pipeline.py,code,11405,2026-08-01,项目源码,active
+scripts/run_ec_graph_comparison_full.py,code,3690,2026-07-31,项目源码,active
+scripts/run_oc_connectivity_global_tau.py,code,16704,2026-08-01,项目源码,active
+scripts/run_oc_connectivity_relative.py,code,10055,2026-08-01,项目源码,active
+scripts/shape_check_oc_latent_flow.py,code,4970,2026-08-01,项目源码,active
+scripts/train_dcgnn_classifier_fold0.py,code,13915,2026-08-01,项目源码,active
+scripts/train_dcgnn_full_cv.py,code,10829,2026-08-01,项目源码,active
+scripts/train_dcgnn_window_fold0.py,code,10302,2026-08-01,项目源码,active
+scripts/train_oc_latent_flow.py,code,26210,2026-08-01,项目源码,active
+scripts/verify_dog_aeff.py,code,2964,2026-08-01,项目源码,active
+tests,dir,0,,目录,active
+tests/__init__.py,code,0,2026-06-16,项目源码,active
+tests/test_baseline_connectivity.py,code,4852,2026-08-01,项目源码,active
+tests/test_bisect_sigma.py,code,15983,2026-08-01,项目源码,active
+tests/test_component_probe.py,code,8765,2026-08-01,项目源码,active
+tests/test_dcgnn_classifier.py,code,5492,2026-08-01,项目源码,active
+tests/test_de_features.py,code,4419,2026-08-01,项目源码,active
+tests/test_gpdc.py,code,5545,2026-08-01,项目源码,active
+tests/test_graph_utils.py,code,5076,2026-08-01,项目源码,active
+tests/test_oc_latent_flow.py,code,9522,2026-08-01,项目源码,active
+tests/test_subject_classification.py,code,6060,2026-08-01,项目源码,active
+training,dir,0,,目录,active
+training/__init__.py,code,0,2026-05-20,项目源码,active
+training/cli.py,code,1321,2026-08-01,项目源码,active
+training/seeding.py,code,2295,2026-08-01,项目源码,active
+training/trainer.py,code,15103,2026-08-01,项目源码,active
+viz,dir,0,,目录,active
+viz/__init__.py,code,0,2026-05-20,项目源码,active
+viz/connectivity.py,code,9339,2026-08-01,项目源码,active
+viz/metrics.py,code,5713,2026-06-29,项目源码,active
+viz/nature_style.py,code,5322,2026-07-02,项目源码,active
+viz/probe.py,code,10381,2026-06-18,项目源码,active
+viz/visualizer.py,code,7677,2026-05-19,项目源码,active

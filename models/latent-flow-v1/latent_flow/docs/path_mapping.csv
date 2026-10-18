@@ -1,0 +1,33 @@
+old_path,new_path,category,notes
+experiment/latent_ode/__init__.py,__init__.py,code,包根重命名 experiment.latent_ode -> latent_flow
+experiment/latent_ode/config.py,config.py,code,_PROJECT_ROOT 从 parents[3] 改为 parents[0] (包即根)
+experiment/latent_ode/models/,models/,code,
+experiment/latent_ode/data/,data/,code,
+experiment/latent_ode/training/,training/,code,
+experiment/latent_ode/viz/,viz/,code,
+experiment/latent_ode/attribution/,attribution/,code,
+experiment/latent_ode/baseline/,baseline/,code,
+experiment/latent_ode/scripts/,scripts/,code,
+experiment/latent_ode/tests/,tests/,code,
+experiment/latent_ode/checkpoints/,checkpoints/,data,checkpoint 目录
+experiment/latent_ode/outputs/,outputs/,data,图表 (gitignored)
+experiment/latent_ode/results/,results/,data,结果 (gitignored)
+experiment/latent_ode/logs/,logs/,data,训练日志 (gitignored)
+ude-vae-npi/modma_resting/,data/modma/,dataset,MODMA 数据集复制进项目
+D:/102-npi/dataset/EDRA/,data/edra/,dataset,EDRA 数据集复制进项目
+ude-vae-npi/sc_osf/,data/sc_osf/,dataset,SC OSF 数据集复制进项目 (已弃用 SC 先验但数据保留)
+ude-vae-npi/sc_zendo/,data/sc_zendo/,dataset,SC Zenodo 数据集复制进项目
+ude-vae-npi/.trellis/,.trellis/,config,迁移并重初始化 (丢弃 .backup-*)
+ude-vae-npi/.claude/,.claude/,config,平台配置迁移
+ude-vae-npi/.agents/,.agents/,config,平台配置迁移
+ude-vae-npi/.codex/,.codex/,config,平台配置迁移
+ude-vae-npi/.zcode/,.zcode/,config,平台配置迁移
+ude-vae-npi/.vscode/,.vscode/,config,平台配置迁移
+results_repo/,archive/results_repo/,data,历史策划结果库归档 (代码从未写入)
+experiment/latent_ode/{train_gru,train_var,gru_forecaster,var_forecaster}.*,archive/{models,scripts}/,code,GRU/VAR 基线弃用 (Phase 1)
+experiment/latent_ode/scripts/run_two_model_comparison.*,archive/scripts/,code,two_model 比较弃用 (Phase 1)
+experiment/latent_ode/models/aal_atlas.py,archive/models/aal_atlas.py,code,SC 基础设施弃用 (Phase 2)
+experiment/latent_ode/scripts/build_sc_leadfield.py,archive/scripts/build_sc_leadfield.py,code,SC leadfield 弃用 (Phase 2)
+experiment/latent_ode/scripts/{probe_sc_osf,compare_params_vs_sc,compare_params_vs_behavior}.*,archive/scripts/,code,SC 评估脚本弃用 (Phase 1)
+,N/A,config,nature-skills (独立 git 仓库 非项目本体) — 不迁移
+ude-vae-npi/docs/adr/,docs/adr/,config,ADR 源文件未复制 (仅关键决策摘录进 FOUNDATION.md)

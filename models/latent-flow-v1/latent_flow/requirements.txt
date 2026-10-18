@@ -1,0 +1,25 @@
+# latent_flow — Python dependencies
+# Conda env: npi (Python 3.13). See README.md "Environment".
+# GPU: NVIDIA RTX 5070 Ti Laptop (Blackwell sm_120), CUDA 12.8.
+# NOTE: torch is a nightly dev build (2.12.0.dev+cu128); pin the closest
+# stable that supports sm_120 when recreating (PyTorch >= 2.6 with cu128).
+
+# Core ML / numerics
+torch>=2.6            # 2.12.0.dev20260408+cu128 in the dev env
+numpy>=2.0            # 2.4.4
+scipy>=1.13           # 1.17.1
+scikit-learn>=1.5     # 1.8.0
+
+# EEG / signal processing
+mne>=1.7              # 1.12.1 (EDRA standard_1020 montage, optional fallback)
+
+# Visualization
+matplotlib>=3.9       # 3.10.8
+
+# Utilities
+tqdm>=4.66            # 4.69.0 (progress bars)
+joblib>=1.4           # 1.5.3 (parallelism in baseline runners)
+python-dateutil>=2.9  # 2.9.0.post0
+
+# Testing
+pytest>=8.0           # 9.0.2

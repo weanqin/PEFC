@@ -1,0 +1,8 @@
+# 移植卫生：源库工作树含 CRLF（Windows 机产物），入库前已统一 LF；
+# 本文件冻结行尾方向，防止未来检出/提交再现 160 文件级伪 diff（见 README-port.md）。
+*.py text eol=lf
+*.md text eol=lf
+*.csv text eol=lf
+*.yaml text eol=lf
+*.txt text eol=lf
+*.npz binary
