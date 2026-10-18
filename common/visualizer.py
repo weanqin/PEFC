@@ -24,6 +24,10 @@
   diag_vs_cross    对角自响应 vs 跨通道量级 + 先验自响应分量解析对照（B4 增量）
   ec_heatmap_grid  EC 矩阵热图网格（多 readout × 多例/组均；B4 增量）
   compare_forest   比较器汇总 forest：readout × 参考法 ρ̄ + bootstrap CI（主比较/上下文分色；B5 增量）
+  edge_scatter     边级原始取值散点 + 恒等线（两组有向边读数直接对比；bivar-gc-ec-v2 compare-rev 增量，2026-10-18）
+  signed_matrix    带符号矩阵热图（RdBu_r 居 0 对称色标 + 对角掩膜；bivar-gc-ec-v2 trgc 增量，2026-10-18）
+  topo_arrows      头皮 2D 投影 + Top-K 有向边箭头（电极坐标空间拓扑；bivar-gc-ec-v2 trgc 增量，2026-10-18）
+  volcano_edges    边级带符号效应量 vs −log10(q) 火山散点（bivar-gc-ec-v2 trgc 增量，2026-10-18）
 """
 
 from __future__ import annotations
@@ -100,7 +104,8 @@ class Visualizer:
     FIG_TYPES = ("trajectories", "psd", "gc_matrix", "ec_matrix", "training_curves",
                  "spatial_corr", "dose_response", "qq_compare", "tau_preview",
                  "mono_r2", "floor_separation", "spatial_decay", "diag_vs_cross",
-                 "ec_heatmap_grid", "compare_forest")
+                 "ec_heatmap_grid", "compare_forest", "edge_scatter",
+                 "signed_matrix", "topo_arrows", "volcano_edges")
 
     def __init__(self, out_dir: str, dpi: int = 300):
         self.out_dir = out_dir
@@ -829,6 +834,177 @@ class Visualizer:
                        markerfacecolor="none", label="unpartial rho (context)"),
         ]
         ax.legend(handles=handles, loc="lower left", fontsize=4.6)
+        if data.get("note"):
+            fig.text(0.99, 0.005, data["note"], ha="right", va="bottom", fontsize=4.6,
+                     color=PALETTE["neutral_mid"])
+        fig.tight_layout()
+        return fig
+
+    # ---- ⑮ 边级原始取值散点 + 恒等线（bivar-gc-ec-v2 compare-rev 增量，2026-10-18）----
+    def _draw_edge_scatter(self, data: Dict, **cfg) -> mpl.figure.Figure:
+        """data: {
+            panels: [{"title": str, "x": (n,), "y": (n,),
+                      "x_label": str, "y_label": str,
+                      "stat_lines": [str, ...] 可选左上注记}, ...]（1–3 面板）,
+            note str 可选右下注记
+        }；每面板 = 边级**原始取值**散点（rasterized）+ 恒等参考虚线（x=y）。
+        与 qq_compare 的区别：qq_compare 画分位数对分位数（分布级对齐检验），
+        本图型画逐边原始读数（方向对应检验）——非负量轴域 [0, lim]。"""
+        panels = data["panels"]
+        fig, axes = plt.subplots(1, len(panels), figsize=(2.9 * len(panels), 2.9),
+                                 squeeze=False)
+        for ax, p in zip(axes[0], panels):
+            x = np.asarray(p["x"], dtype=float)
+            y = np.asarray(p["y"], dtype=float)
+            ax.scatter(x, y, s=1.5, alpha=0.35, color=PALETTE["blue_main"],
+                       rasterized=True, edgecolors="none")
+            lim = max(float(x.max()), float(y.max())) * 1.05
+            ax.plot([0, lim], [0, lim], ls="--", lw=0.6, color=PALETTE["neutral_mid"])
+            ax.set_xlim(0, lim)
+            ax.set_ylim(0, lim)
+            ax.set_title(p.get("title", ""), fontsize=6)
+            ax.set_xlabel(p["x_label"])
+            ax.set_ylabel(p["y_label"])
+            lines = p.get("stat_lines") or []
+            if lines:
+                ax.text(0.04, 0.96, "\n".join(lines), transform=ax.transAxes,
+                        fontsize=4.6, va="top", color=PALETTE["neutral_dark"])
+        for ax, lab in zip(axes[0], "abc"[:len(panels)]):
+            add_panel_label(ax, lab, dx=-0.28)
+        if data.get("note"):
+            fig.text(0.99, 0.005, data["note"], ha="right", va="bottom", fontsize=4.6,
+                     color=PALETTE["neutral_mid"])
+        fig.tight_layout()
+        return fig
+
+    # ---- 带符号矩阵热图（bivar-gc-ec-v2 trgc 增量，2026-10-18）----
+    def _draw_signed_matrix(self, data: Dict, **cfg) -> mpl.figure.Figure:
+        """data: {mats: [{"title": str, "m": (C,C)}, ...]（1–3 面板，全局对称色标）,
+        note str 可选}；发散色标 RdBu_r 居 0、对称幅值、对角掩膜（浅灰）。
+        与 ec_matrix 的区别：ec_matrix 展示契约为非负幅值（clip≥0 + Blues vmin=0），
+        无法承载带符号读数（负值会被静默截断为 0）——本图型完整呈现正负两向。"""
+        mats = data["mats"]
+        fig, axes = plt.subplots(1, len(mats), figsize=(2.6 * len(mats) + 0.4, 2.7),
+                                 squeeze=False)
+        vmax = max(float(np.abs(np.asarray(m["m"], dtype=float)).max()) for m in mats)
+        vmax = vmax if vmax > 0 else 1.0
+        cmap = mpl.colormaps["RdBu_r"].with_extremes(bad="#E8E8E8")
+        for ax, m in zip(axes[0], mats):
+            arr = np.asarray(m["m"], dtype=float)
+            mq = np.ma.array(arr, mask=np.eye(arr.shape[0], dtype=bool))
+            im = ax.imshow(mq, cmap=cmap, vmin=-vmax, vmax=vmax,
+                           interpolation="nearest")
+            ax.set_title(m.get("title", ""), fontsize=6)
+            ax.set_xlabel("target"); ax.set_ylabel("source")
+            cb = fig.colorbar(im, ax=ax, shrink=0.8, pad=0.03)
+            cb.ax.tick_params(labelsize=5)
+        for ax, lab in zip(axes[0], "abc"[:len(mats)]):
+            add_panel_label(ax, lab, dx=-0.28)
+        if data.get("note"):
+            fig.text(0.99, 0.005, data["note"], ha="right", va="bottom", fontsize=4.6,
+                     color=PALETTE["neutral_mid"])
+        fig.tight_layout()
+        return fig
+
+    # ---- 头皮 2D 投影 + Top-K 有向边箭头（bivar-gc-ec-v2 trgc 增量，2026-10-18）----
+    def _draw_topo_arrows(self, data: Dict, **cfg) -> mpl.figure.Figure:
+        """data: {coords_xy (C,2) 电极水平面投影（俯视：x 右 / y 前）,
+        edges: {src (k,), tgt (k,), val (k,)}（|val| 降序；val>0 → 红 = 净前向，
+        val<0 → 蓝 = 净反向；线宽/箭头尺寸 ∝ |val|）, names [str]*C 可选,
+        node_w (C,) 可选（节点大小 ∝ |·|，如出强度）, label_edges_n int 可选
+        （前 N 条边的端点标注通道名，默认 15）, title?/note? 可选}
+        白名单理由：既有图型无「电极坐标 + 有向边箭头」空间拓扑图型——ec_matrix /
+        gc_matrix / spatial_corr 均为矩阵热图、edge_scatter 为散点。"""
+        from matplotlib.lines import Line2D
+        from matplotlib.patches import FancyArrowPatch
+        xy = np.asarray(data["coords_xy"], dtype=float)
+        e = data["edges"]
+        src = np.asarray(e["src"]); tgt = np.asarray(e["tgt"])
+        val = np.asarray(e["val"], dtype=float)
+        names = data.get("names")
+        fig, ax = plt.subplots(figsize=(3.4, 3.4))
+        r_head = 1.10 * float(np.hypot(xy[:, 0], xy[:, 1]).max())
+        ax.add_patch(plt.Circle((0, 0), r_head, fill=False, lw=0.8,
+                                color=PALETTE["neutral_mid"]))
+        ax.add_patch(plt.Polygon([[-0.06 * r_head, r_head], [0.06 * r_head, r_head],
+                                  [0.0, 1.14 * r_head]], closed=True, fill=False,
+                                 lw=0.8, color=PALETTE["neutral_mid"]))
+        node_w = data.get("node_w")
+        if node_w is not None:
+            w = np.asarray(node_w, dtype=float)
+            wmax = float(w.max()) if w.max() > 0 else 1.0
+            ax.scatter(xy[:, 0], xy[:, 1], s=3 + 22 * w / wmax,
+                       c=PALETTE["neutral_light"], edgecolors=PALETTE["neutral_mid"],
+                       linewidths=0.4, zorder=3)
+        else:
+            ax.scatter(xy[:, 0], xy[:, 1], s=6, c=PALETTE["neutral_light"],
+                       edgecolors=PALETTE["neutral_mid"], linewidths=0.4, zorder=3)
+        amax = float(np.abs(val).max()); amax = amax if amax > 0 else 1.0
+        for s_, t_, v_ in zip(src.tolist(), tgt.tolist(), val.tolist()):
+            col = PALETTE["red_strong"] if v_ > 0 else PALETTE["blue_main"]
+            u = abs(v_) / amax
+            ax.add_patch(FancyArrowPatch(xy[s_], xy[t_], arrowstyle="-|>",
+                                         mutation_scale=4 + 4 * u,
+                                         lw=0.4 + 1.2 * u, color=col, alpha=0.85,
+                                         shrinkA=2.5, shrinkB=2.5, zorder=4))
+        n_lab = int(data.get("label_edges_n", 15))
+        if names is not None and n_lab > 0:
+            involved, seen = [], set()
+            for s_, t_ in zip(src.tolist()[:n_lab], tgt.tolist()[:n_lab]):
+                for i_ in (s_, t_):
+                    if i_ not in seen:
+                        seen.add(i_); involved.append(i_)
+            for i_ in involved:
+                ax.annotate(names[i_], xy[i_], textcoords="offset points",
+                            xytext=(0, 3), ha="center", fontsize=4, zorder=5,
+                            color=PALETTE["neutral_dark"])
+        handles = [Line2D([], [], color=PALETTE["red_strong"], lw=1.2,
+                          label="TRGC$>$0 (fwd$>$rev)"),
+                   Line2D([], [], color=PALETTE["blue_main"], lw=1.2,
+                          label="TRGC$<$0 (rev$>$fwd)")]
+        ax.legend(handles=handles, loc="upper center", bbox_to_anchor=(0.5, -0.01),
+                  ncol=2, fontsize=5)
+        ax.set_aspect("equal"); ax.axis("off")
+        if data.get("title"):
+            ax.set_title(data["title"], fontsize=6)
+        if data.get("note"):
+            fig.text(0.99, 0.005, data["note"], ha="right", va="bottom", fontsize=4.6,
+                     color=PALETTE["neutral_mid"])
+        fig.tight_layout()
+        return fig
+
+    # ---- 边级带符号效应量 vs −log10(q) 火山散点（bivar-gc-ec-v2 trgc 增量，2026-10-18）----
+    def _draw_volcano_edges(self, data: Dict, **cfg) -> mpl.figure.Figure:
+        """data: {x (n,) 带符号效应量, y (n,) −log10(q), y_thresh float（q 阈值参考线）,
+        x_label/y_label/title?/stat_lines?/note? 可选}；
+        x$>$0（净前向）红 / x$<$0（净反向）蓝；虚线 = q 阈值与 x=0。
+        白名单理由：edge_scatter 轴域锁定 [0, lim] + 恒等线（非负读数对散点语义），
+        不覆盖「带符号效应量 vs 显著性」火山图型。"""
+        x = np.asarray(data["x"], dtype=float)
+        y = np.asarray(data["y"], dtype=float)
+        fig, ax = plt.subplots(figsize=(3.2, 2.7))
+        pos, neg = x > 0, x <= 0
+        ax.scatter(x[pos], y[pos], s=1.5, alpha=0.35, color=PALETTE["red_strong"],
+                   rasterized=True, edgecolors="none", label="TRGC$>$0")
+        ax.scatter(x[neg], y[neg], s=1.5, alpha=0.35, color=PALETTE["blue_main"],
+                   rasterized=True, edgecolors="none", label="TRGC$<$0")
+        yt = data.get("y_thresh")
+        if yt is not None:
+            ax.axhline(yt, ls="--", lw=0.6, color=PALETTE["neutral_mid"])
+            ax.text(0.98, yt, f"q={data.get('q_label', 0.05):g}", transform=ax.get_yaxis_transform(),
+                    ha="right", va="bottom", fontsize=4.6,
+                    color=PALETTE["neutral_dark"])
+        ax.axvline(0, ls="--", lw=0.6, color=PALETTE["neutral_mid"])
+        ax.set_xlabel(data.get("x_label", "effect size (mean/sd)"))
+        ax.set_ylabel(data.get("y_label", "$-\\log_{10}(q)$"))
+        if data.get("title"):
+            ax.set_title(data["title"], fontsize=6)
+        lines = data.get("stat_lines") or []
+        if lines:
+            ax.text(0.04, 0.90 if yt is not None else 0.96, "\n".join(lines),
+                    transform=ax.transAxes, fontsize=4.6, va="top",
+                    color=PALETTE["neutral_dark"])
+        ax.legend(loc="center left", fontsize=5, scatterpoints=3)
         if data.get("note"):
             fig.text(0.99, 0.005, data["note"], ha="right", va="bottom", fontsize=4.6,
                      color=PALETTE["neutral_mid"])

@@ -1,0 +1,8 @@
+{"file": ".trellis/tasks/archive/2026-10/10-17-bivar-gc-ec-fmt/design.md", "reason": "v1（125 Hz）完整蓝本：本任务为同管线换 250 Hz 口径，逐式对照其 §2 口径/§4 单测/§5 风险"}
+{"file": ".trellis/spec/data/edra-fmt.md", "reason": "edra-fmt 数据契约：60001 点@250 Hz、字段断言（filter/pipeline/fs/truncated）、48 例清单"}
+{"file": ".trellis/spec/research/path-isolation.md", "reason": "变体目录纪律：v2 新目录、v1 与数据集只读、共享文件唯一写入点声明"}
+{"file": ".trellis/spec/research/artifacts-management.md", "reason": "产物布局惯例：outputs/<run_id>/{data,refs,logs,figs}/ + refs_summary.json + config_snapshot.json"}
+{"file": ".trellis/spec/research/evaluation-calibers.md", "reason": "双变量 GC 观测参考口径既有条目（125 Hz）；本任务增补 250 Hz 条目须与其并列区分"}
+{"file": ".trellis/research/environment.md", "reason": "环境契约：16 核 cgroup、BLAS 五变量护栏、CPU-only、nohup 长跑惯例"}
+{"file": ".trellis/spec/research/visualization.md", "reason": "图正典路线：common/visualizer 复用优先、缺口纯增量扩展"}
+{"file": ".trellis/spec/research/experiment-template.md", "reason": "experiment.md Run 块格式：目的/配置/结果/结论四段完整"}

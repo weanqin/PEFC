@@ -1,0 +1,5 @@
+{"file": ".trellis/tasks/archive/2026-10/10-17-bivar-gc-ec-fmt/design.md", "reason": "审查基准：v2 应与 v1 蓝本逐式同构（除登记的采样率口径差异）"}
+{"file": ".trellis/spec/data/edra-fmt.md", "reason": "数据契约符合性：字段断言、48 例、60001@250"}
+{"file": ".trellis/spec/research/path-isolation.md", "reason": "路径扫描：v1 目录与 outputs/bivar-gc-ec-fmt/ 零写入、共享文件写入点限于声明"}
+{"file": ".trellis/spec/research/evaluation-calibers.md", "reason": "口径登记完整性：250 Hz 条目增补、与 125 Hz 区分、顶格如实登记"}
+{"file": ".trellis/research/environment.md", "reason": "环境符合性：BLAS 护栏、16 进程、无越环境依赖"}

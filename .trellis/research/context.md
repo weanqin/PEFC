@@ -15,7 +15,7 @@
 | 路线 | 一句话方法 | 代码位置 | 状态 |
 |---|---|---|---|
 | Study I：EEG Conditional Future Generation | 训练代理脑 X_past→X_future（时序预测/条件生成/时间修补三视角），含 EEG 表征、未来生成、代理脑有效性三层次 | `models/gpfm-mamba-v1/`（+v2/v4b/v4a/v1-fmt/v4a-fmt/v4a-fmt-adaln 变体目录） | gpfm-mamba v1/v2/v4 已实现，fold0 单 seed 前置验证（任务 10-12）与 H3 消融（任务 10-16）完成；**5-fold 候选集已拍板 {v1, v4a}**；新范式 edra-fmt fold0 前置验证完成（任务 10-16-gpfm-mamba-fmt-f0，2026-10-17，LayerNorm/p=25/无低通/GC 阻塞口径）；adaLN(t) 消融中性结果（任务 10-17-gpfm-mamba-adaln-f0，2026-10-17，排序不变）；5-fold 主实验待启动 |
-| Study II：Critical Perturbation Connectivity Inference | 固定 θ* 后扰动源节点 A→测目标节点 B 响应→搜临界强度 r*_A→B=inf{r:Δ(r)≥τ}→临界扰动矩阵→连接强度 | `models/perturb-ec-v1/`（θ\* 只读引用 Study I 产物）；`models/bivar-gc-ec-v1/`（双变量 GC 观测参考） | **四要素首版已定义 + fold0 流程验证完成**（任务 10-17-perturb-ec-f0，2026-10-17）：CRN 确定性契约 + 增益算子 + τ 双口径 v2（操作性 τ̃=0.25 相对自响应）+ readout 三件套；v4a-fmt θ\* 上**未获结构收敛初步证据**（缺口=跨通道传导特异性，非流程问题）；流程规范首版见 spec/research/perturb-ec-pipeline.md；**双变量 GC 观测参考已落地**（任务 10-17-bivar-gc-ec-fmt，2026-10-17） |
+| Study II：Critical Perturbation Connectivity Inference | 固定 θ* 后扰动源节点 A→测目标节点 B 响应→搜临界强度 r*_A→B=inf{r:Δ(r)≥τ}→临界扰动矩阵→连接强度 | `models/perturb-ec-v1/`（θ\* 只读引用 Study I 产物）；`models/bivar-gc-ec-v1/`（双变量 GC 观测参考）；`models/bivar-gc-ec-v2/`（同路径 250 Hz 原始全长档） | **四要素首版已定义 + fold0 流程验证完成**（任务 10-17-perturb-ec-f0，2026-10-17）：CRN 确定性契约 + 增益算子 + τ 双口径 v2（操作性 τ̃=0.25 相对自响应）+ readout 三件套；v4a-fmt θ\* 上**未获结构收敛初步证据**（缺口=跨通道传导特异性，非流程问题）；流程规范首版见 spec/research/perturb-ec-pipeline.md；**双变量 GC 观测参考已落地**（任务 10-17-bivar-gc-ec-fmt，2026-10-17，125 Hz 档）；**250 Hz 原始全长档参照已落地**（任务 10-18-bivar-gc-fmt-250，2026-10-18：`outputs/bivar-gc-ec-fmt-250/refs-01/` 48 例 + 天花板 0.8981±0.1414 + rev-01 时间反转指纹，两档口径隔离不做对比交付） |
 
 Study I 是 Study II 的前置（先建立可信代理脑，再做虚拟扰动）。注意：**预测质量 ≠ Surrogate Brain Validity**，须作为两个独立问题评价。
 
@@ -38,6 +38,8 @@ Study I 是 Study II 的前置（先建立可信代理脑，再做虚拟扰动�
 2026-10-17 Study II 流程首验证（任务 10-17-perturb-ec-f0，v4a-fmt fold0 冻结 θ\*·前置验证级偏离经用户签认，10 例 CRN 批采样 27.7 min）：**流程可跑通且确定性契约全兑现**（r=0 同批逐位恒等、跨 Run 逐位复现、100% 单调剂量-响应）；四要素首版落地（增益算子/CRN-RMS 度量/τ 双口径 v2——绝对口径 q95≈1.82σ 全边 100% 删失系材质性标尺错配，操作性改相对自响应 τ̃=0.25 删失 3.7%/路径集交集 3201 边；r\* 近二元如实登记）；**AC6 如实判定：该 θ\* 上未获结构收敛初步证据**（slope×GC ρ̄=−0.007 p=0.581、slope×gPDC ρ̄=+0.022 Holm p=0.112；ceiling 0.96、实际可检 ρ̄≈0.028 排除 power 不足）——缺口四重证据定位 **θ\* 跨通道传导弥散无特异性**（空间衰减平 ρ=−0.05、D̃ 近 r 无关 ~0.78、三 readout ρ 同值、自/跨比仅 1.27×），为 Study I 迭代（损失侧跨通道监督）提供直接判据；流程/契约与实测基线沉淀 spec/research/perturb-ec-pipeline.md。**用户定论（2026-10-17）**：当前方法推断出的 EC **完全不可用**，不在此 θ\* 上继续；优化留待后续任务（流程与四要素契约可复用，规范已沉淀）。
 
 2026-10-17 双变量 GC 观测参考落地（任务 10-17-bivar-gc-ec-fmt，用户四轮拍板：48 例全量 / 125 Hz / 逐对 BIC / ln(SSR) / **不做 EC_pert 比较**）：edra-fmt 48 例成对双变量 GC EC 矩阵首版落盘（`models/bivar-gc-ec-v1/`、`outputs/bivar-gc-ec-fmt/refs-01/`，offdiag min/median/max=0.0007/0.0153/0.4356 ln 单位；split-half 天花板 0.9243±0.0447；OLS 无收缩非负断言 + Gram-slice↔naive 等价单测 rtol=1e-10、20 项全绿）；**BIC 100% 顶格 p\*=24**（n≈3 万惩罚项极小）为实测事实如实登记，网格扩展未决；与全模型条件 GC（baseline-ec-v1 主口径）平行**不混用**；fmt 条件 GC 与比较器接入均滞后决策；口径条目入 evaluation-calibers.md「双变量 GC 观测参考口径」。
+
+2026-10-18 双变量 GC 观测参考 250 Hz 原始全长档落地（任务 10-18-bivar-gc-fmt-250，同路径换采样率口径：48 例全量 / 250 Hz 不降采不切窗 / P_MAX=48 保 192 ms 物理滞后）：`models/bivar-gc-ec-v2/`（只读复用 v1 核心）+ `outputs/bivar-gc-ec-fmt-250/refs-01/`（offdiag 0.0010/0.0189/0.4103 ln 单位；split-half 天花板 0.8981±0.1414；AC6 raw bytes 级逐位复现）；**条件数实测 2.0e13–5.0e15**（250 Hz 过采样共线性，越 halt 门限经主会话代决策按原 OLS 口径继续，依据 = fast↔naive 逐 Run 交叉校验 GC 差 ≤1.5e-3）；**BIC p\*=48 占 96.8%**（顶部噪声级分布，实效 ≈ 固定阶 VAR(48)，如实登记）；rev-01 时间反转指纹 ρ(fwd,rev)=0.66（读数含时间方向成分）；两档口径隔离、不做对比交付；口径条目入 evaluation-calibers.md「250 Hz 原始全长」条。
 
 ## 待用户拍板
 
