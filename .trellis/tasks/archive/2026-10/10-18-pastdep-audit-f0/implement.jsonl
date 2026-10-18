@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/research/path-isolation.md", "reason": "变体与产物目录隔离契约"}
+{"file": ".trellis/spec/research/perturb-ec-pipeline.md", "reason": "CRN 批构造与算子契约"}
+{"file": ".trellis/spec/research/reproducibility.md", "reason": "显式噪声与 seed 纪律"}
+{"file": ".trellis/spec/research/experiment-log.md", "reason": "Run 块登记契约"}
