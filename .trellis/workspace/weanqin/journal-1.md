@@ -195,3 +195,29 @@ v4a-fmt 基座上把 5 个 LayerNorm 位换 adaLN（emb(t)→逐 site SiLU→Lin
 ### Status
 
 [OK] **Completed**
+
+
+## Session 9: 搜索任务全链（Gate D 增补）→ 三方 EC 生产 → past 依赖审计与 μ/前缀解耦 → GC 相关登记（五任务）
+<!-- trellis-session: v=2 fp=42bf1e5242341935 -->
+
+**Date**: 2026-10-18
+**Task**: 搜索任务全链（Gate D 增补）→ 三方 EC 生产 → past 依赖审计与 μ/前缀解耦 → GC 相关登记（五任务）
+**Branch**: `main`
+
+### Summary
+
+单会话五任务串行完成（全在冻结 v1-fmt θ* fold0 上）：①perturb-search：Gate D 单调性筛选增补（用户三轮拍板：5 点倍率梯+逐算子钳制/聚合曲线 100%/r_2≡r0 恒等锁定）后两阶段搜索——阶段一/二均如实阴性，唯一 Gate B 过线 = N×M-time（2.166，置换 p<0.0002），O 幅度-特异性解耦（A 6.6/B 1.01），三处 B0 潜伏 scorecard bug 由主 Run 首走路径抓获并回归锁定，npz 跨 Run 94 键逐位复现；用户质询触发 Gate B 隔离性审计（三层位级证明+置换证伪+B(r) 扫描）。②ec-nmtime：N×M-time 完整 EC_pert 生产（80 窗/9 点含原点网格/slope-AUC-r* 三 readout/33 契约 npz；自跨比 2.109、split-half 0.904、删失 14.15%）+ 三张波形图（r=0.5/网格外 r=2.0/三曲线 real-gen-OU 先验）+ 512-token 推理窗图（用户口径更正：384 数据前缀+128 计算位）。③pastdep-audit：E1-E4 裁决 H1✓H2✓H3✗（OU 先验解析对拍 0% 偏差、半衰 6 样本/24ms；E2 早段响应证速度网络长程通路；E3 置换四臂 2-6.9×地板）+ Run 002 μ/前缀解耦（解耦采样器逐位相等断言 24/24）否定用户 H*：换前缀保 μ=完整换 past 的 93%，μ 边际 7%——双层图景定稿（局部敏感短记忆经先验/全局身份依赖经前缀）。④ec-ompsd 与 ⑤ec-omtime25：O 系对照极端生产（0.989 完美弥散/0% 删失 vs 1.163/2.41%）+ r=4.0 最大强度波形图（含 PSD 读出面）+ Run 002 三方 r*-strength×GC 受试者级相关（用户拍板 strength 口径）全落零区 ρ̄≤0.017——10-17 阴性扩展至搜索空间最优候选。finish-work 收尾：trellis-check 全范围复核（1 Major 誊写纠正+文档漂移修复）、五 feat 提交、五归档、journal 本条。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `f555f5e` | feat(perturb-search-f0): 两阶段 {范式×度量} 搜索 + Gate D 单调性增补全链落地（用户三轮拍板：双探针/三度量集续跑/Gate D 5 点网格+逐算子钳制） |
+| `4844938` | feat(ec-nmtime-f0): N×M-time 完整 EC_pert 生产（唯一 Gate B 过线组合；用户三档拍板 10 例/9 点网格/只出矩阵） |
+| `f8f24f2` | feat(pastdep-audit-f0): 生成器 past 依赖审计（E1-E4 + μ/前缀解耦 Run 002；源于用户波形图观察与假设质询） |
+| `ed6e1ff` | feat(ec-ompsd-f0): O×M-PSD 对照极端 EC_pert 生产（用户指定组合；镜像 ec-nmtime 流程） |
+| `63a648f` | feat(ec-omtime25-f0): O×M-time@25 EC_pert 生产 + 三方 strength×GC 受试者级相关登记 |
+
+### Status
+
+[OK] **Completed**
