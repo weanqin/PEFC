@@ -173,3 +173,25 @@ v4a-fmt 基座上把 5 个 LayerNorm 位换 adaLN（emb(t)→逐 site SiLU→Lin
 ### Status
 
 [OK] **Completed**
+
+
+## Session 8: bivar-gc-fmt-250：250Hz 原始全长双变量 GC 真实参照 + TRGC/对比/分半/净出度诊断全套
+<!-- trellis-session: v=2 fp=1ad7645067cd4265 -->
+
+**Date**: 2026-10-18
+**Task**: bivar-gc-fmt-250：250Hz 原始全长双变量 GC 真实参照 + TRGC/对比/分半/净出度诊断全套
+**Branch**: `main`
+
+### Summary
+
+全流程：规划三件套+两轮审查（split_half API 失实与 λ_rel 不可行两严重发现回填）→ B0-B5（smoke 条件数 1e13–1e15 触发预注册门禁，用户未实时应答按可逆原则代决策原 OLS 口径继续并逐 Run fast↔naive 校验）→ refs-01 48 例（p*=48 96.8% 顶格如实）→ reprod 逐字节 → rev-01 反转指纹 0.66 → sh-01 天花板 0.8981±0.1414 → 用户追加：fwd-rev 组级对比（同位 0.90/镜像 0.19/强边 34/50 不换向）、TRGC 净方向（边级零存活 q_min=0.997、拓扑无前后偏置 p=0.744、SNR 对照阴性；检查修复置换统计量尺度缺陷 p 0.995→0.744 结论不变）、diag-01（TRGC 分半 0.708±0.307；净出度与自相关/幅值均不显著而出强度~幅值 +0.36 如实核注）。最终全范围检查 PASS（AC1–AC7）。evaluation-calibers 250Hz 条目 + context/progress 同步 + visualizer 四图型纯增量。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `6ad8445` | feat(bivar-gc-fmt-250): edra-fmt 250Hz 原始全长双变量 GC 真实参照 + TRGC 净方向分析（48例·不切窗·P_MAX=48 物理对齐——p*=48 96.8% 顶格如实登记/条件数 1e13–1e15 门禁代决策+逐Run fast↔naive 交叉校验 GC≤1.5e-3/时间反转指纹 ρ=0.66+fwd-rev 组级对比 同位 0.90 镜像 0.19 强边 34/50 不换向/分半天花板 0.8981±0.1414/refs-01-reprod 逐字节一致/TRGC 边级零存活[q_min=0.997, bootstrap=机会水平, 交集0]+拓扑无前后偏置 p=0.744+SNR 对照阴性/TRGC 分半 0.708±0.307+净出度与自相关幅值均不显著而出强度~幅值 +0.36 如实核注）+ visualizer edge_scatter/signed_matrix/topo_arrows/volcano_edges 四图型纯增量 + evaluation-calibers 250Hz 口径条目 + context/prog |
+
+### Status
+
+[OK] **Completed**
