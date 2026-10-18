@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/research/path-isolation.md", "reason": "核查隔离：仅动 latent-flow-v1 目录、源库只读、既有变体零变更"}
+{"file": ".trellis/spec/research/artifacts-management.md", "reason": "核查产物落点与 *.pt 不入库"}
+{"file": ".trellis/spec/research/experiment-log.md", "reason": "核查 Run 块登记完整性与如实口径"}
+{"file": ".trellis/tasks/10-18-latent-flow-port/research/latent-flow-adaptation.md", "reason": "对照推荐决策包与沙箱实测口径复核移植质量（pytest 293/4F/5S 等）"}

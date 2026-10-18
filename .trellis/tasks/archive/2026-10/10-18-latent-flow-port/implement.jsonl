@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/research/path-isolation.md", "reason": "变体目录隔离契约：移植落位/读写路径/不触碰既有变体"}
+{"file": ".trellis/spec/research/artifacts-management.md", "reason": "产物落点契约：outputs/latent-flow-port/ 与 checkpoint 命名"}
+{"file": ".trellis/spec/research/experiment-log.md", "reason": "experiment.md Run 块四要素登记要求"}
+{"file": ".trellis/spec/research/data-pipeline.md", "reason": "边界知悉：本任务不接入该契约（Non-goal），shim 属后续任务，不得擅自适配"}
+{"file": ".trellis/spec/research/surrogate-brain-qualification.md", "reason": "默认路由 study1 的规范边界：旧 θ* 不自动继承资格，本任务不训练不定 θ*"}
+{"file": ".trellis/tasks/10-18-latent-flow-port/research/latent-flow-adaptation.md", "reason": "本任务适配研究产物：落位/基线/裁剪闭包/适配点/验证顺序/边界声明的直接依据"}
