@@ -14,6 +14,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from ..config import DATA_ROOT, GEOMETRY_PATH, EDRA_DATA_ROOT, EDRA_GEOMETRY_PATH, FS
+from ..config import EDRA_FMT_DATA_ROOT, EDRA_FMT_GEOMETRY_PATH
 
 
 @dataclass(frozen=True)
@@ -63,6 +64,20 @@ _REGISTRY = {
         mdd_glob="M_*.vhdr",
         hc_label="HC",
         mdd_label="depression",
+    ),
+    "edra_fmt": DatasetDescriptor(
+        key="edra_fmt",
+        channels=62,
+        fs=FS,
+        file_format="npz",
+        geometry_path=EDRA_FMT_GEOMETRY_PATH,
+        normalize_per_channel=True,
+        data_root=EDRA_FMT_DATA_ROOT,
+        group_layout="subdir",
+        hc_glob="HC/*.npz",
+        mdd_glob="MDD/*.npz",
+        hc_label="HC",
+        mdd_label="MDD",
     ),
 }
 

@@ -59,6 +59,12 @@ def _load_subject(filepath, file_format, normalize, norm_stats=None):
         # read_brainvision handles its own normalization; pass normalize=False
         # so we don't double-normalize, then normalize uniformly below.
         data = read_brainvision(filepath, normalize=False)
+    elif file_format == "npz":
+        # EDRA "fmt" release (edra-fmt contract): per-subject npz with keys
+        # data (C, n_samples) float32 + channel_names/subject_id/group/fs
+        # metadata. The npz may carry object-scalar metadata keys, but only
+        # the "data" member is consumed here.
+        data = np.load(filepath, allow_pickle=True)["data"].astype(np.float32)
     else:
         raise ValueError(f"Unknown file_format {file_format!r}")
 

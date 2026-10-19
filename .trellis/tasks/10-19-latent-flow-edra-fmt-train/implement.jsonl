@@ -1,0 +1,8 @@
+{"file": ".trellis/spec/research/surrogate-brain-qualification.md", "reason": "study1 路由必读：代理脑合格性边界——本任务产物不自动继承资格、fold0 单 seed 前置验证门禁"}
+{"file": ".trellis/spec/data/edra-fmt.md", "reason": "数据契约：48 例/250Hz/npz 布局/930 窗公式/fold0 内层 34/4/10 与 test 列表/勿复用 edra splits"}
+{"file": ".trellis/spec/research/data-pipeline.md", "reason": "dataloader 统一接口与划分规范：归一化在 dataloader 内、训练折统计口径、fold0 前置验证"}
+{"file": ".trellis/spec/research/path-isolation.md", "reason": "产物路径隔离：变体目录与 outputs 任务目录边界、禁写清单"}
+{"file": ".trellis/spec/research/reproducibility.md", "reason": "可复现规范：seed/配置落盘/RNG 中性构建惯例"}
+{"file": ".trellis/spec/research/experiment-log.md", "reason": "experiment.md Run 块四区契约"}
+{"file": ".trellis/spec/research/artifacts-management.md", "reason": "产物管理：outputs 布局与命名"}
+{"file": ".trellis/tasks/archive/2026-10/10-18-latent-flow-port/research/latent-flow-adaptation.md", "reason": "移植期适配研究：§4.1 npz shim 设计草案与 §5 验证顺序，本任务直接落实"}

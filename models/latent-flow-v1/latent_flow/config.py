@@ -32,6 +32,14 @@ CHECKPOINT_DIR = _PROJECT_ROOT / "checkpoints"
 EDRA_DATA_ROOT = Path(os.environ.get("EDRA_DATA_ROOT", _PROJECT_ROOT / "data" / "edra"))
 EDRA_GEOMETRY_PATH = EDRA_DATA_ROOT / "geometry_edra.pt"
 
+# EDRA "fmt" preprocessing release (task 10-19-latent-flow-edra-fmt-train).
+# Same 62ch 10-20 montage as EDRA but stored as per-subject npz files under
+# HC/ / MDD/ subdirs (see .trellis/spec/data/edra-fmt.md). Override via the
+# EDRA_FMT_DATA_ROOT env var. Geometry is a generated artifact
+# (build_edra_fmt_geometry.py at the variant layer) living alongside the data.
+EDRA_FMT_DATA_ROOT = Path(os.environ.get("EDRA_FMT_DATA_ROOT", Path("/root/autodl-tmp/edra_processed_fmt")))
+EDRA_FMT_GEOMETRY_PATH = EDRA_FMT_DATA_ROOT / "geometry_edra_fmt.pt"
+
 # Structural-connectivity (SC) prior datasets (DTI tractography). OSF
 # (88 HC, 90 AAL) is the primary source; Zenodo (1 subj, 5 resolutions) is
 # secondary. Override the SC data root via the SC_DATA_ROOT env var.

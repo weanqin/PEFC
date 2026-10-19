@@ -55,6 +55,18 @@ OMP_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 MKL_NUM_THREADS=8 MODMA_DATA_ROOT=/root
 2 项维持 skip；`MODMA_DATA_ROOT` 下亦无生成脚本（`scripts/build_edra_geometry.py`
 仅生成 EDRA 侧 `geometry_edra.pt`）。
 
+## edra_fmt 训练入口（任务 10-19-latent-flow-edra-fmt-train）
+
+- `train_edra_fmt.py --stage {1,2}`（本目录包装层）：edra_fmt（npz 62ch/250Hz）两阶段
+  训练入口——只读复用 gpfm-mamba-v1-fmt 的 fold0 manifest（断言 48/34/4/10）、窗口
+  512（obs 384 + fc 128）/stride 64/每例 930 窗、训练折 norm_stats；产物落
+  `outputs/10-19-latent-flow-edra-fmt-train/run_01/`；stage2 默认 mexhat-graph
+  （`--dense-fallback` 反切），geometry 由 `build_edra_fmt_geometry.py` 生成到数据根
+  `geometry_edra_fmt.pt`（D2 豁免单文件，含 S2.2 判定门）。
+- stage2 history 会经训练器内置行为写包内 `latent_flow/logs/edra_fmt/`（变体
+  `.gitignore` 已排除），wrapper 训练后复制进 run_01；包内 `latent_flow/checkpoints/`
+  不落任何新文件（ckpt 经 `--run-dir` 派生路径保存）。
+
 ## baseline 相对路径产物警告
 
 `run_baseline_connectivity.py` 等脚本的默认产物路径是 **cwd 相对** `results/...`、

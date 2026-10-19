@@ -6,3 +6,6 @@ results/
 .pytest_cache/
 __pycache__/
 *.pyc
+# - latent_flow/logs/：stage2 训练器内置 history JSON 落点（logs/<dataset>/，本任务 edra_fmt），
+#   wrapper 训练后复制进 run_01（任务 10-19-latent-flow-edra-fmt-train design §5）
+latent_flow/logs/

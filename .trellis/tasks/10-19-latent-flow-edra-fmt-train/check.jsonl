@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/research/surrogate-brain-qualification.md", "reason": "study1 检查必读：核对本任务未擅自做合格性结论、训练顺序门禁未被违反"}
+{"file": ".trellis/spec/data/edra-fmt.md", "reason": "核对数据口径逐项：930 窗/34-4-10/test 列表/训练折归一化/未复用 edra splits"}
+{"file": ".trellis/spec/research/data-pipeline.md", "reason": "核对 dataloader 契约：归一化口径登记、无折间泄漏、窗口在 dataloader 内切分"}
+{"file": ".trellis/spec/research/path-isolation.md", "reason": "核对产物隔离：run_01 之外零新产物、禁写清单零违反"}
+{"file": ".trellis/spec/research/reproducibility.md", "reason": "核对可复现：config JSON 与实际参数一致、seed 固定、路径登记齐全"}
+{"file": ".trellis/spec/research/experiment-log.md", "reason": "核对 Run 块四区齐全无空块"}
