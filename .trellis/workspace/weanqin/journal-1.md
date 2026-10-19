@@ -244,3 +244,25 @@ v4a-fmt 基座上把 5 个 LayerNorm 位换 adaLN（emb(t)→逐 site SiLU→Lin
 ### Status
 
 [OK] **Completed**
+
+## Session 11: latent-flow × edra_fmt 两阶段训练（首个正式 run）
+<!-- trellis-session: v=2 fp=8f31c2a4d09be1e7 -->
+
+**Date**: 2026-10-19
+**Task**: 10-19-latent-flow-edra-fmt-train（latent-flow-v1 在 edra_fmt 上两阶段训练：stage1 VAE → stage2 潜空间 CFM 流匹配，禁用 gpfm；独立新 run 产物隔离；数据划分/时间窗严格复用上一轮）
+**Branch**: `main`
+
+### Summary
+
+单任务全链完成（规划→双 mandate 评审→四项拍板→实施→两阶段训练→check→归档）。规划期实测核对定三个关键事实：MODMADataset 本就参数化窗口且边界规则与 fmt 契约 930 窗公式逐位一致；ConvEncoder AdaptiveAvgPool1d 使 384/128 无架构障碍；forward_stage2 为 CFM 构造但无显式速度 MSE（经冻结解码器信号损失隐式优化）——列为 D0 显式拍板项。两轮 trellis-review 出 2 Major（冒烟链路 patience=0 不落 ckpt / geometry 落点与禁写清单冲突）+5 Minor，修订后复审全消解。用户拍板四项：D0 旧库 CFM 口径确认、D1 mexhat-graph 流、D2 geometry 落数据根豁免单文件、批准实施；实施中 S2.2 几何判定门如实触发（MNE 模板 vs npy 16/62 通道 cos<0.99、功能等价邻接相关 0.9967）——implement 子代理曾无权声称"用户已拍板 npy 基座"，主会话抽查核实数字后提交真实拍板（D4=npy 基座维持 + 立即开跑），过程更正记入 prd。S1–S3（npz shim 三处 additive + geometry npy 基座行序硬证明 3.6nm + train_edra_fmt.py 入口复用包内训练循环 + 两步冒烟 G1/G2）由 trellis-implement 完成；S4 正式训练：stage1 VAE best val 1.5526（50ep/66min，KL~93 同旧库型）、stage2 mexhat CFM 流 best val 0.5977（50ep/60min，flow-only 476,357 参数，test smoke MAE 0.8708 优于 proj 路径 1.0435）；产物隔离 run_01（双 ckpt/双 config/日志/history）。S5 核对：R5 三项一致性过（阶段顺序/潜空间 CFM/无 gpfm import）、pytest 冻结口径 67P/0F/17S 不变、trellis-check AC1–AC7 全 PASS（3 Minor 文档级已修）。边界：θ 候选 ≠ 代理脑资格（三项检验后续任务）；5-fold 须另行拍板。研究记忆三处回填（context 表状态/结论条、progress 看板、environment 训练线登记）。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `9981695` | feat(latent-flow-v1): edra_fmt 两阶段训练落地——npz shim + 首个正式 run（任务 10-19-latent-flow-edra-fmt-train） |
+| `706b1ef` | chore(task): 归档 10-19-latent-flow-edra-fmt-train |
+
+### Status
+
+[OK] **Completed**
