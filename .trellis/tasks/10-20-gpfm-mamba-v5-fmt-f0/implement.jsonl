@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/research/experiment-log.md", "reason": "experiment.md Run 块契约（跑前登记/跑后补记）"}
+{"file": ".trellis/spec/research/path-isolation.md", "reason": "变体目录与 outputs 隔离契约（v5-fmt 只写自有目录）"}
+{"file": ".trellis/spec/research/reproducibility.md", "reason": "config_hash pin / env snapshot / 确定性契约"}
+{"file": ".trellis/spec/research/data-pipeline.md", "reason": "fmt 数据装载与 z-score 口径（dataloader 内完成）"}
+{"file": ".trellis/spec/research/evaluation-calibers.md", "reason": "评估口径（gen_lowpass/无低通 fmt 口径与 GC 主路径背景）"}
+{"file": ".trellis/tasks/10-19-gpfm-mamba-v4b-gnn-f0/ni-mse-design.md", "reason": "下游 θ* 消费方（v1.5 主实例化：n0=25/fmt manifest/与 refs 同管线）"}
+{"file": ".trellis/tasks/10-19-gpfm-mamba-v4b-gnn-f0/experiment.md", "reason": "v5-main-01 训练链先例（Run 003-007）与口径勘误记录"}

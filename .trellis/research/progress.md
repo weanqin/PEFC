@@ -23,3 +23,4 @@
 - 2026-10-18 · 双变量 GC 观测参考 250 Hz 原始全长档落地：refs-01 48 例 + 天花板 0.8981±0.1414 + rev-01 指纹 + AC6 raw bytes 级复现（条件数越限代决策续跑如实登记；不做跨口径对比）· 完整记录见任务 `.trellis/tasks/10-18-bivar-gc-fmt-250/experiment.md`
 - 2026-10-18 · latent-flow 先前原型移植完成（study1 新候选路径）：OC-LatentFlow 代理 + bisection σ 归因代码面入 `models/latent-flow-v1/`，裁剪 A+bundle 备份、零源码改动、G1/G2 全过、trellis-check AC1–AC5 通过；MODMA 勘误（modma_resting_process.zip 可读，已解压在位）· 完整记录见任务 `.trellis/tasks/10-18-latent-flow-port/experiment.md`
 - 2026-10-19 · latent-flow × edra_fmt 首个正式训练 run：npz shim + manifest 只读复用 + 两阶段 50 epoch 稳定收敛（stage1 1.5526 / stage2 mexhat CFM 0.5977），θ 候选产出、产物隔离、AC1–AC7 全过（D0/D1/D2/D4 四项用户拍板；S2.2 几何判定门如实触发后真实拍板 npy 基座）· 完整记录见任务 `.trellis/tasks/10-19-latent-flow-edra-fmt-train/experiment.md`
+- 2026-10-20 · v5-fmt 变体完成（任务 10-20-gpfm-mamba-v5-fmt-f0）：v5 结构 × fmt 口径 + 早停 10（用户拍板），152,957 参数/单测 11/11，主 Run v5-fmt-01 ep39 早停 best 0.70242@ep29，A_eff/W 快读出随档，θ* 候选就绪待 study2 NI-MSE 接入
