@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/research/surrogate-brain-qualification.md", "reason": "检查边界：θ 候选 ≠ 代理脑资格；本任务止步 fold0 前置验证，不得越权结论"}
+{"file": ".trellis/spec/data/edra.md", "reason": "核对数据契约遵守：500 Hz 旧范式、channel_names 断言、无跨范式数据混用"}
+{"file": ".trellis/spec/research/evaluation-calibers.md", "reason": "核对评估口径与 Run 017 逐参数一致（K/seed/bootstrap/nperseg/σ/低通）"}
+{"file": ".trellis/spec/research/path-isolation.md", "reason": "核对零改动清单：latent-flow-v1/既有变体目录/既有 outputs 未被触碰"}
+{"file": ".trellis/spec/research/reproducibility.md", "reason": "核对 config_hash 零漂移断言与既有变体回归测试全绿"}
+{"file": ".trellis/spec/research/experiment-log.md", "reason": "核对 experiment.md Run 块四区完整与 R9 门禁留痕（用户确认记录）"}
+{"file": ".trellis/spec/research/artifacts-management.md", "reason": "核对产物布局与命名、主 Run 脱离式启动与续传契约"}

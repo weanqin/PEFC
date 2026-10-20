@@ -1,0 +1,9 @@
+{"file": ".trellis/spec/research/surrogate-brain-qualification.md", "reason": "study1 路由必读：代理脑合格性边界——本任务产物不自动继承资格、fold0 单 seed 前置验证门禁（5-fold 须另经同意）"}
+{"file": ".trellis/spec/data/edra.md", "reason": "旧范式数据契约：48 例/500 Hz/62ch npz 布局/channel_names 口径/past=384 future=128——本任务数据面全部依此"}
+{"file": ".trellis/spec/research/data-pipeline.md", "reason": "dataloader 统一接口与划分规范：fold0 32/4/10 manifest 只读复用、归一化口径"}
+{"file": ".trellis/spec/research/evaluation-calibers.md", "reason": "Run 017 正式评估口径（gen_lowpass 40 Hz 等）与七维度对照框架——评估须完全同口径"}
+{"file": ".trellis/spec/research/path-isolation.md", "reason": "产物路径隔离：新变体目录与 outputs/gpfm-mamba-f0/v4bg-* 边界、latent-flow-v1 与既有变体目录禁写"}
+{"file": ".trellis/spec/research/reproducibility.md", "reason": "可复现规范：seed 1234/EMA/早停回放/config resolved dump 与 hash 稳定/RNG 中性构建惯例"}
+{"file": ".trellis/spec/research/experiment-log.md", "reason": "experiment.md Run 块四区契约——smoke/bench/main/eval 各 Run 登记"}
+{"file": ".trellis/spec/research/artifacts-management.md", "reason": "产物管理：outputs 布局/命名/续传契约（nohup 脱离式、会话事件不得杀训练进程）"}
+{"file": ".trellis/spec/research/visualization.md", "reason": "可视化统一 visualizer 规范——A_eff/M/W 热图三联与行和分布图"}
