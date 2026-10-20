@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/research/perturb-ec-pipeline.md", "reason": "复核装载契约/防坑矩阵遵守（gen_lowpass=None、config_hash pin、__file__ 断言、BLAS guard）"}
+{"file": ".trellis/spec/research/experiment-log.md", "reason": "复核 Run 块契约与勘误登记完整性（含 fmt test 名单勘误、epoch 记法）"}
+{"file": ".trellis/spec/research/path-isolation.md", "reason": "复核零改动与产物隔离（git status + refs/θ* 校验和复验）"}
+{"file": ".trellis/spec/research/reproducibility.md", "reason": "复核种子树 manifest/断点续跑/确定性断言（R2 恒等）"}
+{"file": ".trellis/spec/research/evaluation-calibers.md", "reason": "复核判读口径一致性（逐被试主口径/flip/距离偏/阴性对照）"}

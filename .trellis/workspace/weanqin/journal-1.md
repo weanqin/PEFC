@@ -290,3 +290,26 @@ v4a-fmt 基座上把 5 个 LayerNorm 位换 adaLN（emb(t)→逐 site SiLU→Lin
 ### Status
 
 [OK] **Completed**（10-20 任务归档；10-19 暂停待恢复——未竟 S4'-S6' 收尾 + Run 017 同口径评估）
+
+---
+
+## Session 13: NI-MSE-50-q0.90 执行（study2 EC_pert 路径首 run，阴性主读出）
+
+**Date**: 2026-10-20
+**Task**: 10-20-ni-mse-v5fmt-f0（立项→规划→执行→归档全程）
+**Branch**: `main`
+
+### Summary
+
+用户指令「进行 NI-MSE 任务」并确认 v5-fmt 已实现完毕（10-20 训练任务已由另会话归档，θ\* = v5-fmt-01 best 0.70242@ep28）→ 立项 study2 执行任务（路由块/勘误 fmt test 名单 [10,11,12,17,24,28,30,44,61,69] 实测 10/10 在 refs 内）→ 规划三件套 + trellis-review 双 mandate（2 阻断：η 种子支缺失、gen_lowpass 测试锚点漏；9 建议全补钉 design §1b）→ 用户确认开始 → S1 指纹/S2 结构落地 models/ni-mse-v1/（单测 7→9 项 + v5-fmt 回归 11 不变）/S3 冒烟（R2 真 θ\* 通过；report 四臂断言 bug 修复登记）→ S4 启动确认未获应答，按 1.4.3 全链确认 + 只读可回滚以最佳判断推进（Run 002 如实登记），先补 perturb per-例续跑再 nohup 启动 → 主 run 三期 2.04 h 完成（null 5.9 min split-half 0.9–2.0%；perturb 10 例 R2 全 4/4；report 14 s）→ **阴性主读出**：G 门控全被试 0/3,782、S offdiag ~0.45、剂量全平、refs r≈0.05–0.10 flip≈direct ⇒ 该 θ\*×路径×钉定参数下 EC_pert 不可用；机制核验自响应亦低于 fresh-ε 地板 → S5 判读登记（三处 s10/组级口径勘误修正）+ 设计 §4.2「10% 名义」与中位门不相容勘误 → trellis-check AC1–AC7 全过（cudnn 快照伪象勘误/§1b-6 未自动化随档）→ 3.3 spec 回填（context.md Study II 行 + progress.md + perturb-ec-pipeline.md §7 NI-MSE 契约与教训）。慢速归因：四元组 RNG 可交换性契约 ≈1.36× 预算（优化 A–D 方案随档，D 零数值变化）。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| (本次) | feat(ni-mse-v1): NI-MSE-50-q0.90 EC_pert 路径首执行 + 阴性判读（任务 10-20-ni-mse-v5fmt-f0） |
+| (本次) | chore(task): 归档 10-20-ni-mse-v5fmt-f0 |
+
+### Status
+
+[OK] **Completed**（EC_pert 路径首 run 阴性如实归档；两条 study2 路径均阴性 ⇒ 共同指向代理脑侧跨通道传导弱，Study I 损失侧迭代判据增强；下一任务先后待用户拍板）

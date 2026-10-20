@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/research/perturb-ec-pipeline.md", "reason": "study2 流程规范：装载防坑矩阵（sys.path 遮蔽/config_hash/子进程）、BLAS guard、EulerSampler 签名与 gen_lowpass 陷阱、npz 契约方向约定"}
+{"file": ".trellis/spec/research/experiment-log.md", "reason": "experiment.md Run 块契约（跑前登记/跑后补记/勘误如实登记）"}
+{"file": ".trellis/spec/research/path-isolation.md", "reason": "隔离契约：只写 models/ni-mse-v1/ 与 outputs/10-20-ni-mse-v5fmt-f0/，θ*/refs/家族代码只读"}
+{"file": ".trellis/spec/research/reproducibility.md", "reason": "种子树/manifest/env snapshot/确定性契约（cudnn.deterministic、显式 eps/eta）"}
+{"file": ".trellis/spec/research/data-pipeline.md", "reason": "fmt 数据装载与 z-score 口径（loader 内完成）、fold0 manifest 只读复用惯例"}
+{"file": ".trellis/spec/research/evaluation-calibers.md", "reason": "相关判读口径背景（距离偏 Spearman 主指标口径、refs 主路径登记）"}
+{"file": ".trellis/tasks/10-19-gpfm-mamba-v4b-gnn-f0/ni-mse-design.md", "reason": "权威设计 v1.5：五要素/伪代码/种子树/R1-R6/判读口径/风险全文（本任务只执行不重设计）"}
