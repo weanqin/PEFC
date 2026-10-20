@@ -266,3 +266,27 @@ v4a-fmt 基座上把 5 个 LayerNorm 位换 adaLN（emb(t)→逐 site SiLU→Lin
 ### Status
 
 [OK] **Completed**
+
+## Session 12: v5 双线（v5-main 训练 + 读出 + refs 归档 + NI-MSE 设计）→ v5-fmt 立项执行归档
+
+<!-- trellis-session: v=2 fp=8f31c2a4d09be1e7 -->
+
+**Date**: 2026-10-20
+**Task**: 10-19-gpfm-mamba-v4b-gnn-f0（暂停待恢复）→ 10-20-gpfm-mamba-v5-fmt-f0（归档）
+**Branch**: `main`
+
+### Summary
+
+单日双任务长会话。10-19 侧：用户拍板取消 v4bg/直训 v5 → smoke/bench/主 Run v5-main-01（100 epoch 跑满，best 0.73155@ep64；早停禁用+cosine 系 v2 副本口径勘误随档）→ A_eff/W 读出 + |A_eff|×原库 GC（+0.44/+0.25，相关由对称距离核承载）→ 原库 GC 登记 GC 计算主路径 + npi/refs 基线归档启用（48 例 EC + MANIFEST + SHA256）→ study2 EC_pert 路径 NI-MSE-50-q0.90 设计五轮迭代（σ_p 标准化空间重定义/K_null 64/阈值精简/砍 GC 重算轨/更名 study1×study2 定位；Run 007 校准 pilot 实测精度只依赖池 W×K；被试清单实测勘误 test 10 与 refs 重叠 10/10）。10-20 侧：用户暂停 10-19、立项 v5-fmt → trellis-implement S1（152,957 参数/11 测）→ smoke/bench → 用户拍板 cosine+早停 10 → 主 Run v5-fmt-01 ep39 早停 best 0.70242@ep29 → A_eff/W 快读出 → trellis-check（1 阻断：早停拍板未同步单测 pin——修复 11/11）→ 提交归档。θ* 候选（v5-main-01/v5-fmt-01 双轨）就绪待 study2 NI-MSE 执行。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `eeecabc` | chore(refs): baseline 常用参考归档启用 npi/refs——原库 GC edra_fmt 48 例 EC |
+| `7439ff2` | feat(gpfm-mamba-v5-fmt): v5 结构 × fmt 口径训练落地 + 主 Run v5-fmt-01（任务 10-20） |
+| `2954512` | chore(task): 归档 10-20-gpfm-mamba-v5-fmt-f0 |
+
+### Status
+
+[OK] **Completed**（10-20 任务归档；10-19 暂停待恢复——未竟 S4'-S6' 收尾 + Run 017 同口径评估）
