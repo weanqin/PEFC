@@ -5,11 +5,11 @@
 ## 当前状态
 
 - **阶段**：study2 用户直给双方法 EC 探索完成（任务 10-21-v5main-ec-explore，2026-10-21）——方法1（噪声→靶熵失稳 σ*）**失败（用户宣告取消）**：4 例全删失（σ=0.48 时 lnVar 膨胀中位 0.014≪阈值 0.365，靶通道预测方差对源噪声不敏感）；方法2（源+0.5std 常量→靶预测均值响应）：10/10 例与 v4 GC refs **一致弱负相关**（ρ −0.126±0.019 全负、组均值 −0.188/r −0.317，方向信息≈零）；与增益算子/NI-MSE 阴性路径同向汇聚 ⇒ v5-main θ* 跨通道响应未达观测 GC 结构，重点指向 Study I 损失侧跨通道监督迭代。此前状态：edra_v4 重采样 GC 参考归档（10-21-oldlib-gc-edrav4）；NI-MSE 首执行阴性（10-20）——GC 计算主路径（原库谱 GC）× edra_process_v4 46 例全量（resample_poly(1,2)→250 Hz，其余口径同 edrafmt48 档）逐被试 EC 归档 `refs/granger_bivariate_spectral/edrav4-46-resample250-cont-zscore-fs250-fixed8-f1-125-nf65/`；与 edrafmt48 档重叠 45/46（v4 独有 s56），对照 ρ=0.2311±0.1026 / median 比 1.651±0.664（描述性登记，不做对比交付）；确定性逐位复现实测；此前状态：NI-MSE-50-q0.90 路径首执行阴性（10-20），两条 EC_pert 路径均阴性共同指向代理脑侧跨通道传导弱
-- **Study I 候选现状**：gpfm 5-fold 候选集 {v1, v4a}（10-16 拍板）；v5/v5-fmt 轴分解交替变体完成（v5-main-01 0.73155 / v5-fmt-01 0.70242，θ\* 候选）；latent-flow edra_fmt θ 候选就绪（10-19 训练 run）但**三项合格性检验未做**——三个候选族均未取得代理脑资格
+- **Study I 候选现状**：gpfm 5-fold 候选集 {v1, v4a}（10-16 拍板）；v5/v5-fmt 轴分解交替变体完成（v5-main-01 0.73155 / v5-fmt-01 0.70242，θ\* 候选）；latent-flow edra_fmt θ 候选就绪（10-19 训练 run）但**三项合格性检验未做**；latent-flow MODMA 原生线本机首跑验证完成（10-21-nosc-check：geometry.pt 模板重建 + fold2 nosc probe CV 318–712% 超 JET 天花板，`N_CHANNELS` 缺陷登记未修）——三个候选族均未取得代理脑资格
 - **Study II 状态**：两条 EC_pert 路径均阴性（perturb-ec-v1 增益算子 @v4a-fmt、NI-MSE 噪声注入 @v5-fmt-01），共同指向代理脑侧跨通道传导弱；流程/契约/规范（含 NI-MSE §7）可复用
 - **暂停任务**：10-19-gpfm-mamba-v4b-gnn-f0（in_progress 暂停待恢复，未竟 = S4'-S6' 收尾 + Run 017 同口径评估）
 - **下一任务（待建，先后待拍板）**：①Study I 迭代（损失侧跨通道监督——两条阴性路径的共同判据指向）；②latent-flow 合格性检验（θ 候选就绪）；③5-fold 主实验（范式/口径待拍板）
-- **待拍板**：①下一任务先后关系；②指标2 视觉人工判；③GC 阻塞解除时点；④r\*→连接强度最终映射；⑤NI-MSE 若复跑的优化方案（D 预取零数值变化可直接用；A/B/C 数值口径变化须变更登记）；⑥10-19 暂停任务恢复时点
+- **待拍板**：①下一任务先后关系；②指标2 视觉人工判；③GC 阻塞解除时点；④r\*→连接强度最终映射；⑤NI-MSE 若复跑的优化方案（D 预取零数值变化可直接用；A/B/C 数值口径变化须变更登记）；⑥10-19 暂停任务恢复时点；⑦probe `N_CHANNELS` 1 行 import 修复是否正式落包体（10-21-nosc-check wrapper 绕过，包体零改动纪律下留拍板）
 
 ## 里程碑（只增不改）
 
@@ -28,3 +28,4 @@
 - 2026-10-20 · NI-MSE-50-q0.90 首执行（任务 10-20-ni-mse-v5fmt-f0）：v5-fmt-01 θ\* × c{0.05,0.1,0.3,0.5} × Q90 门控，流程契约全兑现（R2/split-half/续跑）；**阴性主读出**（G 全 0/3782、S~0.45、剂量全平、refs r≈0.05–0.10 flip≈direct）⇒ 该配置下 EC_pert 不可用；可交换 null 灵敏度权衡与 RNG 契约成本归因入 spec §7 · 完整记录见任务 `.trellis/tasks/10-20-ni-mse-v5fmt-f0/experiment.md`
 - 2026-10-21 · 原库 GC × edra_v4 重采样参考归档（任务 10-21-oldlib-gc-edrav4）：v4 46 例全量（resample_poly(1,2)→250 Hz + fixed8/1–125 Hz 口径，15.4 min、SHA256 逐位复现）→ `refs/granger_bivariate_spectral/edrav4-46-resample250-.../`；与 edrafmt48 档重叠 45/46（s56 仅 v4），对照 ρ=0.231±0.103 / median 比 1.651±0.664 描述性登记；口径条目入 evaluation-calibers.md（含 GC 主路径登记）· 完整记录见任务 `.trellis/tasks/10-21-oldlib-gc-edrav4/experiment.md`
 - 2026-10-21 · v5-main 双方法 EC 探索（任务 10-21-v5main-ec-explore）：方法1 熵失稳 σ* 失败宣告（4 例全删失证据在档）+ 方法2 常量偏移均值响应 10 例一致弱负（ρ −0.126±0.019）；产物 outputs/10-21-v5main-ec-explore/（未随 git，口径登记 README+experiment.md）· 完整记录见任务 `.trellis/tasks/10-21-v5main-ec-explore/experiment.md`
+- 2026-10-21 · latent-flow MODMA no-sc ckpt 本机检查与首跑（任务 10-21-latent-flow-modma-nosc-check）：geometry.pt 按 MNE GSN-129 模板重建（vs ckpt 内嵌 pairwise_d corr=1.0000000000 / max diff 3.4e-08 m 逐位命中）落 `/root/autodl-tmp/modma/geometry.pt` + fold2 nosc（旧库 MODMA SOTA，自包含 state_dict）加载断言全过（W/pairwise_d 逐位一致、gamma_sc 弃用键按白名单丢弃）+ probe 首跑（fold2 test 1 例 169 窗 × 128 源 × 3σ，~17 min GPU）**CV 318.18%/587.12%/712.18%（σ=0.1/0.2/0.3）全超 JET v2 天花板**；probe `N_CHANNELS` 潜在 NameError（旧库 HEAD 同款，import 块漏 driver 定义）wrapper 注入绕过、包体零改动 · 完整记录见任务 `.trellis/tasks/10-21-latent-flow-modma-nosc-check/experiment.md`

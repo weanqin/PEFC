@@ -376,3 +376,23 @@ v4a-fmt 基座上把 5 个 LayerNorm 位换 adaLN（emb(t)→逐 site SiLU→Lin
 ### Status
 
 [OK] **Completed** — AC1–AC5 全过（trellis-check 通过）
+
+
+## Session 17: latent-flow MODMA no-sc ckpt 本机检查与首跑（geometry.pt 重建 + probe CV 存证，任务 10-21-latent-flow-modma-nosc-check）
+<!-- trellis-session: v=2 fp=lf-modma-nosc-check-20261021 -->
+
+**Date**: 2026-10-21
+**Task**: 10-21-latent-flow-modma-nosc-check（study1 路由）
+**Branch**: `main`
+
+### Summary
+
+用户指令「检查 latent-flow 在 modma resting 数据上的 no-sc ckpt，并在本机上运行一遍，数据契约按 latent-flow 约定」→ 侦察定位 5 折 nosc ckpt（`fold{0-4}_..._mexhat_screg_l0.01_w0.1_nosc.pt`，model_registry 登记为 **MODMA SOTA**（fold2 r_abs(GC)=0.585 即 FOUNDATION 出处）），state_dict 自包含（encoder/decoder/proj/flow + graph_mixer buffers）；两向用户拍板（立 Trellis 任务 / geometry 口径=MNE 模板+验证）→ Run 001 geometry.pt 重建：MNE GSN-HydroCel-129 模板 E1–E128 原始序对 ckpt 内嵌 pairwise_d **corr=1.0000000000 / max_abs_diff=3.4e-08 m 逐位命中**（旧 geometry 即该模板生成，通道序=MATLAB 数据序，未触发匈牙利/MDS 回退），落 `/root/autodl-tmp/modma/geometry.pt`（数据根唯一新增工件；勘误 `GEOMETRY_PATH=DATA_ROOT/geometry.pt` 优先取 MODMA_DATA_ROOT env，无 env 解析包内不存在的 data/modma/）；Run 002 加载断言：`load_model` 自动检测 mexhat-graph/dataset=modma、1.24M params、W/pairwise_d 逐位一致、log_sigma/gamma_m/gamma_buf 标量逐位一致、gamma_sc=0.0 弃用 SC 键按白名单丢弃（与 nosc 语义互证）；Run 003 probe 首跑：首次直跑崩 **`N_CHANNELS` NameError（旧库 HEAD 同款潜在缺陷，import 块漏 `_connectivity_driver.N_CHANNELS`，argparse 构建期触发 CLI 无法绕过）**——AST 静态排查确认仅此一处，wrapper 注入模块属性后调用原 main()（包体零改动）；fold2 test 1 例（02010010EOG.set_61_，169 窗）× 128 源 × σ{0.1,0.2,0.3}，~17 min GPU：**CV 318.18%/587.12%/712.18% 全超 JET v2 天花板（9.5–17.5%）**，响应幅值随 σ 近线性，forecast sanity 正常；产物 `outputs/10-21-latent-flow-modma-nosc-check/run_01/`（JSON+5 PNG，gitignored）。边界重申：本任务仅可运行性验证与首跑存证，**不构成代理脑资格**（三项检验另立任务）；不做变体/fold 横向对比。研究记忆四件套回填（context.md 路线行/progress.md 看板+里程碑/environment.md 数据根工件/journal）。
+
+### Git Commits
+
+- `chore(task): 归档 10-21-latent-flow-modma-nosc-check（…）`
+
+### Status
+
+[OK] **Completed** — AC1–AC4 全过（AC4 零仓库代码改动：包体未动，会话前已存在的 data_utils.py/connectivity.py 脏文件非本会话产生）
