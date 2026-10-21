@@ -19,6 +19,7 @@ x^f_pert 仅由 x^p_pert 采样生成；一切 EC 设置复用 07-04。
 
 import argparse
 import json
+import math
 import os
 import sys
 import time
@@ -31,7 +32,6 @@ import numpy as np
 import torch
 
 from latent_flow.attribution.bisect_sigma import (
-    _HALF_LOG_2PIE,
     _extract_mse,
     compute_global_tau,
     log_grid,
@@ -46,7 +46,10 @@ from latent_flow.scripts._connectivity_driver import (
 from adapter import DEFAULT_CKPT, DEFAULT_RUN_DIR, FOLD0_TEST_IDS, load_surrogate, subject_global_windows
 from probe_site import GpfmProbeSite
 
-DEFAULT_Q = 0.5
+# conn 公式（用户拍板 2026-10-21，Run 002 起；07-04 原式为 -(log σ* + ½log 2πe)）
+_LOG_2PIE = math.log(2.0 * math.pi * math.e)
+
+DEFAULT_Q = 0.75
 DEFAULT_SIGMA_REF = 0.3
 DEFAULT_N_GRID = 24
 SIGMA_MIN, SIGMA_MAX = 0.01, 0.3
@@ -225,7 +228,7 @@ def main():
 
     # 强度映射 + 方向符号（07-04 同式）
     sigma_t = torch.from_numpy(sigma_matrix.copy())
-    connectivity = -(sigma_t.float().log() + _HALF_LOG_2PIE).numpy()
+    connectivity = -(sigma_t.float().log() + _LOG_2PIE).numpy() + 1.0
     sign_matrix = np.sign(mean_diff_matrix)
     signed_connectivity = sign_matrix * connectivity
 
@@ -246,7 +249,7 @@ def main():
         "sigma_ref": float(args.sigma_ref),
         "sigma_matrix": sigma_matrix.tolist(),
         "connectivity_matrix": connectivity.tolist(),
-        "connectivity_formula": "-(log sigma* + 0.5*log(2*pi*e))",
+        "connectivity_formula": "-(log sigma* + log(2*pi*e)) + 1",
         "raw_response_matrix": response_matrix.numpy().tolist(),
         "sign_matrix": sign_matrix.tolist(),
         "signed_connectivity_matrix": signed_connectivity.tolist(),

@@ -456,3 +456,23 @@ v4a-fmt 基座上把 5 个 LayerNorm 位换 adaLN（emb(t)→逐 site SiLU→Lin
 ### Status
 
 [RUNNING] **冒烟完成，主跑待二次拍板** — S1–S3/S5 全过（AC1–AC5 兑现，AC6 s12 单例在档）
+
+
+## Session 18 续3: Run 002 主跑 10 例（口径修订 q=0.75/σ[0.01,0.48]/conn 新公式）
+<!-- trellis-session: v=2 fp=ec-globaltau-v5main-run002-20261021 -->
+
+**Date**: 2026-10-21
+**Task**: 10-21-ec-globaltau-v5main（延续）
+**Branch**: `main`
+
+### Summary
+
+用户两项拍板（主跑规模 + 口径修订）：σ∈log[0.01,0.48]×24、σ_ref=0.3、τ=q0.75、**conn=−(log σ\*+log 2πe)+1**，重跑 10 例×32 窗 → runner 公式修订落盘（_LOG_2PIE，公式串随 JSON）→ 后台串行 10 例全成（~15 min，各 1.5 min）→ 钳位分布右移（@min ~23%/@max ~70%，τ 上移预期）→ S5 升级 10 例配对汇总：**r_abs=+0.101±0.042 全正 10/10、r_signed=−0.071±0.029 全负 10/10**、Spearman 同构、flipped 无方向偏好——与方法2「一致弱负」同向且符号一致性更严格；run_01 原口径产物保留不混比；口径修订入 evaluation-calibers.md。任务保持 in_progress（全量 1321 窗口径如有需要另拍板）。
+
+### Git Commits
+
+- `feat(ec-globaltau-v1): Run 002 主跑 10 例（q=0.75/σ[0.01,0.48]/conn 新公式，refs r_abs 10/10 全正）`
+
+### Status
+
+[OK] **Run 002 完成** — 10 例主读出在档，口径修订随档登记
