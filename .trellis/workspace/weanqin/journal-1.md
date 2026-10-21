@@ -333,3 +333,24 @@ v4a-fmt 基座上把 5 个 LayerNorm 位换 adaLN（emb(t)→逐 site SiLU→Lin
 ### Status
 
 [OK] **Completed**
+
+
+## Session 15: 旧库谱 GC × edra_process_v4 逐被试 EC（重采样 250 Hz 口径，任务 10-21-oldlib-gc-edrav4 全程）
+<!-- trellis-session: v=2 fp=oldlib-gc-edrav4-20261021 -->
+
+**Date**: 2026-10-21
+**Task**: `.trellis/tasks/10-21-oldlib-gc-edrav4`（study2 观测参考；立档任务）
+**Branch**: `main`
+
+### Summary
+
+用户指令：用旧库 latent-flow GC 计算方法对 edra_process_v4 逐被试算 EC。两项拍板（AskUserQuestion）：建立档任务 / fs 口径=**先重采样到 250 Hz**（resample_poly(1,2)）再完全复用 edrafmt48 档口径（fixed8/1–125 Hz/nf65/全长连续/逐通道 z-score，fs250），与既有 refs 直接可比。流程全走 Trellis：PRD（轻量 PRD-only）→ trellis-review（有条件通过，修订三处：**重叠 45/46 勘误**——v4 MDD s56 为 fmt 所无，fmt 独有 MDD {11,21,48} 系 v4 弃用例；BLAS 护栏随蓝本五变量 setdefault "1"；evaluation-calibers.md 系**新增完整条目**而非并列）→ 激活 → 实施 → trellis-check **通过**。实施：gen_refs.py（蓝本=10-19 归档脚本，改数据源+重采样步+逐例断言 shape/fs/group/subject_id/通道序 vs fmt 参考序——顺带全量补验 edra.md「待验证」两项）；smoke-01（HC/4，24 s，量级与 fmt 同被试同数量级）→ refs-01（46/46 例，15.4 min，12 进程）→ 对照（45 例交集：offdiag Spearman ρ=0.2311±0.1026、Pearson r=0.4268±0.1266、median 比 v4/fmt=1.651±0.664，描述性登记不做对比交付）→ 确定性（s4 删除重跑 SHA256 逐位一致）→ 归档 `refs/granger_bivariate_spectral/edrav4-46-resample250-cont-zscore-fs250-fixed8-f1-125-nf65/`（46 npz + meta.json + 溯源 4 件 + SHA256SUMS 50/50 校验 + MANIFEST.md 追行）。登记：qc_pass=True 仅 13/46（gate_fail:s7_interp_carry）仍按数据集原样 46 例全算（用户口径，事实随档）；evaluation-calibers.md 新条目含 GC 主路径登记（该文件此前无主路径条目）；context.md/progress.md/MANIFEST.md 当场回填。沉淀事实：v4 与 fmt 为不同管线/时长两份数据（170 s vs 240 s），通道名序逐位一致，GC 低-中正相关 + v4 幅值系统偏高属预期；归档脚本曾因源/目标文件名映射 bug 中途失败一次（半成品目录已清重跑）。
+
+### Git Commits
+
+- `chore(task): 归档 10-21-oldlib-gc-edrav4（…）`（任务产物 + refs 新档 + spec/记忆回填）
+- `chore: record journal（会话十五：…）`
+
+### Status
+
+[OK] **Completed** — AC1–AC6 全过（trellis-check 判定通过；journal 补记即本条）
