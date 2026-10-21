@@ -416,3 +416,23 @@ v4a-fmt 基座上把 5 个 LayerNorm 位换 adaLN（emb(t)→逐 site SiLU→Lin
 ### Status
 
 [OK] **Completed** — AC1–AC3 全过（零仓库代码改动）
+
+
+## Session 18 续: fold2 nosc 单被试 GC 相关性（任务 10-21-latent-flow-gc-corr-f2nosc）
+<!-- trellis-session: v=2 fp=lf-gc-corr-f2nosc-20261021 -->
+
+**Date**: 2026-10-21
+**Task**: 10-21-latent-flow-gc-corr-f2nosc（study1 路由）
+**Branch**: `main`
+
+### Summary
+
+用户指令「仅对此单被试计算 GC 相关性」→ 立轻量任务 → 侦察定型：GC 主路径（`baseline/granger.py` fixed8/1–125 Hz/nf65/全长逐通道 z-score，refs 归档同口径）现算 fold2 test[0] `02010010EOG.set_61_`（旧库无 fold2 历史 GC 可复用，474.5 s、8 workers）；相关性 recipe 复刻 `_compare_signed_de_ablation.py`（先 |·| 再 offdiag z-score、全双三角 Pearson——nosc fold2 r_abs=0.585 同源工具），对齐 = 双方行=源直接 offdiag 无转置 → **r_abs=0.1655 / r_signed=0.1150**（r_unsigned_conn 0.1635、Spearman 0.2292、GC directedness 0.021 近对称）；口径 caveat 如实登记：①n=1 无效力（0.585 为 10 例均值）；②历史 baseline GC 实证 AIC 阶选择（fold0 时代 baseline JSON method_params）vs 本任务 fixed8——不构成复现失败判定，10 例对标属后续拍板。产物 `outputs/10-21-latent-flow-gc-corr-f2nosc/run_01/`（gc npy + corr json）。研究记忆回填 progress.md 里程碑。
+
+### Git Commits
+
+- `chore(task): 归档 10-21-latent-flow-gc-corr-f2nosc（…）`
+
+### Status
+
+[OK] **Completed** — AC1–AC3 全过（零仓库代码改动）

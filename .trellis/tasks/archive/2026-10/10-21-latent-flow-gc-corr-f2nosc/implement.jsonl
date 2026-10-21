@@ -1,0 +1,2 @@
+{"file": ".trellis/research/environment.md", "reason": "环境契约：BLAS 守卫、joblib n_jobs 与有效 16 核事实"}
+{"file": ".trellis/spec/research/experiment-log.md", "reason": "Run 块格式契约"}
