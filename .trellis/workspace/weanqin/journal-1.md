@@ -436,3 +436,23 @@ v4a-fmt 基座上把 5 个 LayerNorm 位换 adaLN（emb(t)→逐 site SiLU→Lin
 ### Status
 
 [OK] **Completed** — AC1–AC3 全过（零仓库代码改动）
+
+
+## Session 18 续2: EC_pert 新路径 global-tau × v5-main 立项+冒烟（任务 10-21-ec-globaltau-v5main，in_progress）
+<!-- trellis-session: v=2 fp=ec-globaltau-v5main-20261021 -->
+
+**Date**: 2026-10-21
+**Task**: 10-21-ec-globaltau-v5main（study2 路由，新路径 globaltau-v5main）
+**Branch**: `main`
+
+### Summary
+
+用户指令「在 trellis 中创建 EC 推断任务：07-04-global-tau 方案 × gpfm-mamba-v5-main 代理脑计算 EC_pert，扰动形式/度量/σ 搜索及一切设置完全复用 07-04，扰动施加于 z-score 后入模前 x^p 段（x^p_pert→x^f_pert，入模 x_0 恒为扰动版），配置显式体现数据流」→ 立任务（study2，新路径 1.0c 触发 research 适配文档）→ 侦察定型（v5 edra v4 @500Hz 1321 窗/384/128/fold0 test 10 例断言清单；EulerSampler 确定性采样契约 eps/eta；explore 先例 m1/m2 已有加性扰动+固定生成噪声模式）→ PRD（用户五条钉定约束全落硬约束）+ design（数据流图/设置映射表/断言/路径清单）+ implement → **trellis-review 评审：有条件通过**，2 阻断（B1 explore 实为 raw-weights 未 swap——EMA 正典口径必须显式钉定；B2 精度口径 07-04 bf16 vs gpfm 正典 fp32 未声明）+ 7 建议全吸收 → 四向拍板：**EMA+bf16 / 仅冒烟 / 纳入对照 / 批准开始** → 实现 `models/ec-globaltau-v1/`（adapter/probe_site/runner，import-only；σ 搜索原语直接 import bisect_sigma）→ S1 selfcheck：首跑抓出本方缩进 bug（raw 对照写在 swap 域内），精度矩阵诊断证明 swap 有效后修复，**五断言全过**（EMA swap Δ=1.16/扰动隔离/同输入跨调用逐位/ξ 与 (eps,eta) 逐位一致）→ S2 冒烟 s12×32 窗 **1.50 min**：τ=0.0454、95.8% 近二元钳边（latent-flow 侧同型）、62/62 源 → S3 同 seed 复跑 σ\*/τ/conn 逐位一致 → S5 refs 对照 s12 r_signed_aligned=−0.149（与方法2 一致弱负同向，flipped 无偏好）→ 口径条目入 evaluation-calibers.md。**边界**：不构成代理脑资格；主跑规模（10 例×32 窗 ≈15 min / ×全量 1321 窗 ≈8–16 h）待二次拍板，任务保持 in_progress。
+
+### Git Commits
+
+- `feat(ec-globaltau-v1): 07-04 global-tau × v5-main 代理脑 EC_pert 新路径冒烟（任务 10-21-ec-globaltau-v5main）`
+
+### Status
+
+[RUNNING] **冒烟完成，主跑待二次拍板** — S1–S3/S5 全过（AC1–AC5 兑现，AC6 s12 单例在档）

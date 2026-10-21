@@ -1,0 +1,4 @@
+{"file": ".trellis/research/environment.md", "reason": "环境契约：BLAS 守卫、mamba_ssm CUDA 要求、数据落点"}
+{"file": ".trellis/spec/research/experiment-log.md", "reason": "Run 块格式契约"}
+{"file": ".trellis/spec/research/path-isolation.md", "reason": "新路径包落点与源包只读纪律"}
+{"file": ".trellis/tasks/10-21-ec-globaltau-v5main/research/globaltau-v5main-adaptation.md", "reason": "适配结论/接口事实/设置映射表（本任务技术基线）"}

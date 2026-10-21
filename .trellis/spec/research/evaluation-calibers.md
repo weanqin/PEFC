@@ -79,3 +79,12 @@
 - **`period_p` 50→25**：fs 减半时 GPR 时间核 p 同步减半保物理时长（`gpr_prior.py` τ 网格采样点单位）。跨范式对比 = 数据+先验（+低通+norm+纪律）多变量同变，非单变量，判读只做方向性观察并随附差异清单。
 - **fs=250 全链透传**：config `fs` 字段经 `getattr(cfg, "fs", 500.0)` 进 PSD Welch 与轨迹图（旧变体无字段 = 500 零漂移）。指标3 频段边界适配见 surrogate-brain-qualification.md（判读窗 1–30 Hz、照登段 40–125）。
 - **norm RMSNorm→LayerNorm**（`norm_type` 钩子，默认 rmsnorm 零漂移）：fmt 两变体 5 个 norm 位全换；容量 +80（v1-fmt d16）/+310（v4a-fmt d62）。
+
+## EC_pert · global-tau × gpfm-mamba-v5-main 口径（2026-10-21 登记，任务 10-21-ec-globaltau-v5main，用户拍板）
+
+- **方法骨架**：07-04-global-tau（latent-flow-v1）逐字复用——加性高斯 σ·ξ + μ_bias=0.5·ch_std（方向符号）/ per-target MSE vs 无扰动确定性基线 / σ_ref=0.3 → 全局 q=0.5 分位 τ → log_grid[0.01,0.3]×24 单调走查 σ\*（clamp）→ conn=−(log σ\*+½log 2πe) → EC_pert=sign⊙conn；σ 搜索原语直接 import `bisect_sigma.py`。扰动施加点 = z-score 后、入模前、x^p 段（x_0 恒为 x^p_pert）。
+- **代理脑**：v5-main-01 θ\*（`outputs/gpfm-mamba-f0/v5-main-01/checkpoints/gpfm-mamba-v5-best.pt`，best_val 0.73155@ep64）——**EMA 正典权重 + bf16 autocast**（用户拍板；对 gpfm 正典 fp32 为登记偏离；explore 先例 10-21-v5main-ec-explore 系 raw-weights 未 swap，其 m1/m2 数字与本口径**不可数值直比**）。生成噪声 (eps,eta) 被试级固定（seed*1e4+sid），跨源/跨 σ 逐位一致；ξ 按源 seed+source。
+- **代理脑契约映射**：edra_process_v4 @500 Hz（窗 1321/例，past 384/future 128/stride 64）、euler_steps=16、fold0 test 10 例 [12,17,18,24,30,38,44,55,58,61]、生成侧 40 Hz 低通口径照挂（sampler 终点）。
+- **实现**：`models/ec-globaltau-v1/`（import-only，两源包零改动）；确定性 = 同 seed 复跑 σ\*/τ/conn 逐位一致（s12 实测）+ S1 五断言（扰动隔离/同输入跨调用逐位/EMA swap 生效/ξ 与 (eps,eta) 逐位一致）。
+- **对照链**：refs edrav4-46 档（行=源，aligned 主口径 + flipped 诊断，ρ 描述性）；冒烟 s12 实测 r_signed_aligned=−0.149 / r_abs=0.151（单例，不外推）。
+- **边界**：EC_pert 结果不构成代理脑资格；n_trials=32 冒烟口径，主跑规模待二次拍板。
