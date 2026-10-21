@@ -8,6 +8,11 @@
           "hooks": [
             {
               "type": "command",
+              "command": "python3 \"/root/npi/.zcode/hooks/inject-iron-rules.py\"",
+              "timeout": 15
+            },
+            {
+              "type": "command",
               "command": "python3 \"/root/npi/.zcode/hooks/session-start.py\"",
               "timeout": 30
             },
@@ -48,6 +53,32 @@
               "type": "command",
               "command": "python3 \"/root/npi/.zcode/hooks/inject-shell-session-context.py\"",
               "timeout": 5
+            },
+            {
+              "type": "command",
+              "command": "python3 \"/root/npi/.zcode/hooks/gate-task-start-consent.py\"",
+              "timeout": 10
+            }
+          ]
+        },
+        {
+          "matcher": "Edit|Write|MultiEdit|NotebookEdit|ApplyPatch",
+          "hooks": [
+            {
+              "type": "command",
+              "command": "python3 \"/root/npi/.zcode/hooks/gate-file-edits.py\"",
+              "timeout": 10
+            }
+          ]
+        }
+      ],
+      "Stop": [
+        {
+          "hooks": [
+            {
+              "type": "command",
+              "command": "python3 \"/root/npi/.zcode/hooks/gate-wrapup-check.py\"",
+              "timeout": 15
             }
           ]
         }
