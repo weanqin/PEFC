@@ -334,3 +334,9 @@ git 快照对比：`git status --porcelain` 与本次派发基线**逐条相同*
 - 支持（训练完成、材料就绪）：全 100 epoch 稳定收敛、无发散/NaN/损失 spike；best ckpt（ep64）为后续评估的 θ\* 候选；W 与 σ 均离开初始化且 EMA 收敛一致（design §8 风险 2/3 缓解证据补强）。
 - 边界：val 内部验证总 loss ≠ 质量/代理脑合格性判定；**Run 017 同口径评估（对照 v1/v2/v5）与 A_eff/W 读出（距离偏 Spearman 判定轨）未跑**，属本 Run 之后的步骤。
 - **勘误登记（跑前文案 vs 实跑口径，三项）**：①**早停未启用**——v5 config 为 v2 副本、无 `early_stop_patience` 字段，v1 train.py getattr 默认 0=禁用（该钩子系 v4-B 口径，v4 家族字段），跑满 100 属口径内行为，best ckpt 语义等价于早停产物；②**lr 实为 cosine 退火**（T_max=epochs=100，1e-3→2.47e-7）——v2 副本无 lr_schedule 字段、v1 循环默认 cosine，与 v2d62-main-01 同口径（对照公平性不受影响）；③划分口径 = fold0 训练折 36 例 − 内部验证 2 例 = **34 例训练** + test 10（Run 003/005 跑前登记中「早停 10 / 恒定 lr 1e-3 / 32/4/10」为 v4bg→v5 转向时 config 家族切换的文案残留，以产物 config.yaml 与本勘误为准）。
+
+## 归档登记（2026-10-21）
+
+- 用户拍板归档本任务；**未竟随档：Run 017 同口径评估（对照 v1/v2/v5）与 A_eff/W 读出（距离偏 Spearman 判定轨）**，如需执行另立新任务（θ\* 候选 = `outputs/gpfm-mamba-f0/v5-main-01/` best ckpt ep64，config_hash `1ac433fdd3d0`）。
+- 收尾提交范围：`models/gpfm-mamba-v4b-gnn/`（S1–S2 完成后二次转向停用留档）+ `models/gpfm-mamba-v5/`（S1' 交付 + v5-main-01 训练已跑）+ latent-flow `baseline/data_utils.py` npz 加载分支 + `viz/connectivity.py` `plot_matrix_heatmap`（A_eff/W 读出绘图）。
+- 归档前单测复核：v4bg **12/12**、v5 **10/10** 全绿。**坑登记**：两变体目录均无包结构，同一条 pytest 命令混跑两目录会因顶层模块名（`model`/`config` 等）互相遮蔽造成批量假失败（实测 v4bg 7 项 red，报错显示的是 v5 的 152,647 参数模型）；须逐目录单独跑（本仓回归惯例即分目录执行）。

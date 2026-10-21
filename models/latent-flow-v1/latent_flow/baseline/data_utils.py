@@ -46,6 +46,10 @@ def load_subject_timeseries(subject_file, normalize=True, dataset="modma"):
     elif desc.file_format == "brainvision":
         from latent_flow.data.brainvision import read_brainvision
         data = read_brainvision(subject_file, normalize=False)
+    elif desc.file_format == "npz":
+        # edra_fmt (npi npz contract): per-subject npz with a `data`
+        # (n_channels, n_samples) float32 key. Mirrors data/modma.py's branch.
+        data = np.load(subject_file, allow_pickle=True)["data"].astype(np.float32)
     else:
         raise ValueError(f"Unknown file_format {desc.file_format!r}")
 

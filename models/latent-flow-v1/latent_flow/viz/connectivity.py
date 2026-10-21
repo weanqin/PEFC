@@ -145,6 +145,62 @@ def plot_connectivity_heatmap(
 # Histograms
 # ---------------------------------------------------------------------------
 
+def plot_matrix_heatmap(
+    matrix,
+    save_path: str,
+    title: Optional[str] = None,
+    cbar_label: str = "value",
+    cmap: str = "RdBu_r",
+    symmetric_scale: bool = True,
+    xlabel: str = "channel j (drives)",
+    ylabel: str = "channel i (driven)",
+):
+    """Generic square-matrix heatmap for learned model matrices (A_eff / M / W).
+
+    Same Nature-style rendering as the connectivity heatmap, but with a
+    caller-supplied colorbar label and diverging colormap by default — these
+    matrices carry signed structure (center-surround excitation/inhibition),
+    so a symmetric color scale around 0 (``symmetric_scale=True``) is the
+    honest rendering.
+
+    Args:
+        matrix: 2-D array-like (C, C).
+        save_path: output path (no extension needed). Saved as svg+pdf+png.
+        title: optional plot title.
+        cbar_label: colorbar label (e.g. "A_eff[i, j]").
+        cmap: diverging by default ("RdBu_r"); pass "magma"/"viridis" for
+            magnitude-only matrices.
+        symmetric_scale: pin vmin=-m, vmax=+m at m=max|finite| so positive
+            and negative structure render symmetrically.
+        xlabel / ylabel: axis labels (A[i, j] convention: j drives i).
+    """
+    arr = _to_numpy_2d(matrix)
+    n_src, n_tgt = arr.shape
+    size = max(4.0, min(10.0, 8.0 * max(n_src, n_tgt) / 128.0))
+    fig, ax = plt.subplots(figsize=(size, size))
+    finite = arr[np.isfinite(arr)]
+    if finite.size > 0:
+        vmax = float(np.max(np.abs(finite))) if symmetric_scale else float(np.max(finite))
+        vmin = -vmax if symmetric_scale else float(np.min(finite))
+    else:
+        vmin = vmax = 0.0
+    im = ax.imshow(
+        arr, cmap=cmap, aspect="equal",
+        origin="lower", vmin=vmin, vmax=vmax, interpolation="nearest",
+    )
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    if title:
+        ax.set_title(title, fontsize=8)
+    cbar = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+    cbar.set_label(cbar_label, fontsize=8)
+    cbar.ax.tick_params(labelsize=7)
+    cbar.outline.set_linewidth(0.5)
+    ax.tick_params(labelsize=7)
+    fig.tight_layout()
+    save_nature(fig, save_path)
+    plt.close(fig)
+
 def plot_sigma_histogram(
     sigma_matrix,
     save_path: str,
