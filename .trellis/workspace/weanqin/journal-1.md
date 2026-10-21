@@ -525,3 +525,28 @@ v4a-fmt 基座上把 5 个 LayerNorm 位换 adaLN（emb(t)→逐 site SiLU→Lin
 ### Next Steps
 
 - 下会话观察：SessionStart 注入顺序（铁律最前）与实际体积留档；exit-2 理由可见性与 Stop 3 次上限两项留观；恢复 10-19 暂停任务须先补 consent.md
+
+## Session 20: latent-flow × Mild Depression 训练线（任务 10-21-latent-flow-mild-train，六轮口径迭代全阴性归档）
+
+### Summary
+
+- 立项→归档单会话闭环：数据侦察（40 例 HC20/MDD20 预切 trial、128ch GSN-128、1500 点=obs:fc 预切）→ 双 mandate review → 六轮用户拍板（5-fold→中止全量→仅 stage2@150→5:1→9:1→收尾迭代另立）。
+- 落地：变体层 4 脚本（manifest 钉死/GSN-128 geometry/两阶段 wrapper obs-fc 参数化/v2.1 visualizer）+ 数据契约 spec + environment 回填，包体零改动，pytest 67P/17S 不变。
+- 训练：fold0 三口径两阶段全部健康收敛（3:1@50 顶格；3:1 stage2@150 被 patience 截杀劣化；5:1/9:1 真收敛 E122/E125）。
+- **核心负结论**：生成质量数值抽查（Run 004 首创）三口径 coverage 一律 0.00%、medoid 主体 0.5–0.74、末端 Euler 发散尖峰抬高表观 std≈1——结构性缺陷（逐点条件方差不足），窗口划分非瓶颈，不指定 θ 候选；用户波形判读「不通过」获硬证据。
+- 沉淀：生成质量抽查口径（coverage/medoid 比去末端双口径）入 evaluation-calibers.md；z-score 三问复核（训练折池化单域）无失配；viz 判读工具曾读 CDN 同名缓存旧图（以像素尺寸/数值抽查为准的教训）。
+
+### Git Commits
+
+| commit | 说明 |
+|---|---|
+| `69c202d` | feat(latent-flow): Mild Depression 数据线接入变体层 + 数据契约 spec 与生成质量抽查口径沉淀 |
+| `795f54c` | chore(task): 归档 10-21-latent-flow-mild-train（Run 001–006 负证据链全档） |
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- Study I 迭代任务待立（损失侧跨通道/条件分布校准/采样侧——本任务与 gpfm 阴性链共同判据）；mild 线 wrapper/manifest/抽查口径可直接复用。
