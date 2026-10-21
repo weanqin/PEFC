@@ -17,6 +17,7 @@
 | [surrogate-brain-qualification.md](./surrogate-brain-qualification.md) | Study I 代理脑合格性检验：FC 一致性（v2.1 Pearson 口径，GC 为补充参考）/ 人工视觉检验 / PSD 相似性三指标与固定 θ\* 前门禁（任务路由到 `study1` 时调用；指标 1/3 通过标准 2026-10-16 已回填） |
 | [data-pipeline.md](./data-pipeline.md) | dataloader 统一接口（全部预处理在 dataloader 内、模型侧零变换）与 5-fold 分层划分（MDD/HC 受试者级） |
 | [visualization.md](./visualization.md) | 全部产图经统一 visualizer，美学风格由 nature-figure 技能统一 |
+| [workflow-hard-gates.md](./workflow-hard-gates.md) | Trellis 规范硬门契约：无任务拦写码 / `task.py start` 前查 `consent.md` / Stop 收尾校验 / 研究记忆速览注入；改 hook 行为前先读（任务 `10-21-trellis-hard-gates` 建立，测试 harness 在该任务 `research/test-gates.py`） |
 
 ## Pre-Development Checklist（写代码/跑实验前逐项确认）
 
