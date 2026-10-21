@@ -1,0 +1,3 @@
+{"file": ".trellis/research/environment.md", "reason": "写/跑代码前必读的环境契约：base conda torch 2.8.0+cu128、MODMA_DATA_ROOT=/root/autodl-tmp/modma、BLAS 线程守卫"}
+{"file": ".trellis/spec/research/experiment-log.md", "reason": "experiment.md Run 块格式契约（目的+配置+结果+结论，不留空块）"}
+{"file": ".trellis/spec/research/reproducibility.md", "reason": "可复现性纪律：命令/seed/env 完整登记，geometry.pt 重建命令需可复跑"}
