@@ -3,6 +3,13 @@
 > **常驻规则**：任何未记录在案的环境场景，必须先问用户确认——不得猜测 env、不得自行安装依赖。环境变化（新 env / 新机器 / 新依赖）须当次回填本文件。
 > **初始化**：2026-10-10 由 AI 按用户指示直接感知当前云服务器配置填写。
 
+## 速览
+
+- **常驻规则**：未记录在案的环境场景必须先问用户——不得猜测 env、不得自行安装依赖；环境变化（新 env / 新机器 / 新依赖）当次回填本文件。
+- **机器/硬件**：Ubuntu 22.04.5 云服务器（seetacloud/AutoDL 系，用户本地经 SSH 访问 `/root/npi`）；128 核 CPU（cgroup 有效 **16 核**——入口脚本须在 numpy 导入前设 BLAS 线程上限）/ 503 GB 内存 / 1× RTX 4080 SUPER（32 GB 显存）。
+- **Python/深度学习**：miniconda3 base，Python 3.12.3；PyTorch 2.8.0+cu128（CUDA 可用）；mamba_ssm 2.3.1 + causal_conv1d 1.7.0（**torch 升级 2.9+ 前不得升级 mamba-ssm**）。
+- **数据盘约定**：数据集等大文件一律 `/root/autodl-tmp/`；outputs 根 = `/root/npi/outputs/<任务名>/`（仓库内、被 `.gitignore` 排除）。
+
 ## 本地（= 当前云服务器；用户本地经 SSH 连接本机访问 `/root/npi`）
 
 - 系统：Ubuntu 22.04.5 LTS（内核 5.15.0-117），seetacloud（AutoDL 系）实例

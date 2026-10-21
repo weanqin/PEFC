@@ -6,9 +6,15 @@ Research Context Injection Hook (project-local, ZCode)
 Injects this project's research memory at SessionStart so every new
 conversation starts aligned with the research context:
 
-  .trellis/research/context.md      -> injected in full (research direction profile)
+  .trellis/research/context.md      -> only the leading "## 速览" section
+                                       (full text when the section is absent)
   .trellis/research/progress.md     -> only the leading "## 当前状态" section
-  .trellis/research/environment.md  -> injected in full (environment contract)
+  .trellis/research/environment.md  -> only the leading "## 速览" section
+                                       (full text when the section is absent)
+
+Every injected block ends with a pointer line naming the full archive so the
+agent can Read it on demand. The full-text fallback keeps pre-速览 files
+behaving exactly as before (migration safety).
 
 Project-local addition alongside the stock session-start.py; a missing or
 partial research memory must never break session startup, so every failure
@@ -67,6 +73,18 @@ def _extract_section(text: str, header_prefix: str) -> str:
     return "\n".join(out).strip()
 
 
+def _overview_or_full(text: str, pointer: str) -> str:
+    """Inject only the leading 「速览」 section, with a pointer to the archive.
+
+    Falls back to the full text when the section is absent, so files not yet
+    carrying a 速览 keep the historical full-injection behavior. The pointer
+    line names the full archive for on-demand Read.
+    """
+    overview = _extract_section(text, "速览")
+    body = "## 速览\n" + overview if overview else text
+    return body + "\n(" + pointer + ")"
+
+
 def _script_project_root() -> Path | None:
     """Project root inferred from where this hook script is installed.
 
@@ -113,7 +131,13 @@ def main() -> None:
 
     context = _read(research / "context.md")
     if context:
-        blocks.append("<research-context>\n" + context + "\n</research-context>")
+        blocks.append(
+            "<research-context>\n"
+            + _overview_or_full(
+                context, "完整档案: .trellis/research/context.md；写/跑代码前按需 Read"
+            )
+            + "\n</research-context>"
+        )
 
     progress_head = _extract_section(_read(research / "progress.md"), "当前状态")
     if progress_head:
@@ -125,7 +149,13 @@ def main() -> None:
 
     env = _read(research / "environment.md")
     if env:
-        blocks.append("<research-environment>\n" + env + "\n</research-environment>")
+        blocks.append(
+            "<research-environment>\n"
+            + _overview_or_full(
+                env, "完整档案: .trellis/research/environment.md；写/跑代码前按需 Read"
+            )
+            + "\n</research-environment>"
+        )
 
     if not blocks:
         # Research memory not initialized (or absent). Emit a guard hint instead

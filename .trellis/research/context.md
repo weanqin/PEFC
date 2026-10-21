@@ -4,6 +4,20 @@
 > **双重身份**：「技术路线（当前活跃）」表同时是任务路由（workflow 1.0b）与新路径/方法检测（1.0c）的对照 registry；新方法经 research 采纳后须在 3.3 回填此表。
 > **初始化**：2026-10-10，依据用户提供的《基于 EEG 数据的虚拟扰动推断研究框架》定稿填写。
 
+## 速览
+
+- **研究主题**：基于 EEG 代理脑虚拟扰动的节点连接推断——先训「过去 EEG→未来 EEG」条件生成代理脑，再在代理脑内做虚拟扰动，以临界扰动强度定义节点间有向连接（框架文档 `docs/research/research-direction.md`；任务定义与推断方法为本研究自主设计，非参考文献已给结论）。
+- **技术路线（当前活跃）**：
+
+  | 路线 | 一句话 | 状态 |
+  |---|---|---|
+  | Study I：EEG Conditional Future Generation（gpfm-mamba 系） | 训练 X_past→X_future 代理脑（时序预测/条件生成/时间修补三视角，含 EEG 表征、未来生成、代理脑有效性三层次） | v1/v2/v4 已实现，5-fold 候选集已拍板 {v1, v4a}；v5 / v5-fmt 变体完成（主 Run v5-main-01 / v5-fmt-01，**θ\* 候选就绪**）；5-fold 主实验待启动 |
+  | Study II：Critical Perturbation Connectivity Inference | 固定 θ\* 后扰动源节点→测靶响应→搜临界强度 r*_A→B→临界扰动矩阵→连接强度 | 四要素首版定义 + fold0 流程验证完成；v4a-fmt θ\* 上未获结构收敛证据（用户定论：该 EC 完全不可用）；NI-MSE-50-q0.90 首执行阴性（该配置下 EC_pert 不可用）；v5-main 双方法探索同向——迭代重点 = Study I 损失侧跨通道监督 |
+  | Study I 候选：latent-flow | 两阶段（stage1 VAE→stage2 潜空间流匹配）obs-conditioned 代理生成 + bisection σ 扰动归因 | edra_fmt 首个正式训练 run 完成（θ 候选未做代理脑资格判定）；MODMA 原生线本机首跑验证完成；global-tau Run 002 主跑完成（任务 2026-10-21 归档） |
+
+- **当前阶段**：Study I 是 Study II 的前置（先建立可信代理脑，再做虚拟扰动）；**预测质量 ≠ Surrogate Brain Validity**，须作为两个独立问题评价；多条 EC_pert 路径阴性后，迭代聚焦 Study I 损失侧跨通道监督。
+- **待拍板要点**：r\*→连接强度最终映射；5-fold 主实验（范式/口径）与 Study II 复跑先后；fmt 条件 GC 与比较器接入、双变量 BIC 网格扩展（均滞后决策）；指标2 视觉人工判；GC 阻塞解除时点。
+
 ## 研究主题
 
 **基于 EEG 代理脑虚拟扰动的节点连接推断**：先训练「过去 EEG → 未来 EEG」的条件生成代理模型（surrogate brain），再在代理脑内做虚拟扰动实验，以「临界扰动强度」定义节点间有向连接。权威框架文档：[research-direction.md](../../docs/research/research-direction.md)。
