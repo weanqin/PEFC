@@ -50,6 +50,8 @@ Study I 是 Study II 的前置（先建立可信代理脑，再做虚拟扰动�
 
 2026-10-21 原库 GC × edra_v4 重采样参考归档（任务 10-21-oldlib-gc-edrav4，用户两项拍板：立任务 / fs 口径=重采样 250 Hz）：旧库谱 GC（GC 计算主路径实现）× `edra_process_v4` 46 例全量（HC 24 + MDD 22，不做 qc_pass 筛选——qc_pass=True 仅 13/46 为登记事实）逐被试 EC 矩阵落盘归档（`refs/granger_bivariate_spectral/edrav4-46-resample250-cont-zscore-fs250-fixed8-f1-125-nf65/`，源 `outputs/10-21-oldlib-gc-edrav4/refs-01/`，15.4 min、同例重跑 SHA256 逐位复现）；唯一新增预处理 = `resample_poly(1,2)` 500→250 Hz（确定性），其余逐项同 edrafmt48 档口径（fixed8/1–125 Hz/nf65/全长连续/逐通道 z-score，ec[a,b]=a→b 行=源）；**与 edrafmt48 档重叠 45/46**（v4 MDD s56 为 fmt 所无，fmt 独有 MDD {11,21,48} 为 v4 弃用例）——下游两档对照一律取 45 例交集；实测对照（描述性登记不做对比交付）：offdiag Spearman ρ=0.2311±0.1026、Pearson r=0.4268±0.1266、median 比值 v4/fmt=1.651±0.664；口径条目入 evaluation-calibers.md「原库谱 GC 观测参考口径 · edra_v4 重采样 250 Hz」（该文件此前无 GC 主路径条目，本条目含主路径登记）。
 
+2026-10-21 v5-main 双方法 EC 探索（任务 10-21-v5main-ec-explore，用户直给规格）：①方法1（源通道噪声 σ∈[0.05,0.48] log×24 → 靶通道高斯拟合微分熵涨幅>20% 判失稳 σ*，EC1=-(ln σ*+ln 2πe)+1）**失败（用户宣告取消）**——4 例全删失：σ=0.48 时靶通道 ln-方差膨胀中位 0.014≪ln(1.44)=0.365，条件流+GPR 先验+40 Hz 产物口径下靶预测方差对单通道源噪声结构性不敏感；②方法2（源 +0.5std 常量 → 靶预测均值响应带符号）与 v4 GC refs **10/10 例一致弱负相关**（ρ −0.126±0.019、组均值 −0.188/r −0.317；flipped≈aligned 方向信息≈零）——强 GC 边上源偏移压低靶预测均值（抑制型模式）。与 perturb-ec-v1/NI-MSE 两条阴性路径同向汇聚：v5-main θ* 跨通道响应未达观测 GC 结构，迭代重点 = Study I 损失侧跨通道监督。产物 `outputs/10-21-v5main-ec-explore/`。
+
 ## 待用户拍板
 
 - ~~扰动算子 P / 度量 D / 阈值 τ / 搜索策略~~ → **已首版定义**（2026-10-17 用户拍板 A 案增益算子 + τ̃=0.25 相对自响应；契约见 spec/research/perturb-ec-pipeline.md，变更须走口径变更纪律）
