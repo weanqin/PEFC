@@ -476,3 +476,23 @@ v4a-fmt 基座上把 5 个 LayerNorm 位换 adaLN（emb(t)→逐 site SiLU→Lin
 ### Status
 
 [OK] **Run 002 完成** — 10 例主读出在档，口径修订随档登记
+
+
+## Session 18 续4: 任务归档 10-21-ec-globaltau-v5main（Run 003 what-if 中止）
+<!-- trellis-session: v=2 fp=ec-globaltau-v5main-archive-20261021 -->
+
+**Date**: 2026-10-21
+**Task**: 10-21-ec-globaltau-v5main → archive/2026-10/
+**Branch**: `main`
+
+### Summary
+
+用户问询「τ 改为 σ=0.3 前 0.1s（25 点）切片 MSE 0.5 分位后边界钳制如何」→ 澄清口径事实（本代理脑 500 Hz：0.1s=50 点、25 点=0.05s，两口径拟并算；已存 JSON 无逐 σ 曲线/分时段 MSE，须同链路前向重放 ~15–18 min）→ 起重放分析（含 τ_old 应逐位复现 run_02 的内建校验）→ **用户指令中止**（「无需进行，直接归档任务」）→ Run 003 以「已取消，未产出」如实入档（GPU 归零核验、空输出目录清理）→ 任务收尾归档：context.md 路线行/progress.md（Study II 状态行 + 暂停区 what-if 中止注记 + 里程碑归档行）/journal 回填。任务终态：EC_pert global-tau × v5-main 主路径建立完成（规划/review/实现/S1 五断言/冒烟/Run 002 主跑 10 例/口径修订在档），`models/ec-globaltau-v1/` 入库为可复用路径包。
+
+### Git Commits
+
+- `chore(task): 归档 10-21-ec-globaltau-v5main（…）`
+
+### Status
+
+[OK] **Completed & Archived** — Run 001/002 在档，Run 003 取消存证
