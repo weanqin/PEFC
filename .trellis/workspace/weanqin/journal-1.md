@@ -313,3 +313,23 @@ v4a-fmt 基座上把 5 个 LayerNorm 位换 adaLN（emb(t)→逐 site SiLU→Lin
 ### Status
 
 [OK] **Completed**（EC_pert 路径首 run 阴性如实归档；两条 study2 路径均阴性 ⇒ 共同指向代理脑侧跨通道传导弱，Study I 损失侧迭代判据增强；下一任务先后待用户拍板）
+
+
+## Session 14: NI-MSE 会话续：CRN-MSE 简化口径首跑（用户四要素钉定）+ 扰动波形/MSE-EC 可视化（未立档会话产物）
+<!-- trellis-session: v=2 fp=9e298c05ef40556f -->
+
+**Date**: 2026-10-21
+**Task**: NI-MSE 会话续：CRN-MSE 简化口径首跑（用户四要素钉定）+ 扰动波形/MSE-EC 可视化（未立档会话产物）
+**Branch**: `main`
+
+### Summary
+
+主任务归档后的会话内续作（用户拍板不立档，产物在 outputs/10-20-ni-mse-v5fmt-f0/crn-mse-01/，gitignored）：①CRN-MSE 简化口径——c=0.5、单次前向、future 前 50 点(0.2s@250Hz)、无 null 门控、CRN 同 ε 配对（MSE=纯扰动因果效应，65s/10 例）：逐被试 Pearson direct +0.061±0.024（10/10 全正，一致性优于门控读出的 0.059±0.043）、flip≈direct 方向信息≈零、距离偏 ρ +0.070、自/跨比 3.5×（fresh-ε 设计仅 1.07×）⇒ 微弱正相关在完全不同基线构造下复现且非 null 归一化伪象；②最强边可视化 s12 ch0→ch33（E_median 0.171、d=0.18 近邻对、该窗 RMS 0.71z）——跨通道传导重尾（典型边 0.055z vs 极端边 0.71z），解释中位统计低相关与门控全 0 但矩阵存在少数强边；③MSE-EC 组级矩阵可视化 2×2（矩阵/refs 对照/offdiag 散点/距离衰减）；④MSE 对数负值答疑（E 全正 1.8e-4 起，负数=log₁₀ 刻度）。图件均过碰撞审计；两脚本随 outputs 目录可复现。待办不变：下一任务先后关系待拍板（Study I 跨通道迭代/latent-flow 合格性/5-fold），CRN 口径如转正需补轻量登记。
+
+### Git Commits
+
+(No commits - planning session)
+
+### Status
+
+[OK] **Completed**

@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 9
-- **Last Active**: 2026-10-18
+- **Total Sessions**: 14
+- **Last Active**: 2026-10-21
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~223 | Active |
+| `journal-1.md` | ~335 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 14 | 2026-10-21 | NI-MSE 会话续：CRN-MSE 简化口径首跑（用户四要素钉定）+ 扰动波形/MSE-EC 可视化（未立档会话产物） | - | `main` |
 | 9 | 2026-10-18 | 搜索任务全链（Gate D 增补）→ 三方 EC 生产 → past 依赖审计与 μ/前缀解耦 → GC 相关登记（五任务） | `f555f5e`, `4844938`, `f8f24f2`, `ed6e1ff`, `63a648f` | `main` |
 | 8 | 2026-10-18 | bivar-gc-fmt-250：250Hz 原始全长双变量 GC 真实参照 + TRGC/对比/分半/净出度诊断全套 | `6ad8445` | `main` |
 | 5 | 2026-10-17 | v4a-fmt adaLN 调制归一化消融（任务 10-17-gpfm-mamba-adaln-f0）全程 | `c235943` | `main` |
