@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/data/edra.md", "reason": "数据契约符合性：46 例全量、只读、fs/shape/group/subject_id 断言、qc_pass 事实登记"}
+{"file": ".trellis/research/environment.md", "reason": "环境符合性：BLAS 护栏在 numpy 导入前、n_jobs=12 ≤ 16 核、日志落点"}
+{"file": ".trellis/spec/research/path-isolation.md", "reason": "路径扫描：v4 数据集、既有 refs 档、既有 outputs 零写入"}
+{"file": ".trellis/spec/research/artifacts-management.md", "reason": "refs 归档完整性：新子目录命名、meta.json 格式对齐 edrafmt48 档、SHA256SUMS"}
+{"file": ".trellis/spec/research/evaluation-calibers.md", "reason": "口径登记完整性：新增完整条目（实现指针/阶/频带/fs/重采样步/行=源/不做对比交付边界）、与既有双变量 GC 条目区分"}

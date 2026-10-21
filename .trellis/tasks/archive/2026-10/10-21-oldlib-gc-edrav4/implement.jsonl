@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/data/edra.md", "reason": "v4 数据契约：46 例/500 Hz/字段断言/下游消费规则（qc_pass 登记要求）"}
+{"file": ".trellis/research/environment.md", "reason": "环境契约：16 核 cgroup、BLAS 五变量护栏（numpy 导入前）、nohup/日志落点惯例"}
+{"file": ".trellis/spec/research/path-isolation.md", "reason": "变体目录纪律：产物只落 outputs/10-21-oldlib-gc-edrav4/，数据集与既有 refs 只读"}
+{"file": ".trellis/spec/research/artifacts-management.md", "reason": "refs 归档惯例：refs/<方法名>/<参数配置>/ 新子目录不覆盖 + meta.json + SHA256SUMS"}
+{"file": ".trellis/spec/research/evaluation-calibers.md", "reason": "GC 观测参考口径条目区（125/250 Hz 双变量档先例）；本任务须新增完整条目「原库谱 GC × edra_v4 重采样口径」（主路径拍板现状仅落 context.md 与 refs meta，无既有条目可并列）"}
+{"file": ".trellis/spec/research/experiment-template.md", "reason": "experiment.md Run 块格式：目的/配置/结果/结论四段完整"}

@@ -9,6 +9,9 @@
 | 子目录 | 数据 | 关键参数 | 来源 | 归档日 |
 |---|---|---|---|---|
 | `edrafmt48-cont-zscore-fs250-fixed8-f1-125-nf65/` | edra_processed_fmt 48 例（HC 24/MDD 24）全长连续 60001 样本/例，逐通道 z-score | 固定阶 8、n_freq 65、1–125 Hz、fs 250、梯形积分（Geweke 1982 / Dhamala 2008） | `outputs/10-19-latent-flow-edra-fmt-train/run_01/gc_oldlib_refs`（任务 10-19-latent-flow-edra-fmt-train，2026-10-19 生成） | 2026-10-20 |
+| `edrav4-46-resample250-cont-zscore-fs250-fixed8-f1-125-nf65/` | edra_process_v4 46 例（HC 24/MDD 22）全长连续，`resample_poly(1,2)` 500→250 Hz（85000→42500 样本/例），重采样后逐通道 z-score；不做 qc_pass 筛选（qc_pass=True 仅 13/46 事实随档） | 同上（固定阶 8、n_freq 65、1–125 Hz、fs 250、梯形积分）——与 fmt 档唯一差异 = 数据源 + 重采样步 | `outputs/10-21-oldlib-gc-edrav4/refs-01`（任务 10-21-oldlib-gc-edrav4，2026-10-21 生成） | 2026-10-21 |
 
 - 内容：48 × `refs_s{id}.npz`（`ec` float32 (62,62)，**ec[a,b]=a→b 行=源/列=靶**，对角 0）+ `gen_refs.py`/`gen_refs.log`（生成溯源）+ `SHA256SUMS` + `meta.json`。
 - 用途：原库 GC 登记（用户 2026-10-20 拍板）为 **GC 计算主路径**，本档为其在 fmt 数据上的现成基线参考；与 A_eff（行=靶/列=源）对照的方向对齐主口径 = |A_eff| vs `ec.T`。
+- edrav4 档内容：46 × `refs_s{id}.npz`（格式同上）+ `gen_refs.py`/`gen_refs.log` + `compare_fmt.py`/`compare_fmt_summary.json`（与 fmt 档对照登记）+ `SHA256SUMS` + `meta.json`。
+- edrav4 档用途与边界：同实现同参数 × v4 原管线数据口径的基线参考；**与 fmt 档重叠 45/46**（v4 MDD s56 为 fmt 所无），下游两档对照一律取 45 例交集；两档口径隔离**不做对比交付**（对照文件仅描述性登记：offdiag Spearman ρ=0.2311±0.1026、median 比 v4/fmt=1.651±0.664）。

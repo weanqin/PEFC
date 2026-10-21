@@ -52,7 +52,17 @@
 - **术语与边界**：沿 125 Hz 条目（observational directed-connectivity reference，非 ground-truth；不做 EC_pert 比较）。
 
 
+## 原库谱 GC 观测参考口径 · edra_v4 重采样 250 Hz（2026-10-21 登记，任务 10-21-oldlib-gc-edrav4，用户拍板）
+
+- **主路径登记**：GC 计算主路径 = 原库 GC（2026-10-20 拍板，见 `.trellis/research/context.md` 技术路线表）——后续 |A_eff|/EC 类 × GC 对照一律用 `models/latent-flow-v1/latent_flow/baseline/granger.py::granger_connectivity`（成对双变量谱 GC，Geweke 1982 / Dhamala 2008；ec[a,b]=a→b 行=源/列=靶/对角=0；对齐口径 |A_eff| vs ec.T）。本条目为首条落入本文件的该主路径口径。
+- **口径内容**：`/root/autodl-tmp/edra_process_v4/` **46 例全量**（HC 24 + MDD 22；**不做 qc_pass 筛选**——manifest qc_pass=True 仅 13/46，均以 status=ok 发布，46 例全算为用户口径，事实随档）、原生 500 Hz 85000 点/例 → `scipy.signal.resample_poly(x, 1, 2, axis=-1)` → 250 Hz 42500 点/例（唯一新增预处理步，确定性无随机源；数据 bp1-40 带限，新 Nyquist 125 Hz 无混叠内容）→ 重采样后逐通道 z-score（ddof=0，σ==0 置 1，同旧库 loader）→ 全长单段连续（不切窗）→ `granger_connectivity(fs=250, max_order=8, n_freq=65, fmin=1, fmax=125, fixed_order=8)`（无 AIC 扫描；float64 计算 / float32 落盘）。
+- **产物**：`refs/granger_bivariate_spectral/edrav4-46-resample250-cont-zscore-fs250-fixed8-f1-125-nf65/`——46 × refs_s{id}.npz（ec float32 (62,62) 行=源）+ meta.json + gen_refs.py/log + compare_fmt_summary.json + SHA256SUMS；任务 outputs 留 `outputs/10-21-oldlib-gc-edrav4/`（工作副本 + 日志）。生成 15.4 min（12 进程 ~20.4 s/例）；确定性 = 同例删除重跑 npz 容器级 SHA256 逐位一致（AC4 实测）。
+- **与 edrafmt48 档的关系（口径隔离，不做对比交付）**：edrafmt48 档 = 同实现同参数 × fmt 管线数据（240 s/例，60001 点）；本档 = 同实现同参数 × v4 原管线重采样（170 s/例，42500 点）。**重叠 45/46**（HC 24/24 全重叠；v4 MDD s56 为 fmt 所无，fmt 独有 MDD {11,21,48} 为 v4 弃用例）——下游两档对照一律取 45 例交集。实测对照（描述性登记，非对比交付）：offdiag 3782 边 Spearman ρ=0.2311±0.1026、Pearson r=0.4268±0.1266、median 比值 v4/fmt=1.651±0.664（低-中正相关 + v4 幅值系统偏高，与数据时段/管线差异相容；非 ≈1 属预期）。offdiag 量级两档同数量级（v4 mean ~55–95 ln 单位 vs fmt ~36–91）。
+- **术语与边界**：observational directed-connectivity reference，非 ground-truth；不做 EC_pert 比较；引用本档时须言明重采样步骤与 qc_pass 事实。
+
 ## gpfm-mamba 路径生成产物口径：输出侧 40 Hz 低通（2026-10-13 登记，任务 10-12-gpfm-mamba-edra-f0，用户拍板）
+
+
 
 - **口径内容**：gpfm-mamba 路径（`models/gpfm-mamba-v1/v2/v3` 及后续派生）的生成样本自本口径起，一律先经「reflect-pad(±64) + rFFT 砖墙 >40 Hz 置零」低通（fs=500 Hz），再进入一切下游产物与指标：K 样本**逐条**滤波且在聚合（点预测均值/medoid/分位带）**之前**；GC/PSD 输入（`gc_input.npz`）、FC 指标、空间 R̂、轨迹图同源。**真实侧不滤**（数据 v4 已 bp1-40+notch50，契约见 [../data/edra.md](../data/edra.md)）。
 - **实现契约**：唯一正典实现 = `models/gpfm-mamba-v1/gpr_prior.py::brickwall_lowpass(x, cut_hz, fs=500.0, pad=64)`（torch，任意 ndim≥2；置于 gpr_prior 因其已被全部消费方 import，避免反向依赖/循环导入）。装配点 = `EulerSampler.sample()` 的 ODE 终点返回前（单一入口覆盖 Pass A / Pass B / 图全部消费方）；截止频率经 `getattr(cfg, "gen_lowpass_hz", 40.0)` 透传——**不得向已定版变体 config.py 加字段**（基线 config_hash 逐位不可变）；`evaluate.py` 提供 `--gen-lowpass-hz` 覆盖（0=关闭，用于旧口径复现，须在 Run 块登记）。

@@ -1,0 +1,559 @@
+{
+  "archive_name": "edrav4-46-resample250-cont-zscore-fs250-fixed8-f1-125-nf65",
+  "method_dir": "granger_bivariate_spectral",
+  "source_path": "/root/npi/outputs/10-21-oldlib-gc-edrav4/refs-01",
+  "task_provenance": "任务 10-21-oldlib-gc-edrav4 Run 002（refs-01），2026-10-21 由 gen_refs.py 生成",
+  "archived_date": "2026-10-21",
+  "archived_by": "任务 10-21-oldlib-gc-edrav4（用户拍板：旧库 GC 主路径 × edra_process_v4 数据源，fs 口径=重采样 250 Hz）",
+  "method": {
+    "name": "granger_bivariate_spectral（latent_flow 原库 GC）",
+    "implementation": "models/latent-flow-v1/latent_flow/baseline/granger.py::granger_connectivity",
+    "reference": "Geweke 1982; Dhamala 2008",
+    "order_selection": "fixed 8（fixed_order=8，无 AIC 扫描）",
+    "n_freq": 65,
+    "fmin_hz": 1.0,
+    "fmax_hz": 125.0,
+    "fs_hz": 250.0,
+    "integral": "trapezoidal"
+  },
+  "data": {
+    "dataset": "edra_process_v4（HC 24 + MDD 22 = 46 例；原生 500 Hz 85000 点/例，resample_poly(1,2)→250 Hz 42500 点/例）",
+    "input": "每例全长连续时序（重采样后 42500 样本，无分窗），重采样后逐通道 z-score（ddof=0，σ==0 置 1，同旧库 loader 惯例）；不做 qc_pass 筛选（qc_pass=True 仅 13/46，均以 status=ok 发布，46 例全算为用户口径，事实随档登记）",
+    "resample": "scipy.signal.resample_poly(x, 1, 2, axis=-1)，确定性无随机源；数据 bp1-40 带限，新 Nyquist 125 Hz 无混叠内容",
+    "subject_ids": {
+      "HC": [
+        4,
+        5,
+        13,
+        17,
+        19,
+        20,
+        22,
+        24,
+        25,
+        27,
+        29,
+        30,
+        36,
+        37,
+        39,
+        43,
+        44,
+        46,
+        50,
+        52,
+        53,
+        61,
+        62,
+        65
+      ],
+      "MDD": [
+        1,
+        7,
+        8,
+        10,
+        12,
+        18,
+        26,
+        28,
+        35,
+        38,
+        40,
+        47,
+        49,
+        55,
+        56,
+        58,
+        59,
+        60,
+        64,
+        67,
+        68,
+        69
+      ]
+    }
+  },
+  "file_format": "refs_s{id}.npz：ec float32 (62,62)，**ec[a,b] = a→b（行=源/列=靶）**，对角 0；subject_id/group 标量；params（生成参数 json 字符串）",
+  "alignment_convention": "与 A_eff[i,j]=j 驱动 i（行=靶）对照时，方向对齐主口径 = |A_eff| vs ec.T（同 edrafmt48 档约定）；通道序 = v4 npz channel_names（与 fmt 档逐位一致，启动断言核对）",
+  "comparison_with_edrafmt48": {
+    "file": "compare_fmt_summary.json",
+    "status": "描述性登记（PRD R3），非对比交付：45/46 重叠被试（s56 为 v4 独有，fmt 无此例）offdiag 3782 边 Spearman/Pearson + median 比值"
+  },
+  "files": {
+    "n_npz": 46,
+    "subjects": [
+      {
+        "file": "refs_s1.npz",
+        "subject_id": 1,
+        "group": "MDD",
+        "ec_shape": [
+          62,
+          62
+        ],
+        "ec_dtype": "float32"
+      },
+      {
+        "file": "refs_s10.npz",
+        "subject_id": 10,
+        "group": "MDD",
+        "ec_shape": [
+          62,
+          62
+        ],
+        "ec_dtype": "float32"
+      },
+      {
+        "file": "refs_s12.npz",
+        "subject_id": 12,
+        "group": "MDD",
+        "ec_shape": [
+          62,
+          62
+        ],
+        "ec_dtype": "float32"
+      },
+      {
+        "file": "refs_s13.npz",
+        "subject_id": 13,
+        "group": "HC",
+        "ec_shape": [
+          62,
+          62
+        ],
+        "ec_dtype": "float32"
+      },
+      {
+        "file": "refs_s17.npz",
+        "subject_id": 17,
+        "group": "HC",
+        "ec_shape": [
+          62,
+          62
+        ],
+        "ec_dtype": "float32"
+      },
+      {
+        "file": "refs_s18.npz",
+        "subject_id": 18,
+        "group": "MDD",
+        "ec_shape": [
+          62,
+          62
+        ],
+        "ec_dtype": "float32"
+      },
+      {
+        "file": "refs_s19.npz",
+        "subject_id": 19,
+        "group": "HC",
+        "ec_shape": [
+          62,
+          62
+        ],
+        "ec_dtype": "float32"
+      },
+      {
+        "file": "refs_s20.npz",
+        "subject_id": 20,
+        "group": "HC",
+        "ec_shape": [
+          62,
+          62
+        ],
+        "ec_dtype": "float32"
+      },
+      {
+        "file": "refs_s22.npz",
+        "subject_id": 22,
+        "group": "HC",
+        "ec_shape": [
+          62,
+          62
+        ],
+        "ec_dtype": "float32"
+      },
+      {
+        "file": "refs_s24.npz",
+        "subject_id": 24,
+        "group": "HC",
+        "ec_shape": [
+          62,
+          62
+        ],
+        "ec_dtype": "float32"
+      },
+      {
+        "file": "refs_s25.npz",
+        "subject_id": 25,
+        "group": "HC",
+        "ec_shape": [
+          62,
+          62
+        ],
+        "ec_dtype": "float32"
+      },
+      {
+        "file": "refs_s26.npz",
+        "subject_id": 26,
+        "group": "MDD",
+        "ec_shape": [
+          62,
+          62
+        ],
+        "ec_dtype": "float32"
+      },
+      {
+        "file": "refs_s27.npz",
+        "subject_id": 27,
+        "group": "HC",
+        "ec_shape": [
+          62,
+          62
+        ],
+        "ec_dtype": "float32"
+      },
+      {
+        "file": "refs_s28.npz",
+        "subject_id": 28,
+        "group": "MDD",
+        "ec_shape": [
+          62,
+          62
+        ],
+        "ec_dtype": "float32"
+      },
+      {
+        "file": "refs_s29.npz",
+        "subject_id": 29,
+        "group": "HC",
+        "ec_shape": [
+          62,
+          62
+        ],
+        "ec_dtype": "float32"
+      },
+      {
+        "file": "refs_s30.npz",
+        "subject_id": 30,
+        "group": "HC",
+        "ec_shape": [
+          62,
+          62
+        ],
+        "ec_dtype": "float32"
+      },
+      {
+        "file": "refs_s35.npz",
+        "subject_id": 35,
+        "group": "MDD",
+        "ec_shape": [
+          62,
+          62
+        ],
+        "ec_dtype": "float32"
+      },
+      {
+        "file": "refs_s36.npz",
+        "subject_id": 36,
+        "group": "HC",
+        "ec_shape": [
+          62,
+          62
+        ],
+        "ec_dtype": "float32"
+      },
+      {
+        "file": "refs_s37.npz",
+        "subject_id": 37,
+        "group": "HC",
+        "ec_shape": [
+          62,
+          62
+        ],
+        "ec_dtype": "float32"
+      },
+      {
+        "file": "refs_s38.npz",
+        "subject_id": 38,
+        "group": "MDD",
+        "ec_shape": [
+          62,
+          62
+        ],
+        "ec_dtype": "float32"
+      },
+      {
+        "file": "refs_s39.npz",
+        "subject_id": 39,
+        "group": "HC",
+        "ec_shape": [
+          62,
+          62
+        ],
+        "ec_dtype": "float32"
+      },
+      {
+        "file": "refs_s4.npz",
+        "subject_id": 4,
+        "group": "HC",
+        "ec_shape": [
+          62,
+          62
+        ],
+        "ec_dtype": "float32"
+      },
+      {
+        "file": "refs_s40.npz",
+        "subject_id": 40,
+        "group": "MDD",
+        "ec_shape": [
+          62,
+          62
+        ],
+        "ec_dtype": "float32"
+      },
+      {
+        "file": "refs_s43.npz",
+        "subject_id": 43,
+        "group": "HC",
+        "ec_shape": [
+          62,
+          62
+        ],
+        "ec_dtype": "float32"
+      },
+      {
+        "file": "refs_s44.npz",
+        "subject_id": 44,
+        "group": "HC",
+        "ec_shape": [
+          62,
+          62
+        ],
+        "ec_dtype": "float32"
+      },
+      {
+        "file": "refs_s46.npz",
+        "subject_id": 46,
+        "group": "HC",
+        "ec_shape": [
+          62,
+          62
+        ],
+        "ec_dtype": "float32"
+      },
+      {
+        "file": "refs_s47.npz",
+        "subject_id": 47,
+        "group": "MDD",
+        "ec_shape": [
+          62,
+          62
+        ],
+        "ec_dtype": "float32"
+      },
+      {
+        "file": "refs_s49.npz",
+        "subject_id": 49,
+        "group": "MDD",
+        "ec_shape": [
+          62,
+          62
+        ],
+        "ec_dtype": "float32"
+      },
+      {
+        "file": "refs_s5.npz",
+        "subject_id": 5,
+        "group": "HC",
+        "ec_shape": [
+          62,
+          62
+        ],
+        "ec_dtype": "float32"
+      },
+      {
+        "file": "refs_s50.npz",
+        "subject_id": 50,
+        "group": "HC",
+        "ec_shape": [
+          62,
+          62
+        ],
+        "ec_dtype": "float32"
+      },
+      {
+        "file": "refs_s52.npz",
+        "subject_id": 52,
+        "group": "HC",
+        "ec_shape": [
+          62,
+          62
+        ],
+        "ec_dtype": "float32"
+      },
+      {
+        "file": "refs_s53.npz",
+        "subject_id": 53,
+        "group": "HC",
+        "ec_shape": [
+          62,
+          62
+        ],
+        "ec_dtype": "float32"
+      },
+      {
+        "file": "refs_s55.npz",
+        "subject_id": 55,
+        "group": "MDD",
+        "ec_shape": [
+          62,
+          62
+        ],
+        "ec_dtype": "float32"
+      },
+      {
+        "file": "refs_s56.npz",
+        "subject_id": 56,
+        "group": "MDD",
+        "ec_shape": [
+          62,
+          62
+        ],
+        "ec_dtype": "float32"
+      },
+      {
+        "file": "refs_s58.npz",
+        "subject_id": 58,
+        "group": "MDD",
+        "ec_shape": [
+          62,
+          62
+        ],
+        "ec_dtype": "float32"
+      },
+      {
+        "file": "refs_s59.npz",
+        "subject_id": 59,
+        "group": "MDD",
+        "ec_shape": [
+          62,
+          62
+        ],
+        "ec_dtype": "float32"
+      },
+      {
+        "file": "refs_s60.npz",
+        "subject_id": 60,
+        "group": "MDD",
+        "ec_shape": [
+          62,
+          62
+        ],
+        "ec_dtype": "float32"
+      },
+      {
+        "file": "refs_s61.npz",
+        "subject_id": 61,
+        "group": "HC",
+        "ec_shape": [
+          62,
+          62
+        ],
+        "ec_dtype": "float32"
+      },
+      {
+        "file": "refs_s62.npz",
+        "subject_id": 62,
+        "group": "HC",
+        "ec_shape": [
+          62,
+          62
+        ],
+        "ec_dtype": "float32"
+      },
+      {
+        "file": "refs_s64.npz",
+        "subject_id": 64,
+        "group": "MDD",
+        "ec_shape": [
+          62,
+          62
+        ],
+        "ec_dtype": "float32"
+      },
+      {
+        "file": "refs_s65.npz",
+        "subject_id": 65,
+        "group": "HC",
+        "ec_shape": [
+          62,
+          62
+        ],
+        "ec_dtype": "float32"
+      },
+      {
+        "file": "refs_s67.npz",
+        "subject_id": 67,
+        "group": "MDD",
+        "ec_shape": [
+          62,
+          62
+        ],
+        "ec_dtype": "float32"
+      },
+      {
+        "file": "refs_s68.npz",
+        "subject_id": 68,
+        "group": "MDD",
+        "ec_shape": [
+          62,
+          62
+        ],
+        "ec_dtype": "float32"
+      },
+      {
+        "file": "refs_s69.npz",
+        "subject_id": 69,
+        "group": "MDD",
+        "ec_shape": [
+          62,
+          62
+        ],
+        "ec_dtype": "float32"
+      },
+      {
+        "file": "refs_s7.npz",
+        "subject_id": 7,
+        "group": "MDD",
+        "ec_shape": [
+          62,
+          62
+        ],
+        "ec_dtype": "float32"
+      },
+      {
+        "file": "refs_s8.npz",
+        "subject_id": 8,
+        "group": "MDD",
+        "ec_shape": [
+          62,
+          62
+        ],
+        "ec_dtype": "float32"
+      }
+    ],
+    "provenance_files": [
+      "gen_refs.py（生成脚本）",
+      "gen_refs.log（生成日志）",
+      "compare_fmt.py（fmt 档对照脚本）",
+      "compare_fmt_summary.json（对照登记汇总）",
+      "SHA256SUMS（归档逐文件校验和，与源逐位一致）"
+    ]
+  },
+  "boundary_notes": [
+    "本档为只读参考：任何新方法/新参数的 GC 参考应在 refs/<方法名>/<参数配置>/ 另建独立子目录，不覆盖本档与 edrafmt48 档",
+    "与 edrafmt48 档（fmt 管线 240 s/例）为不同数据源两档：v4=bp1-40+notch50 原管线 170 s/例 重采样 250 Hz；两档口径隔离，对照文件仅作落点合理性登记，不做跨档结论",
+    "通道序 = geometry_edra_fmt.pt 62ch 名序（与 fmt 数据 npz 通道序一致，v4 侧经逐例断言核对）"
+  ]
+}

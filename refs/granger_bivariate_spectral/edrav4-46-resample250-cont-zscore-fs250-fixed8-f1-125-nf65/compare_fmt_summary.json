@@ -1,0 +1,479 @@
+{
+ "purpose": "descriptive registration only (PRD R3), no threshold",
+ "n_v4": 46,
+ "n_fmt": 48,
+ "overlap_ids": [
+  1,
+  4,
+  5,
+  7,
+  8,
+  10,
+  12,
+  13,
+  17,
+  18,
+  19,
+  20,
+  22,
+  24,
+  25,
+  26,
+  27,
+  28,
+  29,
+  30,
+  35,
+  36,
+  37,
+  38,
+  39,
+  40,
+  43,
+  44,
+  46,
+  47,
+  49,
+  50,
+  52,
+  53,
+  55,
+  58,
+  59,
+  60,
+  61,
+  62,
+  64,
+  65,
+  67,
+  68,
+  69
+ ],
+ "n_overlap": 45,
+ "v4_only_ids": [
+  56
+ ],
+ "fmt_only_ids": [
+  11,
+  21,
+  48
+ ],
+ "edge_set": "offdiag 3782, ec[a,b]=a->b row=source, both sides",
+ "per_subject": [
+  {
+   "subject_id": 1,
+   "group": "MDD",
+   "spearman_rho": 0.42691788039292655,
+   "pearson_r": 0.6340614163500911,
+   "median_ratio_v4_over_fmt": 1.645386799499894,
+   "median_v4": 39.59728240966797,
+   "median_fmt": 24.065637588500977
+  },
+  {
+   "subject_id": 4,
+   "group": "HC",
+   "spearman_rho": 0.3322824814426305,
+   "pearson_r": 0.5583954922556336,
+   "median_ratio_v4_over_fmt": 1.7399386521293259,
+   "median_v4": 39.99203300476074,
+   "median_fmt": 22.984737396240234
+  },
+  {
+   "subject_id": 5,
+   "group": "HC",
+   "spearman_rho": 0.23954191390378293,
+   "pearson_r": 0.5993511810767573,
+   "median_ratio_v4_over_fmt": 2.0249033803460654,
+   "median_v4": 45.765316009521484,
+   "median_fmt": 22.601234436035156
+  },
+  {
+   "subject_id": 7,
+   "group": "MDD",
+   "spearman_rho": 0.27650149312304967,
+   "pearson_r": 0.4726875602205131,
+   "median_ratio_v4_over_fmt": 1.5590228586196353,
+   "median_v4": 36.3651237487793,
+   "median_fmt": 23.325587272644043
+  },
+  {
+   "subject_id": 8,
+   "group": "MDD",
+   "spearman_rho": 0.29849322566666764,
+   "pearson_r": 0.5221916049289309,
+   "median_ratio_v4_over_fmt": 1.6791973241813236,
+   "median_v4": 44.06011962890625,
+   "median_fmt": 26.238798141479492
+  },
+  {
+   "subject_id": 10,
+   "group": "MDD",
+   "spearman_rho": 0.32327925783328715,
+   "pearson_r": 0.5902965336936934,
+   "median_ratio_v4_over_fmt": 0.8804559140875333,
+   "median_v4": 26.761805534362793,
+   "median_fmt": 30.395395278930664
+  },
+  {
+   "subject_id": 12,
+   "group": "MDD",
+   "spearman_rho": 0.30648124554246886,
+   "pearson_r": 0.550443424737266,
+   "median_ratio_v4_over_fmt": 0.8493678560640947,
+   "median_v4": 31.901638984680176,
+   "median_fmt": 37.55927276611328
+  },
+  {
+   "subject_id": 13,
+   "group": "HC",
+   "spearman_rho": 0.16223298064461678,
+   "pearson_r": 0.4338444689544755,
+   "median_ratio_v4_over_fmt": 1.911206084941922,
+   "median_v4": 53.5009880065918,
+   "median_fmt": 27.993311882019043
+  },
+  {
+   "subject_id": 17,
+   "group": "HC",
+   "spearman_rho": 0.20454597275875425,
+   "pearson_r": 0.3870486574202925,
+   "median_ratio_v4_over_fmt": 2.5343072119871315,
+   "median_v4": 49.105491638183594,
+   "median_fmt": 19.37629795074463
+  },
+  {
+   "subject_id": 18,
+   "group": "MDD",
+   "spearman_rho": 0.22824512984001213,
+   "pearson_r": 0.4917080670612257,
+   "median_ratio_v4_over_fmt": 1.5695939637659226,
+   "median_v4": 27.472512245178223,
+   "median_fmt": 17.502942085266113
+  },
+  {
+   "subject_id": 19,
+   "group": "HC",
+   "spearman_rho": 0.12343490292777116,
+   "pearson_r": 0.21882318803042952,
+   "median_ratio_v4_over_fmt": 0.6231947429974549,
+   "median_v4": 39.48964881896973,
+   "median_fmt": 63.3664665222168
+  },
+  {
+   "subject_id": 20,
+   "group": "HC",
+   "spearman_rho": 0.15999584239877163,
+   "pearson_r": 0.3425747683642385,
+   "median_ratio_v4_over_fmt": 1.0882981956072724,
+   "median_v4": 40.9591178894043,
+   "median_fmt": 37.63593292236328
+  },
+  {
+   "subject_id": 22,
+   "group": "HC",
+   "spearman_rho": 0.23055438951791926,
+   "pearson_r": 0.5578426792455213,
+   "median_ratio_v4_over_fmt": 1.5892229991901778,
+   "median_v4": 40.18535232543945,
+   "median_fmt": 25.286163330078125
+  },
+  {
+   "subject_id": 24,
+   "group": "HC",
+   "spearman_rho": 0.07408216365871022,
+   "pearson_r": 0.15711023069839353,
+   "median_ratio_v4_over_fmt": 2.2399464837059244,
+   "median_v4": 64.79873657226562,
+   "median_fmt": 28.928698539733887
+  },
+  {
+   "subject_id": 25,
+   "group": "HC",
+   "spearman_rho": 0.1379023732424709,
+   "pearson_r": 0.2797210315287612,
+   "median_ratio_v4_over_fmt": 2.1033948914578,
+   "median_v4": 51.12361526489258,
+   "median_fmt": 24.305286407470703
+  },
+  {
+   "subject_id": 26,
+   "group": "MDD",
+   "spearman_rho": 0.18027401562683046,
+   "pearson_r": 0.4137727134440077,
+   "median_ratio_v4_over_fmt": 2.557884522174682,
+   "median_v4": 62.79005241394043,
+   "median_fmt": 24.547649383544922
+  },
+  {
+   "subject_id": 27,
+   "group": "HC",
+   "spearman_rho": 0.22373534821463245,
+   "pearson_r": 0.4323757609232455,
+   "median_ratio_v4_over_fmt": 1.6223526046512233,
+   "median_v4": 33.253902435302734,
+   "median_fmt": 20.497333526611328
+  },
+  {
+   "subject_id": 28,
+   "group": "MDD",
+   "spearman_rho": 0.13326067516409643,
+   "pearson_r": 0.42553318448946975,
+   "median_ratio_v4_over_fmt": 2.073988895947583,
+   "median_v4": 57.455305099487305,
+   "median_fmt": 27.702802658081055
+  },
+  {
+   "subject_id": 29,
+   "group": "HC",
+   "spearman_rho": 0.36768396366148814,
+   "pearson_r": 0.6025136786272468,
+   "median_ratio_v4_over_fmt": 1.9577232820343597,
+   "median_v4": 58.86504364013672,
+   "median_fmt": 30.06811237335205
+  },
+  {
+   "subject_id": 30,
+   "group": "HC",
+   "spearman_rho": 0.25101648969919116,
+   "pearson_r": 0.5640329550801315,
+   "median_ratio_v4_over_fmt": 2.0641052598925644,
+   "median_v4": 42.38944053649902,
+   "median_fmt": 20.53647232055664
+  },
+  {
+   "subject_id": 35,
+   "group": "MDD",
+   "spearman_rho": 0.4208237822112351,
+   "pearson_r": 0.5462422279451725,
+   "median_ratio_v4_over_fmt": 1.1942548727326485,
+   "median_v4": 61.61814880371094,
+   "median_fmt": 51.595476150512695
+  },
+  {
+   "subject_id": 36,
+   "group": "HC",
+   "spearman_rho": 0.2784588833113157,
+   "pearson_r": 0.48074456205321375,
+   "median_ratio_v4_over_fmt": 3.3127412699088166,
+   "median_v4": 72.90451431274414,
+   "median_fmt": 22.007307052612305
+  },
+  {
+   "subject_id": 37,
+   "group": "HC",
+   "spearman_rho": 0.14056195751109157,
+   "pearson_r": 0.3472910347116614,
+   "median_ratio_v4_over_fmt": 1.4239622632175417,
+   "median_v4": 51.60739326477051,
+   "median_fmt": 36.24210739135742
+  },
+  {
+   "subject_id": 38,
+   "group": "MDD",
+   "spearman_rho": 0.267666192997227,
+   "pearson_r": 0.3881208540715144,
+   "median_ratio_v4_over_fmt": 1.6335435038015478,
+   "median_v4": 42.58154487609863,
+   "median_fmt": 26.06697940826416
+  },
+  {
+   "subject_id": 39,
+   "group": "HC",
+   "spearman_rho": 0.2560160488539621,
+   "pearson_r": 0.46913242452912274,
+   "median_ratio_v4_over_fmt": 1.866585820705398,
+   "median_v4": 43.67022514343262,
+   "median_fmt": 23.395776748657227
+  },
+  {
+   "subject_id": 40,
+   "group": "MDD",
+   "spearman_rho": 0.13728254350405317,
+   "pearson_r": 0.3731972909245441,
+   "median_ratio_v4_over_fmt": 1.6039647370302923,
+   "median_v4": 41.18958854675293,
+   "median_fmt": 25.679859161376953
+  },
+  {
+   "subject_id": 43,
+   "group": "HC",
+   "spearman_rho": 0.17114678274829084,
+   "pearson_r": 0.3833122525663723,
+   "median_ratio_v4_over_fmt": 1.428278255567351,
+   "median_v4": 33.74930000305176,
+   "median_fmt": 23.629359245300293
+  },
+  {
+   "subject_id": 44,
+   "group": "HC",
+   "spearman_rho": 0.18290264886797453,
+   "pearson_r": 0.5065273177956916,
+   "median_ratio_v4_over_fmt": 2.635836094659577,
+   "median_v4": 41.40730094909668,
+   "median_fmt": 15.70936107635498
+  },
+  {
+   "subject_id": 46,
+   "group": "HC",
+   "spearman_rho": 0.4370805956492974,
+   "pearson_r": 0.5451551128323051,
+   "median_ratio_v4_over_fmt": 2.9058368461556263,
+   "median_v4": 54.241939544677734,
+   "median_fmt": 18.66654682159424
+  },
+  {
+   "subject_id": 47,
+   "group": "MDD",
+   "spearman_rho": 0.14376713380499312,
+   "pearson_r": 0.26819875969884605,
+   "median_ratio_v4_over_fmt": 0.7022691388290337,
+   "median_v4": 32.28479194641113,
+   "median_fmt": 45.97210693359375
+  },
+  {
+   "subject_id": 49,
+   "group": "MDD",
+   "spearman_rho": 0.0832925785529811,
+   "pearson_r": 0.21586750823915202,
+   "median_ratio_v4_over_fmt": 3.0892203783796517,
+   "median_v4": 80.6618881225586,
+   "median_fmt": 26.110758781433105
+  },
+  {
+   "subject_id": 50,
+   "group": "HC",
+   "spearman_rho": 0.12659186543836992,
+   "pearson_r": 0.32030060128705984,
+   "median_ratio_v4_over_fmt": 1.888008025114872,
+   "median_v4": 62.74287033081055,
+   "median_fmt": 33.2323112487793
+  },
+  {
+   "subject_id": 52,
+   "group": "HC",
+   "spearman_rho": 0.10001130479627555,
+   "pearson_r": 0.2167658701904628,
+   "median_ratio_v4_over_fmt": 0.5516767004047352,
+   "median_v4": 29.225393295288086,
+   "median_fmt": 52.9755802154541
+  },
+  {
+   "subject_id": 53,
+   "group": "HC",
+   "spearman_rho": 0.36374259554534316,
+   "pearson_r": 0.5335077033189961,
+   "median_ratio_v4_over_fmt": 1.6566477537213833,
+   "median_v4": 47.77757453918457,
+   "median_fmt": 28.839911460876465
+  },
+  {
+   "subject_id": 55,
+   "group": "MDD",
+   "spearman_rho": 0.29447056118539694,
+   "pearson_r": 0.38906355727750064,
+   "median_ratio_v4_over_fmt": 0.9026421251577375,
+   "median_v4": 33.05782508850098,
+   "median_fmt": 36.6234016418457
+  },
+  {
+   "subject_id": 58,
+   "group": "MDD",
+   "spearman_rho": 0.27865614610633477,
+   "pearson_r": 0.5199583390772339,
+   "median_ratio_v4_over_fmt": 1.5400677470892135,
+   "median_v4": 39.23382568359375,
+   "median_fmt": 25.47538948059082
+  },
+  {
+   "subject_id": 59,
+   "group": "MDD",
+   "spearman_rho": 0.4455082461339806,
+   "pearson_r": 0.5929440371455303,
+   "median_ratio_v4_over_fmt": 2.1680311380674104,
+   "median_v4": 64.95548248291016,
+   "median_fmt": 29.960585594177246
+  },
+  {
+   "subject_id": 60,
+   "group": "MDD",
+   "spearman_rho": 0.14466411399175463,
+   "pearson_r": 0.30096186579524176,
+   "median_ratio_v4_over_fmt": 0.719664441427734,
+   "median_v4": 36.021074295043945,
+   "median_fmt": 50.05259704589844
+  },
+  {
+   "subject_id": 61,
+   "group": "HC",
+   "spearman_rho": 0.274809114303091,
+   "pearson_r": 0.4658565014232421,
+   "median_ratio_v4_over_fmt": 1.5019190298929515,
+   "median_v4": 31.898773193359375,
+   "median_fmt": 21.23867702484131
+  },
+  {
+   "subject_id": 62,
+   "group": "HC",
+   "spearman_rho": 0.33147452735320804,
+   "pearson_r": 0.39305898549361945,
+   "median_ratio_v4_over_fmt": 0.672915243943982,
+   "median_v4": 36.07589149475098,
+   "median_fmt": 53.611345291137695
+  },
+  {
+   "subject_id": 64,
+   "group": "MDD",
+   "spearman_rho": 0.2813756590226512,
+   "pearson_r": 0.44716671749260817,
+   "median_ratio_v4_over_fmt": 1.4171656485470259,
+   "median_v4": 29.10105037689209,
+   "median_fmt": 20.534685134887695
+  },
+  {
+   "subject_id": 65,
+   "group": "HC",
+   "spearman_rho": 0.07907441135688967,
+   "pearson_r": 0.12690471806322953,
+   "median_ratio_v4_over_fmt": 0.5377355495195313,
+   "median_v4": 30.978543281555176,
+   "median_fmt": 57.6092529296875
+  },
+  {
+   "subject_id": 67,
+   "group": "MDD",
+   "spearman_rho": 0.2187405701224803,
+   "pearson_r": 0.39919141779487133,
+   "median_ratio_v4_over_fmt": 1.6599503006184126,
+   "median_v4": 37.45668601989746,
+   "median_fmt": 22.56494426727295
+  },
+  {
+   "subject_id": 68,
+   "group": "MDD",
+   "spearman_rho": 0.1927290535364218,
+   "pearson_r": 0.4073079527526001,
+   "median_ratio_v4_over_fmt": 1.5951173438143464,
+   "median_v4": 40.47066879272461,
+   "median_fmt": 25.371593475341797
+  },
+  {
+   "subject_id": 69,
+   "group": "MDD",
+   "spearman_rho": 0.06672029107284025,
+   "pearson_r": 0.334273219325226,
+   "median_ratio_v4_over_fmt": 1.367329152673144,
+   "median_v4": 37.99658012390137,
+   "median_fmt": 27.788905143737793
+  }
+ ],
+ "group": {
+  "spearman_rho_mean": 0.23106731896083418,
+  "spearman_rho_sd": 0.10256339165811905,
+  "spearman_rho_min": 0.06672029107284025,
+  "spearman_rho_max": 0.4455082461339806,
+  "pearson_r_mean": 0.4267862095318965,
+  "pearson_r_sd": 0.12663270165970403,
+  "median_ratio_mean": 1.6508634512058191,
+  "median_ratio_sd": 0.6640914582825898
+ }
+}
