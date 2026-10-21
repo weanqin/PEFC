@@ -496,3 +496,32 @@ v4a-fmt 基座上把 5 个 LayerNorm 位换 adaLN（emb(t)→逐 site SiLU→Lin
 ### Status
 
 [OK] **Completed & Archived** — Run 001/002 在档，Run 003 取消存证
+
+
+## Session 19: Trellis 规范硬门上电 + SessionStart 瘦身重排（任务 10-21-trellis-hard-gates 归档）
+<!-- trellis-session: v=2 fp=6882ccf8b1f36313 -->
+
+**Date**: 2026-10-21
+**Task**: Trellis 规范硬门上电 + SessionStart 瘦身重排（任务 10-21-trellis-hard-gates 归档）
+**Branch**: `main`
+
+### Summary
+
+诊断确认「规范全软约束、零硬拦截」根因后落地硬门三件套：gate-file-edits（无 in_progress 任务拦 Edit/Write 写码，放行集仅 .trellis/{tasks,research,workspace}）+ gate-task-start-consent（task.py start 前查 consent.md = briefing 要点+用户确认原话）+ gate-wrapup-check（Stop 时 in_progress+脏树则拦，stderr 带 3.4 两分组协议与 finish 暂停出路）+ inject-iron-rules 铁律 SessionStart 首位；研究记忆速览化注入 35.7KB→6.9KB（−80.6%，context/environment 补速览节、细节按需 Read）；spec 新增 research/workflow-hard-gates.md 可执行契约。33/33 stdin 场景矩阵 + trellis-check 独立复核 AC1–AC6 全过；stock 管理文件零改动；T12 真实取证=提交后 3 次干净树 Stop 静默放行（Run 004）。残余风险在档：Bash 重定向写码旁路（拍板不上启发式门）、consent 可伪造（防遗漏不防绕过）、48h 单会话 fallback 窗口、resume 无注入、单次豁免机制用户拍板不做。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `411352a` | feat(workflow): Trellis 规范硬门上电（无任务拦写码 / start 查 consent.md / Stop 收尾校验）+ SessionStart 铁律前置 |
+| `26ab5ea` | feat(workflow): 研究记忆速览化注入（hook 速览节优先/缺失回退全文；context/environment 补速览节，注入 35.7KB→6.9KB −80.6%） |
+| `3dd89f0` | docs(spec): research 规范新增 workflow-hard-gates 契约（三门签名/consent 契约/active_task 耦合点/残余风险登记）并入 index |
+| `de4321e` | chore(task): 10-21-trellis-hard-gates 立档（prd/design/implement/consent + experiment 3 Run + 33 项矩阵 harness） |
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 下会话观察：SessionStart 注入顺序（铁律最前）与实际体积留档；exit-2 理由可见性与 Stop 3 次上限两项留观；恢复 10-19 暂停任务须先补 consent.md
