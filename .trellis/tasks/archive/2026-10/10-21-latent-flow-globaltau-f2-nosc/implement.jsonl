@@ -1,0 +1,2 @@
+{"file": ".trellis/research/environment.md", "reason": "环境契约：BLAS 线程守卫、MODMA_DATA_ROOT env（geometry 解析依赖）、outputs 落点惯例"}
+{"file": ".trellis/spec/research/experiment-log.md", "reason": "experiment.md Run 块格式契约"}

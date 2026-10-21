@@ -396,3 +396,23 @@ v4a-fmt 基座上把 5 个 LayerNorm 位换 adaLN（emb(t)→逐 site SiLU→Lin
 ### Status
 
 [OK] **Completed** — AC1–AC4 全过（AC4 零仓库代码改动：包体未动，会话前已存在的 data_utils.py/connectivity.py 脏文件非本会话产生）
+
+
+## Session 18: latent-flow global-tau（07-04 方案）fold2 nosc 本机重跑首跑存证（任务 10-21-latent-flow-globaltau-f2-nosc）
+<!-- trellis-session: v=2 fp=lf-globaltau-f2-nosc-20261021 -->
+
+**Date**: 2026-10-21
+**Task**: 10-21-latent-flow-globaltau-f2-nosc（study1 路由）
+**Branch**: `main`
+
+### Summary
+
+用户指令「使用 07-04-global-tau-sigma 方案在本机用 nosc fold2 重跑一遍」→ 两向拍板（立任务 / 规模=1 例×32 窗，其余全 07-04 默认）→ 立轻量任务（PRD-only）→ 核验脚本依赖（自带 N_CHANNELS 定义，无 probe 式 NameError；run.py 对 `--output-dir` 显式传参即跳过注入）→ 后台首跑一次成功：fold2 nosc（MODMA SOTA）加载 → fold2 test[0] `02010010EOG.set_61_`（169 窗子采样 32，与 probe 同被试）→ Stage1 τ_global(q=0.5)=5.594e-4 → Stage2 log 网格 128 源×24 点 → 128/128 源成功、**6.52 min/例**（旧库 5070 Ti 同口径 17.7 min）；诊断：**@σ_min 47.3%+@σ_max 44.2%=91.5% 近二元钳边**（旧库 fold0 历史例 92.3% 同型）、σ\* offdiag 中位=σ_min、signed 负 57.6%/正 42.4%、corr(|conn|,电极距离)=−0.015 无空间衰减（与 npi 侧阴性路径「跨通道传导非特异」判读同向，描述性并置不外推）；产物 `outputs/10-21-latent-flow-globaltau-f2-nosc/run_01/subject_0.json`。边界：单例存证、不构成代理脑资格、未跑 GC 对照（10 例对标旧库档 ~1.1 h 可行，属后续拍板）。研究记忆回填（context 路线行/progress 看板+里程碑/journal）。
+
+### Git Commits
+
+- `chore(task): 归档 10-21-latent-flow-globaltau-f2-nosc（…）`
+
+### Status
+
+[OK] **Completed** — AC1–AC3 全过（零仓库代码改动）
