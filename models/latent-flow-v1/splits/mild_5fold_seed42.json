@@ -1,0 +1,455 @@
+{
+  "dataset": "mild_depress",
+  "seed": 42,
+  "n_folds": 5,
+  "split_algorithm": "per-group sorted(glob) then RandomState(seed).permutation(20) (exactly one call per group); segments bounds [0,4,8,12,16,20]; fold i test = both groups' segment i (4+4); val = first 2 of both groups' segment (i+1)%5; train = remaining 28",
+  "subjects": {
+    "1": {
+      "group": "MDD",
+      "file": "/root/autodl-tmp/Mild Depression/m_1.mat",
+      "label_code": 1
+    },
+    "2": {
+      "group": "MDD",
+      "file": "/root/autodl-tmp/Mild Depression/m_2.mat",
+      "label_code": 1
+    },
+    "3": {
+      "group": "MDD",
+      "file": "/root/autodl-tmp/Mild Depression/m_3.mat",
+      "label_code": 1
+    },
+    "4": {
+      "group": "MDD",
+      "file": "/root/autodl-tmp/Mild Depression/m_4.mat",
+      "label_code": 1
+    },
+    "5": {
+      "group": "MDD",
+      "file": "/root/autodl-tmp/Mild Depression/m_5.mat",
+      "label_code": 1
+    },
+    "6": {
+      "group": "MDD",
+      "file": "/root/autodl-tmp/Mild Depression/m_6.mat",
+      "label_code": 1
+    },
+    "7": {
+      "group": "MDD",
+      "file": "/root/autodl-tmp/Mild Depression/m_7.mat",
+      "label_code": 1
+    },
+    "8": {
+      "group": "MDD",
+      "file": "/root/autodl-tmp/Mild Depression/m_8.mat",
+      "label_code": 1
+    },
+    "9": {
+      "group": "MDD",
+      "file": "/root/autodl-tmp/Mild Depression/m_9.mat",
+      "label_code": 1
+    },
+    "10": {
+      "group": "MDD",
+      "file": "/root/autodl-tmp/Mild Depression/m_10.mat",
+      "label_code": 1
+    },
+    "11": {
+      "group": "MDD",
+      "file": "/root/autodl-tmp/Mild Depression/m_11.mat",
+      "label_code": 1
+    },
+    "12": {
+      "group": "MDD",
+      "file": "/root/autodl-tmp/Mild Depression/m_12.mat",
+      "label_code": 1
+    },
+    "13": {
+      "group": "MDD",
+      "file": "/root/autodl-tmp/Mild Depression/m_13.mat",
+      "label_code": 1
+    },
+    "14": {
+      "group": "MDD",
+      "file": "/root/autodl-tmp/Mild Depression/m_14.mat",
+      "label_code": 1
+    },
+    "15": {
+      "group": "MDD",
+      "file": "/root/autodl-tmp/Mild Depression/m_15.mat",
+      "label_code": 1
+    },
+    "16": {
+      "group": "MDD",
+      "file": "/root/autodl-tmp/Mild Depression/m_16.mat",
+      "label_code": 1
+    },
+    "17": {
+      "group": "MDD",
+      "file": "/root/autodl-tmp/Mild Depression/m_17.mat",
+      "label_code": 1
+    },
+    "18": {
+      "group": "MDD",
+      "file": "/root/autodl-tmp/Mild Depression/m_18.mat",
+      "label_code": 1
+    },
+    "19": {
+      "group": "MDD",
+      "file": "/root/autodl-tmp/Mild Depression/m_19.mat",
+      "label_code": 1
+    },
+    "20": {
+      "group": "MDD",
+      "file": "/root/autodl-tmp/Mild Depression/m_20.mat",
+      "label_code": 1
+    },
+    "21": {
+      "group": "HC",
+      "file": "/root/autodl-tmp/Mild Depression/h_1.mat",
+      "label_code": 0
+    },
+    "22": {
+      "group": "HC",
+      "file": "/root/autodl-tmp/Mild Depression/h_2.mat",
+      "label_code": 0
+    },
+    "23": {
+      "group": "HC",
+      "file": "/root/autodl-tmp/Mild Depression/h_3.mat",
+      "label_code": 0
+    },
+    "24": {
+      "group": "HC",
+      "file": "/root/autodl-tmp/Mild Depression/h_4.mat",
+      "label_code": 0
+    },
+    "25": {
+      "group": "HC",
+      "file": "/root/autodl-tmp/Mild Depression/h_5.mat",
+      "label_code": 0
+    },
+    "26": {
+      "group": "HC",
+      "file": "/root/autodl-tmp/Mild Depression/h_6.mat",
+      "label_code": 0
+    },
+    "27": {
+      "group": "HC",
+      "file": "/root/autodl-tmp/Mild Depression/h_7.mat",
+      "label_code": 0
+    },
+    "28": {
+      "group": "HC",
+      "file": "/root/autodl-tmp/Mild Depression/h_8.mat",
+      "label_code": 0
+    },
+    "29": {
+      "group": "HC",
+      "file": "/root/autodl-tmp/Mild Depression/h_9.mat",
+      "label_code": 0
+    },
+    "30": {
+      "group": "HC",
+      "file": "/root/autodl-tmp/Mild Depression/h_10.mat",
+      "label_code": 0
+    },
+    "31": {
+      "group": "HC",
+      "file": "/root/autodl-tmp/Mild Depression/h_11.mat",
+      "label_code": 0
+    },
+    "32": {
+      "group": "HC",
+      "file": "/root/autodl-tmp/Mild Depression/h_12.mat",
+      "label_code": 0
+    },
+    "33": {
+      "group": "HC",
+      "file": "/root/autodl-tmp/Mild Depression/h_13.mat",
+      "label_code": 0
+    },
+    "34": {
+      "group": "HC",
+      "file": "/root/autodl-tmp/Mild Depression/h_14.mat",
+      "label_code": 0
+    },
+    "35": {
+      "group": "HC",
+      "file": "/root/autodl-tmp/Mild Depression/h_15.mat",
+      "label_code": 0
+    },
+    "36": {
+      "group": "HC",
+      "file": "/root/autodl-tmp/Mild Depression/h_16.mat",
+      "label_code": 0
+    },
+    "37": {
+      "group": "HC",
+      "file": "/root/autodl-tmp/Mild Depression/h_17.mat",
+      "label_code": 0
+    },
+    "38": {
+      "group": "HC",
+      "file": "/root/autodl-tmp/Mild Depression/h_18.mat",
+      "label_code": 0
+    },
+    "39": {
+      "group": "HC",
+      "file": "/root/autodl-tmp/Mild Depression/h_19.mat",
+      "label_code": 0
+    },
+    "40": {
+      "group": "HC",
+      "file": "/root/autodl-tmp/Mild Depression/h_20.mat",
+      "label_code": 0
+    }
+  },
+  "folds": [
+    {
+      "fold": 0,
+      "train": [
+        2,
+        3,
+        4,
+        6,
+        8,
+        9,
+        11,
+        12,
+        13,
+        15,
+        16,
+        18,
+        19,
+        20,
+        22,
+        23,
+        24,
+        26,
+        28,
+        29,
+        31,
+        32,
+        33,
+        35,
+        36,
+        38,
+        39,
+        40
+      ],
+      "val": [
+        14,
+        17,
+        34,
+        37
+      ],
+      "test": [
+        1,
+        5,
+        7,
+        10,
+        21,
+        25,
+        27,
+        30
+      ]
+    },
+    {
+      "fold": 1,
+      "train": [
+        1,
+        3,
+        4,
+        5,
+        7,
+        9,
+        10,
+        11,
+        13,
+        15,
+        16,
+        18,
+        19,
+        20,
+        21,
+        23,
+        24,
+        25,
+        27,
+        29,
+        30,
+        31,
+        33,
+        35,
+        36,
+        38,
+        39,
+        40
+      ],
+      "val": [
+        6,
+        8,
+        26,
+        28
+      ],
+      "test": [
+        2,
+        12,
+        14,
+        17,
+        22,
+        32,
+        34,
+        37
+      ]
+    },
+    {
+      "fold": 2,
+      "train": [
+        1,
+        2,
+        4,
+        5,
+        7,
+        10,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        19,
+        20,
+        21,
+        22,
+        24,
+        25,
+        27,
+        30,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        39,
+        40
+      ],
+      "val": [
+        9,
+        18,
+        29,
+        38
+      ],
+      "test": [
+        3,
+        6,
+        8,
+        11,
+        23,
+        26,
+        28,
+        31
+      ]
+    },
+    {
+      "fold": 3,
+      "train": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        10,
+        11,
+        12,
+        14,
+        15,
+        17,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        34,
+        35,
+        37
+      ],
+      "val": [
+        16,
+        19,
+        36,
+        39
+      ],
+      "test": [
+        9,
+        13,
+        18,
+        20,
+        29,
+        33,
+        38,
+        40
+      ]
+    },
+    {
+      "fold": 4,
+      "train": [
+        2,
+        3,
+        5,
+        6,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        17,
+        18,
+        20,
+        22,
+        23,
+        25,
+        26,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        37,
+        38,
+        40
+      ],
+      "val": [
+        1,
+        7,
+        21,
+        27
+      ],
+      "test": [
+        4,
+        15,
+        16,
+        19,
+        24,
+        35,
+        36,
+        39
+      ]
+    }
+  ]
+}
