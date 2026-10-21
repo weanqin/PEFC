@@ -1,0 +1,10 @@
+{"file": ".trellis/spec/research/surrogate-brain-qualification.md", "reason": "study1 路由必读：代理脑合格性边界——本任务产物不自动继承资格，只交付 θ 候选"}
+{"file": ".trellis/tasks/10-21-latent-flow-mild-train/prd.md", "reason": "本任务需求与 AC（R1 隔离/R2 数据口径/R3 两阶段/R4 复现/R5 核对）"}
+{"file": ".trellis/tasks/10-21-latent-flow-mild-train/design.md", "reason": "技术设计：trial Dataset/5-fold manifest 算法/geometry GSN-128/wrapper 差异点/风险表"}
+{"file": ".trellis/spec/research/data-pipeline.md", "reason": "dataloader 统一接口与划分规范：归一化训练折统计口径、严格 held-out"}
+{"file": ".trellis/spec/research/path-isolation.md", "reason": "产物路径隔离：变体层新增边界、outputs 任务目录、禁写清单、数据根单文件豁免案"}
+{"file": ".trellis/spec/research/reproducibility.md", "reason": "可复现规范：seed/配置落盘/BLAS 守卫前置/RNG 中性构建惯例"}
+{"file": ".trellis/spec/research/experiment-log.md", "reason": "experiment.md Run 块四区契约"}
+{"file": ".trellis/spec/research/artifacts-management.md", "reason": "产物管理：outputs 布局与命名（run_fold{N} 结构）"}
+{"file": ".trellis/tasks/archive/2026-10/10-18-latent-flow-port/research/latent-flow-adaptation.md", "reason": "latent-flow 移植期适配研究：数据接入模式与验证顺序先例"}
+{"file": "models/latent-flow-v1/train_edra_fmt.py", "reason": "wrapper 模式直接参照物：断言结构/build_model/smoke/config 落盘（本任务复刻其结构改 128ch/1125/375/fold）"}

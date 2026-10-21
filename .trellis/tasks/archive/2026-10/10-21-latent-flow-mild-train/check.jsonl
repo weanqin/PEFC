@@ -1,0 +1,5 @@
+{"file": ".trellis/tasks/10-21-latent-flow-mild-train/prd.md", "reason": "核对 AC1–AC8 逐项（隔离/口径/两阶段×5 折/smoke/复现/一致性/回归）；AC2 含 S1 新落数据契约 spec 的核对锚点"}
+{"file": ".trellis/spec/research/surrogate-brain-qualification.md", "reason": "核对未擅自做合格性结论、阶段顺序门禁未被违反"}
+{"file": ".trellis/spec/research/path-isolation.md", "reason": "核对产物隔离：任务 outputs 之外零新产物（数据根仅 D1 豁免单文件）、包体 latent_flow/ 零 diff"}
+{"file": ".trellis/spec/research/reproducibility.md", "reason": "核对可复现：config JSON 与实际 CLI 一致、seed 42、manifest/norm/geometry SHA 登记"}
+{"file": ".trellis/spec/research/experiment-log.md", "reason": "核对 Run 块四区齐全无空块、逐折表与 summary.md 一致"}
