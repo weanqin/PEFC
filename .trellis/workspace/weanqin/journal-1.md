@@ -354,3 +354,25 @@ v4a-fmt 基座上把 5 个 LayerNorm 位换 adaLN（emb(t)→逐 site SiLU→Lin
 ### Status
 
 [OK] **Completed** — AC1–AC6 全过（trellis-check 判定通过；journal 补记即本条）
+
+
+## Session 16: v5-main 双方法 EC 推索（噪声→熵失稳 σ* 失败宣告 + 常量偏移→均值响应 10 例弱负）
+<!-- trellis-session: v=2 fp=v5main-ec-explore-20261021 -->
+
+**Date**: 2026-10-21
+**Task**: `.trellis/tasks/10-21-v5main-ec-explore`（study2；已归档）
+**Branch**: `main`
+
+### Summary
+
+用户直给规格的双方法 EC 推索（gpfm-mamba-v5-main-01，v4 数据 fold0 模型，test 10 例）+ 与 edrav4-46 重采样档 GC refs 逐被试对照。中途两项用户确认（建任务/高斯拟合微分熵）+ 一项中途拍板（**方法1 取消并宣告失败**）。方法1（源通道噪声 σ∈[0.05,0.48] log×24 CRN → 靶通道高斯熵涨幅>20% 判失稳 σ* → EC1）：4 例（s12/s17/s18/s24）offdiag 删失率全 1.000——σ=0.48 时靶通道 ln-方差膨胀中位 0.014 ≪ 阈值 ln1.44=0.365，条件流+GPR 先验+40 Hz 产物口径下靶预测方差对单通道源噪声结构性不敏感；按用户指令停算，4 例 npz（含 62源×24σ×62靶 logvar_infl 诊断量）作失败证据随档。方法2（源 +0.5std 常量 → 靶预测均值响应带符号，全量窗 1321/例）：10/10 例完成，与 refs **一致弱负相关**（Spearman ρ −0.098~−0.151 全负、−0.126±0.019；Pearson −0.188±0.027；组均值 −0.188/−0.317；flipped≈aligned 方向信息≈零）——强 GC 边上源偏移压低靶预测均值（抑制型模式）。与 perturb-ec-v1/NI-MSE 阴性路径同向汇聚 ⇒ v5-main θ* 跨通道响应未达观测 GC 结构，迭代重点 = Study I 损失侧跨通道监督。实现要点：v1 sample.py 经 v5 config/model 双遮蔽复用；显式 eps/eta CRN（seed 2026+sid / +100000+sid）；扁平批 cap=1000 分块（brickwall reflect-pad 核 65535 行 grid 上限，1200×62 实测崩）；trellis-check 通过（4 处叙述层数字微瑕已订正）。产物 outputs/10-21-v5main-ec-explore/（gitignored，README 口径登记 + ec_explore_stats.json + 逐被试 npz）。
+
+### Git Commits
+
+- `chore(task): 归档 10-21-v5main-ec-explore（…）`
+- `chore(task): 10-21-v5main-ec-explore 移入 archive/2026-10/`
+- `chore: record journal（会话十六：…）`
+
+### Status
+
+[OK] **Completed** — AC1–AC5 全过（trellis-check 通过）
