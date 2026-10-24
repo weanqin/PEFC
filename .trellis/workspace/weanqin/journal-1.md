@@ -550,3 +550,28 @@ v4a-fmt 基座上把 5 个 LayerNorm 位换 adaLN（emb(t)→逐 site SiLU→Lin
 ### Next Steps
 
 - Study I 迭代任务待立（损失侧跨通道/条件分布校准/采样侧——本任务与 gpfm 阴性链共同判据）；mild 线 wrapper/manifest/抽查口径可直接复用。
+
+## Session 21: mild-w500 无偏噪声扰动归因 EC + mild GC refs 注册（任务 10-24-mild-w500-ec-unbiased）
+
+### Summary
+
+- 先方案后执行闭环：方案三确认点（q 校准判据/熔断线/规模）→ 用户三项拍板（GC refs 注册 AIC 阶 8 固定+1–45 Hz、q=0.5 钉死不测他值、8×30 直接使用）→ 双 mandate review 通过（6 建议全采纳：P(resp>τ) 判读量/对角口径注明/500-375-125 硬断言+norm SHA 对拍/autocast 责任/逐例续跑/共享记忆文件提交处置）。
+- S0 refs 注册：/root/autodl-tmp/mild-depression-gc.zip → refs/granger_bivariate_spectral/mild40-trial500-zscore-fs250-fixed8-f1-45-favg/（40 npz + meta + SHA256SUMS + 源 README 归档；sid=index+1 四锚点 EEG_ALL↔manifest bitwise 验证；MANIFEST 新增 mne-connectivity 小节）。
+- S1 落码：变体层单文件 ec_mild_unbiased.py 三模式（main/summary/gccorr），包体零改动，SignalProbeSite(use_biased_noise=False) 零适配（OCLatentFlow 原生契约：channel-last/obs_len 切尾/确定性采样）。
+- Run 001：8/8 例 46.9 min（5.86 min/例），P(resp>τ)=0.500 逐例精确（q=0.5 构造性自洽）；Run 002：dyn_ratio 2.62×（v5-main unbiased 参照 137.9×）、方差分解 行 0.037/列 0.641/残差 0.322（靶主效应主导）、跨被试 ρ=0.576；Run 003 GC：|EC| ρ=−0.099±0.066（7/8 负）、raw +0.118、flip≈direct、组均值 −0.23。
+- **主结论（阴性，provisional）**：平响应 + 靶主效应主导 + GC 基本不相关 ⇒ 该配置 EC_pert 无可用有向信号；随 w500 stage2 未收敛 caveat 联动，不回改 q（用户口径）。
+
+### Git Commits
+
+| commit | 说明 |
+|---|---|
+| （本次） | feat(ec): mild-w500 无偏噪声 global-τ EC 首跑（阴性全档）+ mild GC refs 注册 |
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- w500 波形判读/延长预算拍板仍悬置（10-24-latent-flow-mild-w500 in_progress）；EC 结论随其联动，若续训通过可同命令重跑复核。
+- 共享记忆文件（context/progress/两 spec）含本任务回填但未提交（防裹挟 10-24 待提交内容），随其收尾一并入库。

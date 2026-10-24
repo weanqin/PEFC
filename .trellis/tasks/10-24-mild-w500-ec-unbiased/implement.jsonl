@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/research/path-isolation.md", "reason": "变体层新增文件/输出目录隔离契约（与 10-24 任务共享变体目录的零触碰纪律）"}
+{"file": ".trellis/spec/research/reproducibility.md", "reason": "EC 产物复现凭据登记契约（ckpt/manifest SHA/norm hash/seed/git head）"}
+{"file": ".trellis/spec/research/visualization.md", "reason": "smoke σ–MSE 响应曲线 PNG 风格契约"}
+{"file": ".trellis/spec/research/experiment-log.md", "reason": "Run 000/001/002 跑前登记+跑后回填的 experiment.md 契约"}
+{"file": ".trellis/spec/data/mild-depression.md", "reason": "Mild Depression 数据契约（前缀窗 500 口径消费登记）"}

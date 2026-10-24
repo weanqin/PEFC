@@ -1,0 +1,3 @@
+[register] wrote 40 refs npz + SHA256SUMS + meta.json
+[register] sanity: diag_max=0.0 min=0.0000 max=0.4820 offdiag_mean=0.01454 (source finalize log: min=0 max=0.482)
+[register] elapsed 0.1s -> /root/npi/refs/granger_bivariate_spectral/mild40-trial500-zscore-fs250-fixed8-f1-45-favg
