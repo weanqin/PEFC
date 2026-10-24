@@ -92,7 +92,8 @@
       照登；v1 结果与 w500 先例可并置描述（跨代理脑并置注记）。
 - [x] experiment.md Run 000/000b/001/002/003 块齐备（目的-配置-结果-结论）；研究记忆
       （progress.md/context.md 如适用）当场回写；README.md 于 outputs 任务树。
-- [ ] 收尾三件套（2.2 check / 3.3 spec-update 判定 / 3.4 commit 仅本任务路径）完成。
+- [x] 收尾三件套（2.2 check 全项 PASS / 3.3 spec-update：evaluation-calibers.md 增「不变性
+      断言的精度路径纪律」条目 / 3.4 commit 04711ee 仅本任务路径）完成。
 
 ## 代理脑 caveat（登记不阻塞）
 
