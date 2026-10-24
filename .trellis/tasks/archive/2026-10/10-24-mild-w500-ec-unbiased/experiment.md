@@ -138,3 +138,30 @@
   与该代理脑 provisional 状态一致。
 - 派生决策项：无（用户边界内）；若未来代理脑资格任务立项，本档数字可作基线引用。
 
+
+## Run 004 — A_eff 与逐被试 EC 读出可视化（2026-10-24，用户指令「可视化 A_eff 以及被试扰动归因 EC」）
+
+### 目的与假设
+
+- 读出型检验图（不落库代码，PNG 交付）：训练后 A_eff（γ_m·M(d)+γ·W，行=靶/列=源）×
+  组均值 EC 对照 + 8 例逐被试 EC 矩阵网格。
+
+### 配置
+
+- 数据：Run 001 subject_{0..7}.json conn 矩阵 + summary/group_mean.npz；A_eff 自 w500 ckpt
+  `flow.graph_mixer.effective_adjacency()` 参数层读取（CPU，无前向）
+- 命令：内联 matplotlib（RdBu_r 双向色，diag 掩蔽，q99 饱和，E1–E128 刻度）
+
+### 结果
+
+- `outputs/10-24-mild-w500-ec-unbiased/viz/aeff_vs_mean_ec.png`（a: A_eff；b: 组均值 EC）+
+  `viz/ec_subjects.png`（2×4：行 1 MDD s1,5,7,10 / 行 2 HC s21,25,27,30，共享色标）
+- 读出数字：γ_m=1.0、γ=0.1；W offdiag −0.063±0.559、相对不对称 0.149（M 对称核主导）；
+  **Spearman(|EC_mean|, |A_eff|) offdiag = −0.478**（结构先验与扰动 EC 中等负关联，
+  描述性登记——与 EC 靶主效应主导 0.64 及 provisional caveat 联动解读）
+
+### 结论
+
+- A_eff 呈 mexhat 距离环带结构（对称核主导）；EC 逐被试有个体结构（跨被试 ρ=0.576）
+  但主要由靶灵敏度差异塑形；两者负关联进一步支持「该配置 EC_pert 未编码结构先验意义上的
+  有向传导」。派生决策项：无（读出登记）。
