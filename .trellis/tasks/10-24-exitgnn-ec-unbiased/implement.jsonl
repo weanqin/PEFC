@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/research/path-isolation.md", "reason": "变体目录 models/latent-flow-v1 与三个在途任务共享——改动仅两脚本+新目录、旧任务输出树零触碰契约"}
+{"file": ".trellis/spec/research/reproducibility.md", "reason": "EC 产物复现凭据登记契约（ckpt/config 旗标/manifest SHA/norm hash/seed/git head 全链）"}
+{"file": ".trellis/spec/research/experiment-log.md", "reason": "Run 000–003 跑前登记+跑后回填的 experiment.md 契约"}
+{"file": ".trellis/spec/data/mild-depression.md", "reason": "Mild Depression 数据契约（前缀窗 500/375/125 消费口径 + norm SHA 对拍）"}
+{"file": ".trellis/spec/research/perturb-ec-pipeline.md", "reason": "study2 扰动→EC 流程规范：可迁移契约=确定性采样配对/行=源列=靶方向约定/EC×GC 描述性隔离；本任务口径为 global-τ 无偏（mild-w500-ec-unbiased 已归档先例），非 gpfm τ̃/slope 口径——差异在 design §3 声明"}
+{"file": ".trellis/spec/research/evaluation-calibers.md", "reason": "口径先于运行纪律（q/σ_ref/网格/公式已在 prd 钉死）；单 seed 结论标注要求"}

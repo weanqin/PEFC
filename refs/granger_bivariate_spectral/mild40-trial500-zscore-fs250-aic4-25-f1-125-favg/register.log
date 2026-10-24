@@ -1,0 +1,4 @@
+[register] anchors: idx0=m_1(sid1) maxabsdiff=0.0; idx19=m_20(sid20) maxabsdiff=0.0; idx20=h_1(sid21) maxabsdiff=0.0; idx39=h_20(sid40) maxabsdiff=0.0
+[register] wrote 40 refs npz + SHA256SUMS + meta.json
+[register] sanity: diag_max=0.0 min=0.0000 max=0.5684 mean=0.0475 offdiag_mean=0.04790 (source README QC: mean=0.0475 max=0.568)
+[register] elapsed 11.9s -> /root/npi/refs/granger_bivariate_spectral/mild40-trial500-zscore-fs250-aic4-25-f1-125-favg

@@ -575,3 +575,29 @@ v4a-fmt 基座上把 5 个 LayerNorm 位换 adaLN（emb(t)→逐 site SiLU→Lin
 
 - w500 波形判读/延长预算拍板仍悬置（10-24-latent-flow-mild-w500 in_progress）；EC 结论随其联动，若续训通过可同命令重跑复核。
 - 共享记忆文件（context/progress/两 spec）含本任务回填但未提交（防裹挟 10-24 待提交内容），随其收尾一并入库。
+
+## Session 22: exit-gnn 无偏 EC + v4 公式交付 + 双 GC 参考（任务 10-24-exitgnn-ec-unbiased）
+
+### Summary
+
+- 用户指令五要素（exit-gnn 代理脑 / v4 公式 −(ln σ*+0.5·ln2πe)+5/7 / 无偏 μ=0 / σ[0.01,0.48]+σ_ref 0.3+q 0.5 / 其余默认）+ AskUserQuestion 拍板「全套默认流程+双GC对照，新加的GC参考在autodl-tmp/EC_GC_1_125」；双 mandate review（A 通过 / B 有条件通过）4 条件 + 5 改进 + 3 建议全回填后 start。
+- Run 000：GC refs v2 注册（1–125 Hz / AIC 逐被试 4–25）——四锚点 bitwise 复验全 0.0、sanity 对拍源 README QC、refs/MANIFEST.md 追加（评审 F1-major 补漏）。
+- S1/S2：ec_mild_unbiased.py 增量（--flow-exit-gnn/--task-label/原子写/元数据条件化）；Run 000b 旗标关 vs w500 在档 dryrun **四矩阵+τ 逐位等价**（评审建议采纳的运行时证据）。
+- Run 001：8/8 例 51.2 min（6.40 min/例 = w500 +9.4% 出口消息传递开销）；Run 002：dyn_ratio 1.79×（更平）、方差分解 靶主效应 0.907/残差 0.083、跨被试 ρ=0.655；Run 003：v4 三断言 + Pearson 平移不变 40 项全过，双 GC——v1 refs Pearson +0.1486±0.1677（跨代理脑并置 w500 先例 +0.1674 同量级）/ v2 refs −0.0102±0.0847 近零。
+- 实现注记：json v1 conn 为 float32 舍入值，与 float64 重算存在 ~1e-13 Spearman 尾差（s5 实测）——不变性断言改同 σ* float64 路径（|Δ|<1e-9），舍入差 2.7e-7 随档；沉淀 spec evaluation-calibers.md「不变性断言的精度路径纪律」。
+- **主结论（阴性，provisional 随 exit-gnn θ 判断联动）**：响应更平 + 靶主效应更主导 + 双 GC 一弱一零 ⇒ exit-gnn 配置下 EC_pert 无可用有向信号；v4 全正无 |·| 折叠歧义可直供网络化/切边。
+
+### Git Commits
+
+| commit | 说明 |
+|---|---|
+| （本次） | feat(ec): exit-gnn 代理脑无偏 EC + v4 公式交付 + 双 GC 参考（v2 AIC 档注册；旗标关逐位等价在档） |
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- exit-gnn θ 候选判断/波形判读/消融（lr 5e-4 补跑）仍待用户拍板（10-24-latent-flow-exit-gnn in_progress）——EC provisional 随其联动。
+- v2 GC 参考的 flipped 负相关（组均 −0.15）为描述性登记，如需追问方向结构属新任务。

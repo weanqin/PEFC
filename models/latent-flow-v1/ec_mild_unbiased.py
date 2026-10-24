@@ -15,6 +15,10 @@ summary（离线：分布/方差分解/跨被试稳定性/重映射对照/曲线
 gccorr（离线：refs mild40 GC × EC，|EC|/raw × aligned/flipped × Spearman/Pearson，
 协议对齐 gen_unbiased_gc_corr.py 先例，描述性登记不构成代理脑资格判定）。
 
+10-24-exitgnn-ec-unbiased 增量：--flow-exit-gnn 出口 GNN 变体代理脑（默认关 = w500
+基座，旧调用面零变化；viz_mild 同款旗标先例）；--task-label 非空时 main payload 新增
+顶层 task 字段、summary/gccorr 替换任务名段；逐例 json/npz 原子写（tmp+rename）。
+
 τ 分位口径含对角自响应（flatten 全 128×128，与 unbiased 先例一致；评审 A 注明防
 与 offdiag-only 口径误比）。
 
@@ -117,6 +121,12 @@ def parse_args(argv=None):
                    help="summary/gccorr 模式：subject_*.json 所在目录（默认 = --out-dir）")
     p.add_argument("--overwrite", action="store_true",
                    help="main 模式：json 已存在也重算（默认跳过=断点续跑）")
+    p.add_argument("--flow-exit-gnn", action="store_true",
+                   help="出口 GNN 变体架构（10-24-latent-flow-exit-gnn；默认关 = "
+                        "w500 基座，旧调用面不变）")
+    p.add_argument("--task-label", type=str, default="",
+                   help="非空时：main payload 新增顶层 task 字段；summary/gccorr "
+                        "替换 task 串任务名段（保留 Run 注记）。默认空 = 现行为")
     return p.parse_args(argv)
 
 
@@ -126,6 +136,26 @@ def _caliber_asserts(a) -> None:
          f"got {a.window_len}/{a.obs_len}/{a.forecast_len}")
     assert a.obs_len + a.forecast_len == a.window_len
     assert Path(a.ckpt).exists(), f"ckpt not found: {a.ckpt}"
+    if a.flow_exit_gnn:
+        # 同名 ckpt 防交叉：w500 与 exit-gnn 两 run_dir 的 stage2 best 文件名相同，
+        # 凭 run_dir 段区分（strict load 双保险之外的第一道闸）
+        assert "10-24-latent-flow-exit-gnn" in a.ckpt, \
+            f"--flow-exit-gnn 须配 exit-gnn run_dir 的 ckpt，got {a.ckpt}"
+
+
+def _atomic_write_json(path: Path, payload: dict) -> None:
+    """tmp + rename 原子写：防长跑中断留半截 json 被断点续跑误判为完成。"""
+    tmp = path.with_name(path.name + ".tmp")
+    with open(tmp, "w") as fh:
+        json.dump(payload, fh, indent=2, default=json_default, allow_nan=False)
+    os.replace(tmp, path)
+
+
+def _atomic_write_npz(path: Path, **arrays) -> None:
+    tmp = path.with_name(path.name + ".tmp")
+    with open(tmp, "wb") as fh:  # 文件句柄式：绕过 np.savez 的 .npz 后缀补全
+        np.savez_compressed(fh, **arrays)
+    os.replace(tmp, path)
 
 
 def _git_head() -> str:
@@ -169,7 +199,7 @@ def run_main(a) -> None:
         f"norm mean_std SHA256 对拍失败: {norm_sha} != 训练登记值（口径漂移即拒跑）"
     files_hash = _train_files_hash(train_f)
 
-    model = build_model_mild(device, _model_args(), stage=2,
+    model = build_model_mild(device, _model_args(a.flow_exit_gnn), stage=2,
                              obs_len=a.obs_len, forecast_len=a.forecast_len)
     load_flow_ckpt(model, a.ckpt)
     set_seed(a.seed)
@@ -238,14 +268,52 @@ def run_main(a) -> None:
         n_min = int(np.sum(v <= a.sigma_min + 1e-6))
         n_max = int(np.sum(v >= a.sigma_max - 1e-6))
         elapsed = (time.time() - t0) / 60.0
+        # --- 代理脑元数据条件化（design §2.3：旗标关 = 旧字段原值不动）---
+        if a.flow_exit_gnn:
+            method_str = ("global_tau_quantile UNBIASED (mu=0, sigma*xi, latent-flow "
+                          "mild exit-gnn variant surrogate, signal-space, sigma* "
+                          "preserved; sign field saved but not directional by design)")
+            surrogate_block = {
+                "task": "10-24-latent-flow-exit-gnn run_exitgnn_fold0",
+                "ckpt_stage2_best": ("0.8241@E116 (early-stop E146, converged within "
+                                     "budget; amplitude under-calibration — see "
+                                     "surrogate_caveat)"),
+                "variant": ("OCLatentFlow two-stage + flow exit GNN variant (exit K=2 "
+                            "shared-A_eff message passing + zero-init exit projection, "
+                            "+33,024 params vs w500 base; trained lr 1e-3 — two-factor "
+                            "caveat vs w500), mexhat-graph flow (K=2, gamma 0.1, "
+                            "gamma_m 1.0), full-window decoder, deterministic sampling"),
+                "euler_steps": int(a.n_steps), "amp": "bf16-autocast",
+                "obs_len": int(a.obs_len), "forecast_len": int(a.forecast_len),
+                "n_channels": int(C), "flow_exit_gnn": True}
+            surrogate_caveat = (
+                "exit-gnn Run 002 (2026-10-24): medoid/real std 0.645/0.581 vs w500 "
+                "0.957/0.996 — amplitude under-calibration regression (exit "
+                "neighbor-mixing re-averaging hypothesis); lr 1e-3 and exit structure "
+                "co-vary (two-factor, ablation pending user decision); theta-candidacy "
+                "currently leans w500 base (user readout pending). EC results are "
+                "PROVISIONAL and do not constitute a surrogate qualification verdict.")
+        else:
+            method_str = ("global_tau_quantile UNBIASED (mu=0, sigma*xi, latent-flow "
+                          "mild-w500 surrogate, signal-space, sigma* preserved; sign "
+                          "field saved but not directional by design)")
+            surrogate_block = {
+                "task": "10-24-latent-flow-mild-w500 run_w500_fold0",
+                "ckpt_stage2_best": "0.8356@E150 (cap, NOT converged — EC results "
+                                    "provisional pending user readout/budget decision)",
+                "variant": "OCLatentFlow two-stage, mexhat-graph flow (K=2, gamma 0.1, "
+                           "gamma_m 1.0), full-window decoder, deterministic sampling "
+                           "(z_obs=mu + deterministic Euler + deterministic decoder)",
+                "euler_steps": int(a.n_steps), "amp": "bf16-autocast",
+                "obs_len": int(a.obs_len), "forecast_len": int(a.forecast_len),
+                "n_channels": int(C)}
+            surrogate_caveat = None
         payload = {
             "subject_idx": int(subj_idx), "subject_file": f"s{sid}",
             "group": groups[sid], "n_trials": int(N),
             "n_sources_requested": int(n_src), "n_sources_succeeded": int(n_src),
             "n_source_failures": 0,
-            "method": ("global_tau_quantile UNBIASED (mu=0, sigma*xi, latent-flow "
-                       "mild-w500 surrogate, signal-space, sigma* preserved; sign "
-                       "field saved but not directional by design)"),
+            "method": method_str,
             "tau_global": float(tau_global), "q": float(a.q),
             "sigma_ref": float(a.sigma_ref),
             "tau_caliber_note": ("tau quantile over flattened full (src,tgt) matrix "
@@ -266,7 +334,8 @@ def run_main(a) -> None:
                         "sigma_min": float(a.sigma_min), "sigma_max": float(a.sigma_max),
                         "n_grid": int(a.n_grid), "n_steps": int(a.n_steps),
                         "batch_size": int(a.batch_size), "seed": int(a.seed),
-                        "use_biased_noise": False},
+                        "use_biased_noise": False,
+                        "flow_exit_gnn": bool(a.flow_exit_gnn)},
             "diagnostics": {
                 "n_at_sigma_min": n_min, "n_at_sigma_max": n_max,
                 "pct_at_sigma_min": n_min / v.size * 100,
@@ -278,16 +347,7 @@ def run_main(a) -> None:
                 "p_response_above_tau": float(np.mean(response > tau_global)),
             },
             "checkpoint": Path(a.ckpt).name,
-            "surrogate": {
-                "task": "10-24-latent-flow-mild-w500 run_w500_fold0",
-                "ckpt_stage2_best": "0.8356@E150 (cap, NOT converged — EC results "
-                                    "provisional pending user readout/budget decision)",
-                "variant": "OCLatentFlow two-stage, mexhat-graph flow (K=2, gamma 0.1, "
-                           "gamma_m 1.0), full-window decoder, deterministic sampling "
-                           "(z_obs=mu + deterministic Euler + deterministic decoder)",
-                "euler_steps": int(a.n_steps), "amp": "bf16-autocast",
-                "obs_len": int(a.obs_len), "forecast_len": int(a.forecast_len),
-                "n_channels": int(C)},
+            "surrogate": surrogate_block,
             "provenance": {
                 "manifest": {"path": a.manifest, "sha256": EXPECTED_MANIFEST_SHA},
                 "norm": {"source": f"train fold first-{a.window_len} samples",
@@ -300,9 +360,12 @@ def run_main(a) -> None:
             "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
         }
         payload = sanitize_for_json(payload)
-        with open(json_path, "w") as fh:
-            json.dump(payload, fh, indent=2, default=json_default, allow_nan=False)
-        np.savez_compressed(
+        if a.task_label:
+            payload["task"] = a.task_label
+        if surrogate_caveat is not None:
+            payload["surrogate_caveat"] = surrogate_caveat
+        _atomic_write_json(json_path, payload)
+        _atomic_write_npz(
             out_dir / f"subject_{subj_idx}_curves.npz",
             mse_curve=mse_curve_all, resp_ref=response, mean_diff_ref=mean_diff,
             grid=np.array(grid, dtype=np.float64),
@@ -345,6 +408,10 @@ def run_summary(a) -> None:
     main_dir = Path(a.main_dir or a.out_dir)
     out_dir = Path(a.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
+    task_name = a.task_label or "10-24-mild-w500-ec-unbiased"
+    caveat_note = ("EC 结论继承 exit-gnn 代理脑幅度欠校准 + lr/结构二因素 caveat"
+                   "（provisional）" if a.flow_exit_gnn else
+                   "EC 结论继承 w500 代理脑 stage2 顶格未收敛 caveat（provisional）")
     rows = sorted(main_dir.glob("subject_*.json"))
     assert rows, f"no subject_*.json under {main_dir}"
     off = ~np.eye(128, dtype=bool)
@@ -400,7 +467,7 @@ def run_summary(a) -> None:
                 "min": float(v.min()), "max": float(v.max())}
 
     summary = {
-        "task": "10-24-mild-w500-ec-unbiased Run 002 (offline group summary)",
+        "task": f"{task_name} Run 002 (offline group summary)",
         "n_subjects": len(per),
         "caliber": {"q": 0.5, "formula": "-(log sigma*+ln2pie)+1",
                     "remap_check": "1/(sigma*+1e-4) Spearman-invariance asserted",
@@ -421,7 +488,7 @@ def run_summary(a) -> None:
         "reading_notes": [
             "row_source_share 高 = σ* 主要编码源全局破坏性（07-04 教训口径），残差份额才是 a->b 边特异信号",
             "P(response>tau) 区分 τ 位置性钳边（P 偏离 0.5 大）vs 响应动态范围不足（dyn_ratio 低）",
-            "EC 结论继承 w500 代理脑 stage2 顶格未收敛 caveat（provisional）",
+            caveat_note,
         ],
         "generated": time.strftime("%Y-%m-%dT%H:%M:%S"),
     }
@@ -448,6 +515,8 @@ def run_gccorr(a) -> None:
     main_dir = Path(a.main_dir or a.out_dir)
     out_dir = Path(a.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
+    task_name = a.task_label or "10-24-mild-w500-ec-unbiased"
+    surrogate_name = "mild exit-gnn variant" if a.flow_exit_gnn else "mild-w500"
     refs = {}
     for f in sorted(Path(REFS_DIR).glob("refs_s*.npz")):
         z = np.load(f, allow_pickle=True)
@@ -488,10 +557,10 @@ def run_gccorr(a) -> None:
     A_mean = np.stack([np.abs(c) for c in stack_conn]).mean(axis=0)
     ec_mean = np.stack(stack_ec).mean(axis=0)
     summary = {
-        "task": "10-24-mild-w500-ec-unbiased Run 003 (descriptive EC x GC)",
-        "naming": "EC_pert = unbiased mu=0 global_tau (q=0.5@sigma_ref=0.3) on "
-                  "latent-flow mild-w500 surrogate; GC = mne-connectivity spectral "
-                  "gc, VAR order 8 fixed, 1-45 Hz faverage (refs mild40)",
+        "task": f"{task_name} Run 003 (descriptive EC x GC)",
+        "naming": f"EC_pert = unbiased mu=0 global_tau (q=0.5@sigma_ref=0.3) on "
+                  f"latent-flow {surrogate_name} surrogate; GC = mne-connectivity "
+                  f"spectral gc, VAR order 8 fixed, 1-45 Hz faverage (refs mild40)",
         "protocol": "offdiag 16256 pairs; aligned = row=source vs ec; flipped = vs "
                     "ec.T; entropy form -(log sigma*+ln2pie)+1 and inverse "
                     "1/(sigma*+1e-4) (Spearman identical, Pearson differs)",

@@ -21,7 +21,10 @@
 | 子目录 | 数据 | 关键参数 | 来源 | 归档日 |
 |---|---|---|---|---|
 | `mild40-trial500-zscore-fs250-fixed8-f1-45-favg/` | Mild Depression EEG_ALL 40 例（MDD 20/HC 20，128ch Cz 参考），每 trial 前 500 点（2 s）× 30 trials 池化，逐 trial 逐通道 z-score（原数据未归一） | `gc_n_lags=8`（VAR 阶数固定）、fmin 1 / fmax 45 Hz + faverage 单频段均值、fs 250；状态空间谱 GC（Barnett & Seth 2015，mne-connectivity 0.9.0） | 用户 2026-10-24 提供 zip `/root/autodl-tmp/mild-depression-gc.zip`（注册任务 10-24-mild-w500-ec-unbiased S0；源 README 归档为 README-source.md） | 2026-10-24 |
+| `mild40-trial500-zscore-fs250-aic4-25-f1-125-favg/` | 同上（同 EEG_ALL 数据、同 trial 前 500 点/逐 trial z-score/30 trials 池化口径） | **AIC 逐被试选阶（4–25，池化二元 VAR 完全模型 OLS-AIC，统一 500−25 截断）**、fmin 1 / fmax 125 Hz + faverage、fs 250；状态空间谱 GC（mne-connectivity） | 用户 2026-10-24 提供 zip `/root/autodl-tmp/EC_GC_1_125.zip`（注册任务 10-24-exitgnn-ec-unbiased S0/Run 000；源 README 归档为 README-source.md） | 2026-10-24 |
 
 - 内容：40 × `refs_s{id}.npz`（`ec` float32 (128,128)，**ec[a,b]=a→b 行=源/列=靶**，对角 0，理论非负实测 min=0）+ `register_refs.py`/`register.log`（注册溯源，可重放）+ `SHA256SUMS` + `meta.json` + `README-source.md`。
 - subject 映射：sid = EEG_ALL index + 1（前 20 MDD → sid 1–20，后 20 HC → sid 21–40）；四锚点（m_1/m_20/h_1/h_20）与 `models/latent-flow-v1/splits/mild_5fold_seed42.json` 文件 **bitwise 相等**已验（记录在 meta.json）。
 - 用途与边界：latent-flow mild-w500 代理脑 EC_pert 的观测参考（对照协议对齐 unbiased 先例：|EC|/raw × aligned/flipped × Spearman/Pearson，描述性登记不构成代理脑资格判定）；与 latent_flow 原库 GC 两档**实现不同、口径隔离**，不做跨实现/跨数据集对比交付；GC 依赖 Cz 参考（Trongnetrpunya et al. 2016）等局限随源 README 在档。
+- aic4-25 档（v2）内容：格式同 v1 档（40 npz + 注册溯源四件套）；**四锚点 bitwise 复验由注册脚本重做**（非沿用 v1 规划期验证，结果在 meta.json）；sanity 与源 README QC 对拍通过（mean=0.0475 / max=0.568）。
+- aic4-25 档（v2）用途与边界：latent-flow mild 线代理脑 EC_pert 的第二观测参考（与 v1 档构成**双 GC 对照**，各自独立登记不做优劣判断）；caliber note（源 README 原文）：数据有效带宽 ≈0.5–50 Hz，51–125 Hz 已衰减 −24 dB 以下 ⇒ 1–125 Hz 积分主要由 <50 Hz 贡献；与 v1 档逐被试矩阵 Pearson median=0.148（结构差异大，双对照正当）；evoked 瞬态非平稳风险等局限随源 README 在档。
