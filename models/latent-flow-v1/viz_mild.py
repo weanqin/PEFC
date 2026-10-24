@@ -11,11 +11,19 @@
 
 输入契约：--fold N --ckpt <stage2 ckpt> --subjects sid,sid,... --trials idx[,idx..]
   --k K（每 trial 生成样本数）--seed S --out-dir DIR。
+  口径：--window-len（默认 1500 = 全 trial 旧行为）与 --obs-len/--forecast-len
+  须与 ckpt 训练口径一致（obs+forecast == window_len 硬断言；10-24 前缀窗
+  500 = 375/125）；归一化与 trial 切片 import 训练侧同一实现
+  （compute_mild_train_norm / MildTrialDataset），前 window_len 点统计。
 输出：每 (subject, trial) 一张 PNG（2×4 通道面板）+ viz_meta.json（口径与产物登记）。
 
 Run:
   python3 /root/npi/models/latent-flow-v1/viz_mild.py --fold 0 \
     --ckpt /root/npi/outputs/10-21-latent-flow-mild-train/run_fold0/checkpoints/fold0_mild_flow_best_graph_mexhat.pt
+  python3 /root/npi/models/latent-flow-v1/viz_mild.py --fold 0 \
+    --ckpt .../run_w500_fold0/checkpoints/fold0_mild_flow_best_graph_mexhat.pt \
+    --window-len 500 --obs-len 375 --forecast-len 125 --subjects 1,7,21 \
+    --out-dir .../run_w500_fold0/viz
 """
 from __future__ import annotations
 
@@ -84,25 +92,35 @@ def parse_args(argv=None):
     p.add_argument("--trials", type=str, default="0", help="逗号分隔 trial 索引（0–29）")
     p.add_argument("--k", type=int, default=32, help="每 trial 生成样本数")
     p.add_argument("--seed", type=int, default=42)
+    p.add_argument("--window-len", type=int, default=WINDOW,
+                   help=f"前缀窗口长度（默认 {WINDOW} = 全 trial 旧行为；"
+                        f"0 < window_len <= {WINDOW}；与 ckpt 训练口径一致）")
     p.add_argument("--obs-len", type=int, default=OBS_LEN,
-                   help=f"obs 段长度（默认 {OBS_LEN}；与 --forecast-len 之和必须为 {WINDOW}，须与 ckpt 训练口径一致）")
+                   help=f"obs 段长度（默认 {OBS_LEN}；与 --forecast-len 之和必须为 --window-len，须与 ckpt 训练口径一致）")
     p.add_argument("--forecast-len", type=int, default=FORECAST_LEN,
-                   help=f"forecast 段长度（默认 {FORECAST_LEN}；与 --obs-len 之和必须为 {WINDOW}，须与 ckpt 训练口径一致）")
+                   help=f"forecast 段长度（默认 {FORECAST_LEN}；与 --obs-len 之和必须为 --window-len，须与 ckpt 训练口径一致）")
     p.add_argument("--channels", type=str,
                    default=",".join(str(c) for c in CHANNELS_DEFAULT),
                    help="逗号分隔通道号（E 序，1–128）")
+    # --- 流出口变体透传（10-24-latent-flow-exit-gnn；默认关 = 原架构） ---
+    p.add_argument("--flow-exit-gnn", action="store_true",
+                   help="出口 GNN 变体 ckpt 装载（FlowVelocityNetExitGNN 架构 "
+                        "strict load 匹配；须与 ckpt 训练口径一致，不一致即 "
+                        "拒跑）")
     p.add_argument("--out-dir", type=str,
                    default="/root/npi/outputs/10-21-latent-flow-mild-train/run_fold0/viz")
     p.add_argument("--device", type=str, default=None)
     return p.parse_args(argv)
 
 
-def _model_args():
-    """build_model_mild 所需 args 命名空间（= 训练时钉死的 stage2 mexhat 默认）。"""
+def _model_args(flow_exit_gnn: bool = False):
+    """build_model_mild 所需 args 命名空间（= 训练时钉死的 stage2 mexhat 默认；
+    flow_exit_gnn 透传出口 GNN 变体架构（默认 False = 原架构，旧调用面
+    （ec_mild_unbiased 等）零参数沿用不受影响）。"""
     return argparse.Namespace(
         dense_fallback=False, graph_kernel="mexhat", graph_k=2,
         graph_out_mix_alpha=0.5, mexhat_gamma=0.1, mexhat_gamma_m=1.0,
-        beta_kl=1e-4,
+        beta_kl=1e-4, flow_exit_gnn=flow_exit_gnn,
     )
 
 
@@ -120,7 +138,7 @@ def load_flow_ckpt(model, ckpt_path: str):
 def sample_forecast(model, x_obs, k: int, device, obs_len: int = OBS_LEN):
     """x_obs (1,obs_len,128) → k 条生成样本的 forecast (k,forecast_len,128) numpy。"""
     xb = x_obs.unsqueeze(0).to(device).repeat(k, 1, 1)
-    x_hat = model.sample(xb, n_steps=10)              # (k,1500,128)
+    x_hat = model.sample(xb, n_steps=10)          # (k, obs+forecast, 128)
     return x_hat[:, obs_len:, :].cpu().numpy()
 
 
@@ -142,8 +160,9 @@ def render_trial(x_target: np.ndarray, fc: np.ndarray, channels, k_used: int,
                  forecast_len: int = FORECAST_LEN):
     """v2.1 口径（用户 2026-10-21 指定）：仅可视化 real-future + gen-future——
     蓝真实未来 + 红 medoid（实际样本）+ Q05–Q95 带；past 灰线上下文去掉，
-    时间轴缩放到 forecast 段（obs_len/fs – 6.0 s）。medoid/分位带计算口径
-    与 v2 不变。obs_len/forecast_len 缺省 = 训练默认 1125/375。"""
+    时间轴缩放到 forecast 段（obs_len/fs – (obs_len+forecast_len)/fs，随
+    口径自适应）。medoid/分位带计算口径与 v2 不变。obs_len/forecast_len
+    缺省 = 训练默认 1125/375。"""
     q05, q95 = np.quantile(fc, [0.05, 0.95], axis=0)     # (forecast_len,128)
     k_star = medoid_index(fc)
     med = fc[k_star]                                      # (forecast_len,128) 实际样本
@@ -182,8 +201,11 @@ def main() -> int:
     args = parse_args()
     assert args.obs_len > 0 and args.forecast_len > 0, \
         f"--obs-len/--forecast-len must be positive: {args.obs_len}/{args.forecast_len}"
-    assert args.obs_len + args.forecast_len == WINDOW, \
-        f"--obs-len + --forecast-len ({args.obs_len}+{args.forecast_len}) != {WINDOW}"
+    assert 0 < args.window_len <= WINDOW, \
+        f"--window-len must be in (0, {WINDOW}]: {args.window_len}"
+    assert args.obs_len + args.forecast_len == args.window_len, \
+        f"--obs-len + --forecast-len ({args.obs_len}+{args.forecast_len}) " \
+        f"!= --window-len {args.window_len}"
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     device = torch.device(args.device if args.device
@@ -193,7 +215,10 @@ def main() -> int:
         load_manifest(args.manifest, args.fold)
     groups = {sid: v["group"] for sid, v in subjects.items()}
     sid_to_file = {sid: v["file"] for sid, v in subjects.items()}
-    test_ids = sorted(int(Path(f).stem.split("_")[1]) for f in test_f)
+    # fold 记录的 test 即 subject_id 列表（文件名 m_/h_ 前缀是组内编号，
+    # h_i ↔ subject_id 20+i，不得从 stem 解析——stem 解析在 HC 段错位且
+    # 使默认首个 HC 挑选必然 StopIteration）
+    test_ids = sorted(fold_dict["test"])
     if args.subjects:
         sids = [int(s) for s in args.subjects.split(",")]
     else:
@@ -204,23 +229,36 @@ def main() -> int:
     channels = [int(c) for c in args.channels.split(",")]
     assert all(1 <= c <= N_CHANNELS for c in channels)
 
-    # 数据（train 折归一化统计，严格 held-out，与训练入口同一实现）
-    norm_stats = compute_mild_train_norm(train_f)
+    # 数据（train 折归一化统计，严格 held-out，与训练入口同一实现；
+    # 累加域 = 前 window_len 点前缀窗，与训练侧 compute_mild_train_norm 一致）
+    norm_stats = compute_mild_train_norm(train_f, window_len=args.window_len)
 
-    # 模型：stage2 mexhat-graph 架构 + strict 加载（架构与 ckpt 不一致即拒跑）
-    model = build_model_mild(device, _model_args(), stage=2,
+    # 模型：stage2 mexhat-graph 架构 + strict 加载（架构与 ckpt 不一致即拒跑；
+    # --flow-exit-gnn 透传出口 GNN 变体架构，与 ckpt 训练口径匹配）
+    model = build_model_mild(device,
+                             _model_args(flow_exit_gnn=args.flow_exit_gnn),
+                             stage=2,
                              obs_len=args.obs_len,
                              forecast_len=args.forecast_len)
     load_flow_ckpt(model, args.ckpt)
 
     set_seed(args.seed)
     meta = {
-        "task": "10-21-latent-flow-mild-train", "caliber": "trajectories-v2.1 "
+        "task": "latent-flow-v1 x mild-depression viz wrapper "
+                "(shared by tasks 10-21 / 10-24; run provenance = out_dir "
+                "+ owning task experiment.md)",
+        "caliber": "trajectories-v2.1 "
         "(user 2026-10-21: real future blue + gen medoid red + Q05-Q95 band; "
         "past context dropped, forecast window only)",
         "fold": args.fold, "ckpt": args.ckpt, "k": args.k, "seed": args.seed,
+        "window_len": args.window_len,
+        # 装载旗标随 meta 落盘（10-24-latent-flow-exit-gnn check 补齐，与
+        # quality_meta 口径登记对齐）：True = 出口 GNN 变体架构装载
+        "flow_exit_gnn": bool(args.flow_exit_gnn),
         "obs_len": args.obs_len, "forecast_len": args.forecast_len,
-        "channels_E": channels, "norm": "train-fold per-channel stats (held-out)",
+        "channels_E": channels,
+        "norm": f"train-fold per-channel stats over first {args.window_len} "
+                f"samples (held-out; same implementation as training)",
         "figures": [], "generated": time.strftime("%Y-%m-%dT%H:%M:%S"),
     }
     sid_to_file = {sid: v["file"] for sid, v in subjects.items()}
@@ -230,10 +268,11 @@ def main() -> int:
         from train_mild_depress import MildTrialDataset
         ds = MildTrialDataset(ds_files, norm_stats,
                               obs_len=args.obs_len,
-                              forecast_len=args.forecast_len)
+                              forecast_len=args.forecast_len,
+                              window_len=args.window_len)
         for ti in trials:
             assert 0 <= ti < TRIALS
-            x_target = ds.trials[ti].numpy()               # (1500,128) z 域
+            x_target = ds.trials[ti].numpy()     # (window_len,128) z 域
             fc = sample_forecast(model, ds.trials[ti], args.k, device,
                                  obs_len=args.obs_len)
             title = (f"subj {sid} ({groups[sid]}) · trial {ti} · "
