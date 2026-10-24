@@ -31,10 +31,25 @@
 
 - 划分：**只读复用** `models/latent-flow-v1/splits/mild_5fold_seed42.json`（生成器 `make_mild_manifest.py`，已存在即拒跑）。算法（RNG 调用序列钉死，每群恰一次 `RandomState(42).permutation(20)` 调用）：MDD/HC 各自 `sorted(glob)` 后独立洗牌 → 连续 5 段 bounds [0,4,8,12,16,20] → fold i test = 两群第 i 段各 4 例（4+4=8）；val = 两群第 (i+1)%5 段前 2 例（2+2=4，随折轮转）；train = 余 28。**manifest SHA256 = `47987909c04348e57d98e77e1668678a7885109336df90bd0a5a635f865d881b`**（2026-10-21 生成；重生成须整链重登记）
 - 逐折计数契约：train 28 例/840 trial、val 4 例/120 trial、test 8 例/240 trial；训练入口全量断言重放（计数/无交/文件存在/逐例 shape/fs/label/trial 数），失败即拒跑
+- **被试 id 解析坑（10-24 实测沉淀）**：文件名 `m_/h_` 前缀是**组内编号**（h_i ↔ subject_id 20+i），不得从文件名 stem 解析被试 id——正确来源 = `load_manifest` 返回的 fold 记录 `train/val/test`（真实 subject_id 列表）；stem 解析曾致 viz 自动挑选必然 StopIteration、quality 脚本 test 集合错位（10-24 已修，既往 viz 靠显式 --subjects 绕过）
 - geometry：`/root/autodl-tmp/Mild Depression/geometry_mild.pt`（D1 数据根单文件豁免，MNE GSN-HydroCel-128 模板 E1..E128，`build_mild_geometry.py` 可再生，默认拒覆盖除非 --force）
+- **前缀窗 500 消费口径（10-24-latent-flow-mild-w500，用户 2026-10-24 拍板）**：每 trial 取前 500 点单窗（完整落于数据文件 x_p 字段内，**x_f 字段不参与**），窗内切 obs 375 / forecast 125，无滑窗无多窗；归一化 = 训练折 trial 前 500 点逐通道 mean/std（`train_mild_depress.py --window-len 500`，window_len 联动归一化范围与断言 obs+fc==window_len；默认 1500 = 原全窗口径 bit 兼容）；新口径特征（window≠1500/unfreeze-decoder/anti-uniform≠0）不显式传 `--run-dir` 时守卫拒跑
 - 变更本契约任何口径 → 逐项排查对下游的影响并告知用户后方可生效
 
 ## 6. 训练实测补记（10-21-latent-flow-mild-train，2026-10-21）
 
 - 窗内重切分已参数化：`train_mild_depress.py --obs-len/--forecast-len`（默认 1125/375；5:1=1250/250 → `run_ratio5to1/`、9:1=1350/150 → `run_ratio9to1/` 已实测，obs+fc==1500 硬断言）——数据文件 1125/375 形状断言不变。
 - 数据侧观察（Run 005 viz 判读备查）：真实 trial 末段 ~5.8 s 后幅度衰减；生成侧末端 Euler 发散尖峰与之叠加，判读末段时须用去末端口径（见 evaluation-calibers.md 生成质量抽查条目）。
+
+## 7. 训练实测补记二（10-24-latent-flow-mild-w500，2026-10-24）
+
+- 前缀窗 500 口径 fold0 重训（用户拍板：batch 64/lr 5e-4/stage2 decoder+flow 联合仅冻结
+  encoder/anti-uniform 0.1/归一化前 500 点/确定性采样沿用）：stage1 best 2.0992@E57 早停
+  E87 健康；stage2 best 0.8356@**E150 顶格未收敛**（decoder 联合训练收敛慢于上轮
+  flow-only 的 E122/E125）——150ep 预算对该冻结面偏低，延长属口径变更须拍板。
+- 生成质量抽查（新口径）：medoid/real std 全程 0.957 / 去末 25 点 0.996（逐例均值
+  0.88–1.05）——**上轮 0.5–0.74 欠幅基本消除**；coverage 双口径 0.0000 属确定性采样
+  构造性（判读规则见 evaluation-calibers.md 增记）。数值抽查已持久化为
+  `quality_check_mild.py`（上轮内联脚本无落盘，本轮修正）。
+- forecast 段 1.5–2.0 s 远离尾段 ~5.8 s 衰减区——上轮「末端 Euler 发散 × 尾段衰减叠加」
+  伪影在本口径不适用（去末口径仍保留对 Euler 末步发散的敏感）。
