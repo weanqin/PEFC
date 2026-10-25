@@ -23,6 +23,13 @@ gccorr（离线：refs mild40 GC × EC，|EC|/raw × aligned/flipped × Spearman
 exit-gnn-symw；架构侧等价 --flow-exit-gnn、与之互斥；payload symw 分支含 A_eff 无向
 caveat + hparams symw 键；σ*/τ/conn 计算路径零改动，默认关 = 旧调用面零变化）。
 
+10-25-symw-ec-f12 增量：--symw + --fold {1,2} + f12 run_dir（10-25-latent-flow-
+symw-f12）新调用面——EXPECTED_NORM_SHA 按 fold 键控（{0,1,2}，f12 值 = 训练侧
+configs norm_stats 登记值，缺键拒跑）；f12 ckpt 文件名 fold{k}_ 前缀与 --fold 锁定
+（折-权重错配防护，exit-gnn-symw 先例 run_dir 收窄为仅 --fold 0）；payload surrogate
+f12 分支（task/best-val/variant/caveat）+ hparams.fold 显式化；σ*/τ/conn 计算路径
+逐行零改动，fold0 旧调用面行为不变（旗标关等价对拍兜底）。
+
 τ 分位口径含对角自响应（flatten 全 128×128，与 unbiased 先例一致；评审 A 注明防
 与 offdiag-only 口径误比）。
 
@@ -79,7 +86,14 @@ from viz_mild import _model_args, load_flow_ckpt  # noqa: E402
 # --- w500 口径硬三元组（评审 B：防 train_mild_depress 模块常量 1500/1125/375 误用；
 #     compute_mild_train_norm 缺省 window_len 是静默错统计路径，故此断言 + hash 对拍双保险）---
 W500_WINDOW, W500_OBS, W500_FC = 500, 375, 125
-EXPECTED_NORM_SHA = "d184e64772b368418b5d816680af8ed030b20e3ef76867f99ab6d354cac82758"
+# norm mean/std SHA256 按 fold 键控（10-25-symw-ec-f12）：fold0 = w500/symw-fold0 在档
+# 钉死值；fold1/2 = f12 训练侧 configs/stage{1,2}_config.json norm_stats.mean_std_sha256
+# 登记（run_symw_fold{1,2} 两 stage 一致，2026-10-25 核）。缺 fold 键 = 拒跑。
+EXPECTED_NORM_SHA_BY_FOLD = {
+    0: "d184e64772b368418b5d816680af8ed030b20e3ef76867f99ab6d354cac82758",
+    1: "0f10b15350f69757d883beca19500342fc8279a71dc327252e495be08e1d3383",
+    2: "a2c27a2d2577210c2696e0310b0bd1a792d8b2d530107b9bdf8d100446c3d102",
+}
 EXPECTED_MANIFEST_SHA = "47987909c04348e57d98e77e1668678a7885109336df90bd0a5a635f865d881b"
 
 DEFAULT_Q = 0.5            # 用户拍板钉死：不做其他取值测试
@@ -153,9 +167,21 @@ def _caliber_asserts(a) -> None:
         assert "10-24-latent-flow-exit-gnn" in a.ckpt, \
             f"--flow-exit-gnn 须配 exit-gnn run_dir 的 ckpt，got {a.ckpt}"
     elif a.symw:
-        # symw run_dir 段守卫（同款防交叉；symw 与 exit-gnn 文件名亦相同）
-        assert "10-25-latent-flow-exit-gnn-symw" in a.ckpt, \
-            f"--symw 须配 symw run_dir 的 ckpt，got {a.ckpt}"
+        # symw run_dir 段守卫（同款防交叉；symw 与 exit-gnn 文件名亦相同）。
+        # f12 扩展（10-25-symw-ec-f12）：另接受 10-25-latent-flow-symw-f12 run_dir，
+        # 并断言 ckpt 文件名 fold{k}_ 前缀与 --fold 一致（防折-权重错配——各折 norm/
+        # 划分不同，fold1 命令误配 fold0/fold2 ckpt 须在装载前被拦）。
+        if "10-25-latent-flow-symw-f12" in a.ckpt:
+            assert (a.fold in (1, 2)
+                    and Path(a.ckpt).name.startswith(f"fold{a.fold}_")), \
+                (f"--symw f12 ckpt 须配 --fold {{1,2}} 且文件名以 fold{a.fold}_ "
+                 f"前缀开头（折-权重错配防护），got fold={a.fold}, "
+                 f"{Path(a.ckpt).name}")
+        else:
+            assert "10-25-latent-flow-exit-gnn-symw" in a.ckpt and a.fold == 0, \
+                ("--symw 须配 symw run_dir 的 ckpt（exit-gnn-symw 仅限 --fold 0；"
+                 f"--fold {a.fold} 须配 10-25-latent-flow-symw-f12 的 fold{a.fold}_"
+                 f" 前缀 ckpt），got {a.ckpt}")
 
 
 def _atomic_write_json(path: Path, payload: dict) -> None:
@@ -210,8 +236,14 @@ def run_main(a) -> None:
 
     mean, std = compute_mild_train_norm(train_f, window_len=a.window_len)
     norm_sha = _norm_sha(mean, std)
-    assert norm_sha == EXPECTED_NORM_SHA, \
-        f"norm mean_std SHA256 对拍失败: {norm_sha} != 训练登记值（口径漂移即拒跑）"
+    # fold 键控断言（10-25-symw-ec-f12）：各折 train 集不同 ⇒ norm SHA 各折登记；
+    # 缺 fold 键（--fold 越界/未登记）= 拒跑
+    assert a.fold in EXPECTED_NORM_SHA_BY_FOLD, \
+        f"--fold {a.fold} 无登记 norm SHA（已登记折: {sorted(EXPECTED_NORM_SHA_BY_FOLD)}）"
+    expected_norm_sha = EXPECTED_NORM_SHA_BY_FOLD[a.fold]
+    assert norm_sha == expected_norm_sha, \
+        (f"norm mean_std SHA256 对拍失败 (fold={a.fold}): {norm_sha} != "
+         f"训练登记值 {expected_norm_sha}（口径漂移即拒跑）")
     files_hash = _train_files_hash(train_f)
 
     # symw 训练直用 FlowVelocityNetExitGNN（flow_exit_gnn_symw.py:58 import，零架构
@@ -286,6 +318,7 @@ def run_main(a) -> None:
         n_max = int(np.sum(v >= a.sigma_max - 1e-6))
         elapsed = (time.time() - t0) / 60.0
         # --- 代理脑元数据条件化（design §2.3：旗标关 = 旧字段原值不动）---
+        symw_f12 = bool(a.symw) and "10-25-latent-flow-symw-f12" in str(a.ckpt)
         if a.flow_exit_gnn:
             method_str = ("global_tau_quantile UNBIASED (mu=0, sigma*xi, latent-flow "
                           "mild exit-gnn variant surrogate, signal-space, sigma* "
@@ -315,30 +348,65 @@ def run_main(a) -> None:
                           "mild exit-gnn sym-w variant surrogate, signal-space, "
                           "sigma* preserved; sign field saved but not directional "
                           "by design)")
-            surrogate_block = {
-                "task": "10-25-latent-flow-exit-gnn-symw run_symw_fold0",
-                "ckpt_stage2_best": ("0.8054@E144 (early-stop converged; W strictly "
-                                     "symmetrized — see surrogate_caveat)"),
-                "variant": ("OCLatentFlow two-stage + flow exit GNN variant "
-                            "(shared-A_eff message passing + zero-init exit "
-                            "projection) trained with SymWAdam per-step W←(W+Wᵀ)/2 "
-                            "projection + anti-uniform λ0.2; two-factor vs exit-gnn "
-                            "Run 001 (λ and sym-W co-vary, ablation pending), "
-                            "mexhat-graph flow (K=2, gamma 0.1, gamma_m 1.0), "
-                            "full-window decoder, deterministic sampling"),
-                "euler_steps": int(a.n_steps), "amp": "bf16-autocast",
-                "obs_len": int(a.obs_len), "forecast_len": int(a.forecast_len),
-                "n_channels": int(C), "symw": True}
-            surrogate_caveat = (
-                "symw Run 000 (2026-10-25): A_eff undirected (W strictly "
-                "symmetric, torch.equal-level) ⇒ EC directionality "
-                "construct-limited — per-direction readout must reset "
-                "expectations to undirected caliber; λ0.2 and sym-W two-factor "
-                "co-vary (ablation pending); medoid/real std 0.858/0.848 "
-                "(partial amplitude recovery vs w500 0.957/0.996); "
-                "theta-candidacy pending user decision; EC results are "
-                "PROVISIONAL and do not constitute a surrogate qualification "
-                "verdict.")
+            if symw_f12:
+                # f12 双折分支（10-25-symw-ec-f12）：best val/真早停 epoch = f12 训练侧
+                # stage2 history 登记（fold1 0.8264@E116/E146；fold2 0.8433@E113/E143）
+                surrogate_block = {
+                    "task": f"10-25-latent-flow-symw-f12 run_symw_fold{a.fold}",
+                    "ckpt_stage2_best": {
+                        1: "0.8264@E116 (early-stop E146, converged)",
+                        2: "0.8433@E113 (early-stop E143, converged)"}[a.fold],
+                    "variant": ("OCLatentFlow two-stage + flow exit GNN variant "
+                                "(shared-A_eff message passing + zero-init exit "
+                                "projection) trained with SymWAdam per-step "
+                                "W←(W+Wᵀ)/2 projection + anti-uniform λ0.2 — f12 "
+                                "dual-fold training (10-25-latent-flow-symw-f12, "
+                                "symw Run 001 same params across folds; this ckpt "
+                                f"= fold{a.fold}), mexhat-graph flow (K=2, gamma "
+                                "0.1, gamma_m 1.0), full-window decoder, "
+                                "deterministic sampling"),
+                    "euler_steps": int(a.n_steps), "amp": "bf16-autocast",
+                    "obs_len": int(a.obs_len), "forecast_len": int(a.forecast_len),
+                    "n_channels": int(C), "symw": True}
+                surrogate_caveat = (
+                    "symw-f12 Run 001 (2026-10-25): fold-transfer surrogate — "
+                    "theta-candidacy pending user decision; cross-fold "
+                    "(fold0/1/2) EC juxtaposition is DESCRIPTIVE only (per-fold "
+                    "theta are different surrogate instances — not a "
+                    "reproducibility readout); A_eff undirected (W strictly "
+                    "symmetrized) — fold0 symmetry diagnosis (10-25-symw-ec-"
+                    "unbiased) narrowed this caveat: EC v4 matrices NOT collapsed "
+                    "to undirected (group corr(M,Mᵀ) −0.002±0.135, fro_asym_ratio "
+                    "≈1.02), the constraint acts on GNN message passing only, "
+                    "direction carried by asymmetric per-channel encoding/exit "
+                    "projection + data-dependent σ*; λ0.2 and sym-W two-factor "
+                    "co-vary (ablation pending); EC results are PROVISIONAL and "
+                    "do not constitute a surrogate qualification verdict.")
+            else:
+                surrogate_block = {
+                    "task": "10-25-latent-flow-exit-gnn-symw run_symw_fold0",
+                    "ckpt_stage2_best": ("0.8054@E144 (early-stop converged; W strictly "
+                                         "symmetrized — see surrogate_caveat)"),
+                    "variant": ("OCLatentFlow two-stage + flow exit GNN variant "
+                                "(shared-A_eff message passing + zero-init exit "
+                                "projection) trained with SymWAdam per-step W←(W+Wᵀ)/2 "
+                                "projection + anti-uniform λ0.2; two-factor vs exit-gnn "
+                                "Run 001 (λ and sym-W co-vary, ablation pending), "
+                                "mexhat-graph flow (K=2, gamma 0.1, gamma_m 1.0), "
+                                "full-window decoder, deterministic sampling"),
+                    "euler_steps": int(a.n_steps), "amp": "bf16-autocast",
+                    "obs_len": int(a.obs_len), "forecast_len": int(a.forecast_len),
+                    "n_channels": int(C), "symw": True}
+                surrogate_caveat = (
+                    "symw Run 000 (2026-10-25): A_eff undirected (W strictly "
+                    "symmetric, torch.equal-level) ⇒ EC directionality "
+                    "construct-limited — per-direction readout must reset "
+                    "expectations to undirected caliber; λ0.2 and sym-W two-factor "
+                    "co-vary (ablation pending); medoid/real std 0.858/0.848 "
+                    "(partial amplitude recovery vs w500 0.957/0.996); "
+                    "theta-candidacy pending user decision; EC results are "
+                    "PROVISIONAL and do not constitute a surrogate qualification "
+                    "verdict.")
         else:
             method_str = ("global_tau_quantile UNBIASED (mu=0, sigma*xi, latent-flow "
                           "mild-w500 surrogate, signal-space, sigma* preserved; sign "
@@ -382,7 +450,10 @@ def run_main(a) -> None:
                         "batch_size": int(a.batch_size), "seed": int(a.seed),
                         "use_biased_noise": False,
                         "flow_exit_gnn": bool(a.flow_exit_gnn),
-                        "symw": bool(a.symw)},
+                        "symw": bool(a.symw),
+                        # f12 显式化（10-25-symw-ec-f12）：折身份进 hparams；
+                        # 旗标关/fold0 先例 payload 键面不变
+                        **({"fold": int(a.fold)} if symw_f12 else {})},
             "diagnostics": {
                 "n_at_sigma_min": n_min, "n_at_sigma_max": n_max,
                 "pct_at_sigma_min": n_min / v.size * 100,
@@ -398,7 +469,8 @@ def run_main(a) -> None:
             "provenance": {
                 "manifest": {"path": a.manifest, "sha256": EXPECTED_MANIFEST_SHA},
                 "norm": {"source": f"train fold first-{a.window_len} samples",
-                         "files_hash": files_hash, "mean_std_sha256": norm_sha},
+                         "files_hash": files_hash,
+                         "mean_std_sha256": expected_norm_sha},
                 "window": {"window_len": a.window_len, "obs_len": a.obs_len,
                            "forecast_len": a.forecast_len},
                 "ckpt_path": str(Path(a.ckpt).resolve()),

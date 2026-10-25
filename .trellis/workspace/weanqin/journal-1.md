@@ -707,3 +707,30 @@ v4a-fmt 基座上把 5 个 LayerNorm 位换 adaLN（emb(t)→逐 site SiLU→Lin
 ### Next Steps
 
 - 无（描述性可视化；上游 EC 结论待拍板项不变）。
+
+## Session 26: symw f12 双折无偏 EC_pert + 跨折汇总（任务 10-25-symw-ec-f12）
+
+**Date**: 2026-10-25
+**Task**: .trellis/tasks/10-25-symw-ec-f12（study2 轻量；用户三项规格 = fold0 逐字口径 + f12 权重 + 跨折汇总）
+
+### Summary
+
+- 适配三处元数据级（norm SHA fold 键控=训练侧登记值四方核对 / 守卫 f12 run_dir+fold 前缀锁定 / payload f12 分支），算法零改动（check 逐 hunk 审 + fold0 else 半支程序化逐字对拍）；干跑双证据全绿（六矩阵逐位 max|Δ|=0 + fold1 strict load + 守卫双负例）。
+- 两折主跑各 8/8（52.2 min/折）：fold1 test s{2,12,14,17,22,32,34,37} interior 74.1±3.7%；fold2 test s{3,6,8,11,23,26,28,31} interior 71.8±4.6%；P(resp>τ)=0.500 全精确；凭据链 16/16。
+- 双 GC：v1 ρ fold1 +0.159±0.116 / fold2 +0.176±0.127（fold0 +0.134±0.159，三折同型微弱正，aligned>flipped 全保持）；v2 三折近零（+0.077/+0.010）；group_mean v1 fold1 +0.381 最高。
+- 跨折判读：GC 相关形态由 GNN 架构面承载、对 W 对称化不敏感——三折并置下稳定复现；fold1 方差分解实例分化（残差 0.477）；DESCRIPTIVE 口径（各折 θ 异实例）。
+- 沉淀 spec evaluation-calibers：跨折折键控校验契约（norm SHA 训练侧来源 + ckpt 折锁定 + DESCRIPTIVE 并置规则）。
+
+### Git Commits
+
+| commit | 说明 |
+|---|---|
+| （本次） | feat(latent-flow): symw f12 双折 EC_pert（两折 8/8 + 双 GC 三折同型 + 跨折汇总表） |
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- θ 候选判断待用户（progress 待拍板⑩已联动三折 EC 证据）。

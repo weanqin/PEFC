@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/research/path-isolation.md", "reason": "改动仅 ec_mild_unbiased.py 元数据级 + 新 outputs 树；旧树/refs 只读"}
+{"file": ".trellis/spec/research/reproducibility.md", "reason": "逐例凭据链（fold/ckpt/各折 norm SHA/manifest SHA/seed/git head）"}
+{"file": ".trellis/spec/research/experiment-log.md", "reason": "Run 000–005 跑前登记+回填契约"}
+{"file": ".trellis/spec/data/mild-depression.md", "reason": "数据契约 + 5-fold manifest + 逐折 norm 口径"}
+{"file": ".trellis/spec/research/perturb-ec-pipeline.md", "reason": "行=源列=靶方向约定；EC×GC 描述性隔离"}
+{"file": ".trellis/spec/research/evaluation-calibers.md", "reason": "口径先于运行（与 fold0 逐字一致）；单 seed 标注"}

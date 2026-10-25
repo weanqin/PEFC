@@ -149,3 +149,16 @@
 - **Wrong vs Correct**：Wrong = 在 PRD/README 写「A_eff 无向 ⇒ EC 无向」并按无向口径直接
   预设 GC 相关上限；Correct = 同句 caveat 附「待对称性诊断实证」并落实诊断（本任务
   `models/latent-flow-v1/symmetry_diag_symw.py` 先例，读 ec_main 逐例 json 纯后处理）。
+
+## 跨折 EC 复用的折键控校验契约（2026-10-25 登记，任务 10-25-symw-ec-f12）
+
+- **坑**：EC 脚本的 norm SHA 断言若钉死单折训练登记值（fold0），跨折复用时要么静默换档
+  （口径漂移）要么拒跑——且各折 norm 来自各折 train split，**不可跨折借用**。
+- **契约**：跨折 EC 复用时 norm SHA 必须 **fold 键控映射**，值取**训练侧 configs 的
+  norm_stats.mean_std_sha256 登记值**（stage1/stage2 须一致，四方核对：常量=训练登记=PRD=
+  逐例 payload）；manifest 若单文件全折共用则 SHA 断言不变。ckpt 守卫同步折锁定：f12 类
+  run_dir 断言 ckpt 文件名 `fold{k}_` 前缀与 `--fold` 一致（防折-权重错配），先例 run_dir
+  收紧为 `--fold 0`（else 半支补齐拦截——"路径子串断言"对不含该子串的负例无约束力）。
+- **跨折并置口径**：各折 θ 为不同代理脑实例 + test 被试互斥 ⇒ 并置为 DESCRIPTIVE（不作
+  复现性判读）；跨折一致性结论须以"形态同型"（如 GC 相关符号结构/σ* 中位量级）而非数值
+  重合来表述（先例：crossfold_summary_f12.py，fold0/1/2 三折对照）。

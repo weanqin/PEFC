@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/research/path-isolation.md", "reason": "核查路径隔离与包体零 diff"}
+{"file": ".trellis/spec/research/reproducibility.md", "reason": "核查凭据链（fold 正确性重点）"}
+{"file": ".trellis/spec/research/experiment-log.md", "reason": "核查 Run 块齐备"}
+{"file": ".trellis/spec/research/evaluation-calibers.md", "reason": "核查口径一致性与单 seed 标注"}
