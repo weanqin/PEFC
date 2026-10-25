@@ -58,12 +58,21 @@ REFS = {
 }
 HALF_LOG_2PIE = 0.5 * math.log(2.0 * math.pi * math.e)
 V4_OFFSET = 5.0 / 7.0
+DEFAULT_TASK_LABEL = ("10-24-exitgnn-ec-unbiased Run 003 "
+                      "(v4 remap + dual descriptive EC x GC)")
+DEFAULT_SURROGATE_NAME = "exit-gnn variant surrogate"
 
 
 def parse_args(argv=None):
     p = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     p.add_argument("--main-dir", type=str, default=DEFAULT_MAIN)
     p.add_argument("--out-dir", type=str, default=DEFAULT_OUT)
+    p.add_argument("--task-label", type=str, default=DEFAULT_TASK_LABEL,
+                   help="输出 gccorr_dual_summary.json 的 task 字段（默认 = 先例"
+                        "常量串，旧调用面不变；新任务传本任务标签）")
+    p.add_argument("--surrogate-name", type=str, default=DEFAULT_SURROGATE_NAME,
+                   help="naming 串中代理脑描述段（默认 = 先例常量串，旧调用面"
+                        "不变；新任务传本任务代理脑描述，元数据专用零计算改动）")
     return p.parse_args(argv)
 
 
@@ -187,10 +196,10 @@ def main() -> int:
         }
 
     summary = {
-        "task": "10-24-exitgnn-ec-unbiased Run 003 (v4 remap + dual descriptive EC x GC)",
+        "task": a.task_label,
         "naming": "EC_pert = v4 formula -(ln sigma*+0.5*ln2pie)+5/7 on unbiased mu=0 "
                   "global_tau sigma* (q=0.5@sigma_ref=0.3), latent-flow mild "
-                  "exit-gnn variant surrogate (provisional, see surrogate_caveat in "
+                  f"{a.surrogate_name} (provisional, see surrogate_caveat in "
                   "subject jsons); abs == raw (all positive, bitwise asserted)",
         "formula_facts": {
             "constant_shift_vs_v1": float(HALF_LOG_2PIE - 2.0 / 7.0),

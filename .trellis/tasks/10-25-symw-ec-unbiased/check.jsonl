@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/research/path-isolation.md", "reason": "核查：latent_flow 包体零 diff、旧任务输出树/refs 零触碰、改动仅本任务声明路径"}
+{"file": ".trellis/spec/research/reproducibility.md", "reason": "核查：subject json 凭据字段齐全（ckpt/旗标/SHA/seed/git head）可复现"}
+{"file": ".trellis/spec/research/experiment-log.md", "reason": "核查：Run 000–003 块目的-配置-结果-结论齐备"}
+{"file": ".trellis/spec/research/evaluation-calibers.md", "reason": "核查：主读出单 seed 标注在档、口径与 prd 钉死一致（q=0.5/σ_ref=0.3/log[0.01,0.48]×24/v4 公式）"}

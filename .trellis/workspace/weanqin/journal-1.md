@@ -628,3 +628,32 @@ v4a-fmt 基座上把 5 个 LayerNorm 位换 adaLN（emb(t)→逐 site SiLU→Lin
 
 - symw 波形人工判读 + θ 候选判断留用户（`outputs/10-25-latent-flow-exit-gnn-symw/run_symw_fold0/viz/`）。
 - 消融归因（λ0.2 不对称 / symw λ0.1）与 w500 延长预算、exit-gnn 消融同属拍板池（progress 待拍板②⑩）。
+
+## Session 24: sym-W 变体无偏 EC_pert + 双 GC 逐被试相关 + 对称性诊断（任务 10-25-symw-ec-unbiased）
+
+**Date**: 2026-10-25
+**Task**: .trellis/tasks/10-25-symw-ec-unbiased（study2，轻量路径：PRD+implement，跳过 1.4.1 review dispatch，用户「开始」过 1.4 门）
+
+### Summary
+
+- 用户指令三项（代理脑 = 最新 sym-W 变体 / 沿用扰动归因口径不改算法 / 输出注明版本配置 + 逐被试 GC 相关）；全默认口径第三跑（w500 → exit-gnn → symw），唯一实质差异 = ckpt。
+- S0 适配：`ec_mild_unbiased.py` 加 `--symw`（守卫/元数据/hparams/互斥四落点，计算路径逐行零改动——check 逐 hunk 审计确认）；`recompute_conn_v4.py` 加 `--task-label`/`--surrogate-name`（旧调用面默认值等价）。
+- S1 Gate G1：旗标关 mini 跑 vs w500 在档 dryrun **六矩阵+τ 逐位 max|Δ|=0**（check 独立复算复核）；--symw strict load（1,276,258 参数）+ 守卫正负例两枚 + payload 18/18。
+- Run 001 主跑 8/8（52.1 min 预算内，P(resp>τ)=0.500 全精确，interior 64.2%±7.4 三者最高）；Run 002 summary（dyn 2.55、方差分解 0.031/0.753/0.216、跨被试稳定 ρ̄ 0.425 三者最低——HC 残差分化单 seed 不判读）；Run 003 v4 三断言 40/40 + 双 GC + 对称性诊断。
+- **核心读数（用户交付）**：v1 refs（1–45 Hz fixed8）逐被试 Spearman **+0.1344±0.1587**（group_mean +0.181）、Pearson +0.1723；v2 refs（1–125 Hz AIC）**+0.0158±0.0851**（基本零）；与 exit-gnn（+0.149/−0.010）形态高度一致——GC 形态对 W 对称化不敏感；v1 微弱正 6/8（s5/s10/s27 驱动），描述性不确证。
+- **方法学发现（caveat 实证收窄）**：EC 未坍缩为无向——corr(M,Mᵀ)≈0、asym(v4)≈1.02 与另两代理脑同量级 ⇒ W 对称仅约束 GNN 消息传递通路，方向结构由非对称逐通道编码/出口投影承载；与有向 GC 相关弱的瓶颈 = 整体对齐弱非对称性坍缩（aligned +0.134 > flipped +0.102 方向特异弱保持）。沉淀 spec evaluation-calibers.md「架构级先验不自动传递到 EC 读出」条目。
+- 2.2 check 8/8 PASS（2 Minor 登记：juxtaposition_note 先例常量残留不重跑、并置口径注记 README 已配对）。
+
+### Git Commits
+
+| commit | 说明 |
+|---|---|
+| （本次） | feat(latent-flow): sym-W 变体无偏 EC_pert 三跑（v1 GC ρ+0.134/v2 基本零 + 对称性诊断证伪无向坍缩预期；--symw 旗标算法零改动 + 逐位等价对拍） |
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- symw EC 结果随 θ 候选判断联动（progress 待拍板⑩）；三任务波形判读 + 消融归因 + 下一任务先后仍待用户拍板。

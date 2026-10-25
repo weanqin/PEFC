@@ -19,6 +19,10 @@ gccorr（离线：refs mild40 GC × EC，|EC|/raw × aligned/flipped × Spearman
 基座，旧调用面零变化；viz_mild 同款旗标先例）；--task-label 非空时 main payload 新增
 顶层 task 字段、summary/gccorr 替换任务名段；逐例 json/npz 原子写（tmp+rename）。
 
+10-25-symw-ec-unbiased 增量：--symw SymWAdam 对称 W 变体代理脑（10-25-latent-flow-
+exit-gnn-symw；架构侧等价 --flow-exit-gnn、与之互斥；payload symw 分支含 A_eff 无向
+caveat + hparams symw 键；σ*/τ/conn 计算路径零改动，默认关 = 旧调用面零变化）。
+
 τ 分位口径含对角自响应（flatten 全 128×128，与 unbiased 先例一致；评审 A 注明防
 与 offdiag-only 口径误比）。
 
@@ -124,6 +128,11 @@ def parse_args(argv=None):
     p.add_argument("--flow-exit-gnn", action="store_true",
                    help="出口 GNN 变体架构（10-24-latent-flow-exit-gnn；默认关 = "
                         "w500 基座，旧调用面不变）")
+    p.add_argument("--symw", action="store_true",
+                   help="SymWAdam 对称 W 变体代理脑（10-25-latent-flow-exit-gnn-"
+                        "symw；symw 训练直用 FlowVelocityNetExitGNN 零架构差异，"
+                        "故模型构建侧等价 --flow-exit-gnn；与 --flow-exit-gnn 互斥；"
+                        "默认关 = w500 基座，旧调用面不变）")
     p.add_argument("--task-label", type=str, default="",
                    help="非空时：main payload 新增顶层 task 字段；summary/gccorr "
                         "替换 task 串任务名段（保留 Run 注记）。默认空 = 现行为")
@@ -136,11 +145,17 @@ def _caliber_asserts(a) -> None:
          f"got {a.window_len}/{a.obs_len}/{a.forecast_len}")
     assert a.obs_len + a.forecast_len == a.window_len
     assert Path(a.ckpt).exists(), f"ckpt not found: {a.ckpt}"
+    assert not (a.flow_exit_gnn and a.symw), \
+        "--flow-exit-gnn 与 --symw 互斥（symw 代理脑只走 --symw 单旗标）"
     if a.flow_exit_gnn:
         # 同名 ckpt 防交叉：w500 与 exit-gnn 两 run_dir 的 stage2 best 文件名相同，
         # 凭 run_dir 段区分（strict load 双保险之外的第一道闸）
         assert "10-24-latent-flow-exit-gnn" in a.ckpt, \
             f"--flow-exit-gnn 须配 exit-gnn run_dir 的 ckpt，got {a.ckpt}"
+    elif a.symw:
+        # symw run_dir 段守卫（同款防交叉；symw 与 exit-gnn 文件名亦相同）
+        assert "10-25-latent-flow-exit-gnn-symw" in a.ckpt, \
+            f"--symw 须配 symw run_dir 的 ckpt，got {a.ckpt}"
 
 
 def _atomic_write_json(path: Path, payload: dict) -> None:
@@ -199,7 +214,9 @@ def run_main(a) -> None:
         f"norm mean_std SHA256 对拍失败: {norm_sha} != 训练登记值（口径漂移即拒跑）"
     files_hash = _train_files_hash(train_f)
 
-    model = build_model_mild(device, _model_args(a.flow_exit_gnn), stage=2,
+    # symw 训练直用 FlowVelocityNetExitGNN（flow_exit_gnn_symw.py:58 import，零架构
+    # 差异）⇒ 架构侧等价 flow_exit_gnn=True（SymWAdam 仅 optimizer 尾部投影，不进 ckpt）
+    model = build_model_mild(device, _model_args(a.flow_exit_gnn or a.symw), stage=2,
                              obs_len=a.obs_len, forecast_len=a.forecast_len)
     load_flow_ckpt(model, a.ckpt)
     set_seed(a.seed)
@@ -293,6 +310,35 @@ def run_main(a) -> None:
                 "co-vary (two-factor, ablation pending user decision); theta-candidacy "
                 "currently leans w500 base (user readout pending). EC results are "
                 "PROVISIONAL and do not constitute a surrogate qualification verdict.")
+        elif a.symw:
+            method_str = ("global_tau_quantile UNBIASED (mu=0, sigma*xi, latent-flow "
+                          "mild exit-gnn sym-w variant surrogate, signal-space, "
+                          "sigma* preserved; sign field saved but not directional "
+                          "by design)")
+            surrogate_block = {
+                "task": "10-25-latent-flow-exit-gnn-symw run_symw_fold0",
+                "ckpt_stage2_best": ("0.8054@E144 (early-stop converged; W strictly "
+                                     "symmetrized — see surrogate_caveat)"),
+                "variant": ("OCLatentFlow two-stage + flow exit GNN variant "
+                            "(shared-A_eff message passing + zero-init exit "
+                            "projection) trained with SymWAdam per-step W←(W+Wᵀ)/2 "
+                            "projection + anti-uniform λ0.2; two-factor vs exit-gnn "
+                            "Run 001 (λ and sym-W co-vary, ablation pending), "
+                            "mexhat-graph flow (K=2, gamma 0.1, gamma_m 1.0), "
+                            "full-window decoder, deterministic sampling"),
+                "euler_steps": int(a.n_steps), "amp": "bf16-autocast",
+                "obs_len": int(a.obs_len), "forecast_len": int(a.forecast_len),
+                "n_channels": int(C), "symw": True}
+            surrogate_caveat = (
+                "symw Run 000 (2026-10-25): A_eff undirected (W strictly "
+                "symmetric, torch.equal-level) ⇒ EC directionality "
+                "construct-limited — per-direction readout must reset "
+                "expectations to undirected caliber; λ0.2 and sym-W two-factor "
+                "co-vary (ablation pending); medoid/real std 0.858/0.848 "
+                "(partial amplitude recovery vs w500 0.957/0.996); "
+                "theta-candidacy pending user decision; EC results are "
+                "PROVISIONAL and do not constitute a surrogate qualification "
+                "verdict.")
         else:
             method_str = ("global_tau_quantile UNBIASED (mu=0, sigma*xi, latent-flow "
                           "mild-w500 surrogate, signal-space, sigma* preserved; sign "
@@ -335,7 +381,8 @@ def run_main(a) -> None:
                         "n_grid": int(a.n_grid), "n_steps": int(a.n_steps),
                         "batch_size": int(a.batch_size), "seed": int(a.seed),
                         "use_biased_noise": False,
-                        "flow_exit_gnn": bool(a.flow_exit_gnn)},
+                        "flow_exit_gnn": bool(a.flow_exit_gnn),
+                        "symw": bool(a.symw)},
             "diagnostics": {
                 "n_at_sigma_min": n_min, "n_at_sigma_max": n_max,
                 "pct_at_sigma_min": n_min / v.size * 100,
@@ -411,7 +458,9 @@ def run_summary(a) -> None:
     task_name = a.task_label or "10-24-mild-w500-ec-unbiased"
     caveat_note = ("EC 结论继承 exit-gnn 代理脑幅度欠校准 + lr/结构二因素 caveat"
                    "（provisional）" if a.flow_exit_gnn else
-                   "EC 结论继承 w500 代理脑 stage2 顶格未收敛 caveat（provisional）")
+                   ("EC 结论继承 symw 代理脑 A_eff 无向（方向性构造受限）+ λ/sym-W "
+                    "二因素 caveat（provisional）" if a.symw else
+                    "EC 结论继承 w500 代理脑 stage2 顶格未收敛 caveat（provisional）"))
     rows = sorted(main_dir.glob("subject_*.json"))
     assert rows, f"no subject_*.json under {main_dir}"
     off = ~np.eye(128, dtype=bool)
@@ -516,7 +565,8 @@ def run_gccorr(a) -> None:
     out_dir = Path(a.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     task_name = a.task_label or "10-24-mild-w500-ec-unbiased"
-    surrogate_name = "mild exit-gnn variant" if a.flow_exit_gnn else "mild-w500"
+    surrogate_name = ("mild exit-gnn variant" if a.flow_exit_gnn else
+                      ("mild exit-gnn sym-w variant" if a.symw else "mild-w500"))
     refs = {}
     for f in sorted(Path(REFS_DIR).glob("refs_s*.npz")):
         z = np.load(f, allow_pickle=True)
