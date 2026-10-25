@@ -657,3 +657,27 @@ v4a-fmt 基座上把 5 个 LayerNorm 位换 adaLN（emb(t)→逐 site SiLU→Lin
 ### Next Steps
 
 - symw EC 结果随 θ 候选判断联动（progress 待拍板⑩）；三任务波形判读 + 消融归因 + 下一任务先后仍待用户拍板。
+
+## Session 24: symw 变体 fold1/fold2 双折训练（任务 10-25-latent-flow-symw-f12）
+
+### Summary
+
+- 用户指令双折训练（模型 = symw 变体；AskUserQuestion 拍板立轻量任务）；纯跑批零代码改动。
+- 关键前置核查：仓库无 fold1/2 stage1 VAE ⇒ 每折先 stage1（镜像 w500 fold0 stage1 **实际口径** epochs150/patience30/lr5e-4/batch64——修正 briefing 初稿误引的旧库默认值）；抽查被试取各折 test 2MDD+1HC（fold1=2,12,22 / fold2=3,6,23，fold0 的 1,7,21 跨折不可复用）。
+- 串行链 fold1 s1→s2→fold2 s1→s2（首拉即夭折于日志目录不存在，mkdir 后重拉——登记）；AC1 脚本对拍：三折 stage2 CLI 剔除 fold/run_dir/vae_ckpt 后逐键相等。
+- 结果：fold1 s1 2.0358@E57（87ep 早停）→ s2 **0.8264@E116（146ep 真早停）**，幅度 1.011/1.043 ≈ 完美；fold2 s1 2.1210@E49（79ep）→ s2 **0.8433@E113（143ep 真早停）**，幅度 0.886/0.896；三折 val 0.81–0.84 同域、幅度均值 0.918 ⇒ **幅度回升跨折稳健**；W torch.equal 对称三折全过。
+- 协同事实：并行会话（10-25-symw-ec-unbiased）同期回写研究记忆——EC 未坍缩为无向（方向结构由非对称逐通道编码/出口承载），symw 的 A_eff 无向 caveat 实证收窄；progress.md 合并式更新避免覆盖。
+
+### Git Commits
+
+| commit | 说明 |
+|---|---|
+| （本次） | feat(latent-flow): symw fold1/fold2 双折训练（跨折稳健：val 0.8264/0.8433 双真早停 + 幅度 1.011/0.886；CLI 三折对拍全等 + W 对称三折全过） |
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- symw 三折波形判读 + θ 候选判断 + fold3/4 是否补跑留用户（progress 待拍板⑩）；与并行 EC 任务（10-25-symw-ec-unbiased）联动判读。
