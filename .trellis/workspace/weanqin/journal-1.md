@@ -601,3 +601,30 @@ v4a-fmt 基座上把 5 个 LayerNorm 位换 adaLN（emb(t)→逐 site SiLU→Lin
 
 - exit-gnn θ 候选判断/波形判读/消融（lr 5e-4 补跑）仍待用户拍板（10-24-latent-flow-exit-gnn in_progress）——EC provisional 随其联动。
 - v2 GC 参考的 flipped 负相关（组均 −0.15）为描述性登记，如需追问方向结构属新任务。
+
+## Session 23: exit-gnn sym-W 变体训练（任务 10-25-latent-flow-exit-gnn-symw）
+
+### Summary
+
+- 用户两项拍板派生变体：anti-uniform λ 0.1→0.2 + 每步强制对称化 W←(W+Wᵀ)/2，其余 = exit-gnn Run 001 同参（方案先行 briefing，用户「确认」过 1.4 门）。
+- 实施：变体层 `flow_exit_gnn_symw.py`（SymWAdam = Adam 子类，step() 尾部 no_grad 原位投影 `flow.graph_mixer.W`，零参数增量、optimizer state 键面零污染；挂点依据 = BaseTrainer optimizer 外部注入且无逐步回调钩子）+ `train_mild_depress.py` `--sym-w` 旗标/五守卫/口径守卫/config 凭据（`train_args` Namespace 透传 sym_w 为实施代理发现的静默失效点）；包体零 diff。
+- Run 000：CPU 自验全过（非对称 W 一步投影后 torch.equal 对称）；**方法学发现——该 GPU 路径（bf16 AMP/cuDNN）同代码重跑即非逐位（ckpt 全张量 max|Δ|≈1.4e-3），三方对拍（改前/改后旗标关/改后重跑）证实改动前后差异全部落在重跑噪声内**；冒烟 λ=0.2 算术精确入 loss、W 严格对称且已从零打开。
+- Run 001 正式（fold0/150ep/736 s）：best val **0.8054@E144**（三者最优：exit-gnn 0.8241@E116 / w500 0.8356@E150），150ep 顶格未早停；best ckpt W torch.equal 级对称（max|W| 1.59）。
+- Run 002 质量抽查：medoid/real std 全程 **0.858 / 去末 0.848**——较 exit-gnn（0.645/0.581）收复幅度回归大半，与 w500（0.957/0.996）仍差 ~0.10；coverage 结构性 0 照登；viz 三图落档。
+- **主结论**：对称 W + λ0.2 下 val 最优且幅度校准显著回升（λ 与 sym-W 两因素同变，归因不唯一）；A_eff 无向 ⇒ EC 方向性按构造受限——θ 候选判断/波形判读留用户（progress 待拍板⑩）。
+- 沉淀 spec reproducibility.md 两条：optimizer 子类挂训练期硬约束惯例 + 非逐位确定 GPU 路径的旗标关兼容判据（三方对拍噪声内一致）。
+
+### Git Commits
+
+| commit | 说明 |
+|---|---|
+| （本次） | feat(latent-flow): exit-gnn sym-W 变体训练（SymWAdam 每步对称投影 + λ0.2；val 0.8054 三者最优 + 幅度回升 0.858/0.848；包体零 diff） |
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- symw 波形人工判读 + θ 候选判断留用户（`outputs/10-25-latent-flow-exit-gnn-symw/run_symw_fold0/viz/`）。
+- 消融归因（λ0.2 不对称 / symw λ0.1）与 w500 延长预算、exit-gnn 消融同属拍板池（progress 待拍板②⑩）。

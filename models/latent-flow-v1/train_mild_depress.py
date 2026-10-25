@@ -41,9 +41,13 @@ stage2 训练面（10-24 任务起新增，默认全 off = 旧路径行为不动
     零初始化 exit_out，初始 v≡0 恒等起步；A_eff 与入口共享、梯度双路累计）；
     仅 stage2 且 mexhat/dog 流有效（构造断言拒建）；口径守卫将其纳入新口径
     特征（须显式 --run-dir）；
+  - --sym-w（10-25-latent-flow-exit-gnn-symw 新增，默认关）：每步 optimizer
+    step 后强制对称化 W ← (W+Wᵀ)/2（SymWAdam 逐步投影，目标
+    flow.graph_mixer.W；仅 stage2 + mexhat/dog + --unfreeze-decoder 本地
+    runner 路径；与 --dense-fallback / gaussian kernel 互斥）；
   - 口径守卫：新口径特征（window_len != 1500 或 unfreeze-decoder 或
-    anti-uniform != 0 或 flow-exit-gnn）而 --run-dir 解析为 OUT_BASE 默认值时
-    拒跑（防漏传 --run-dir 误写上轮受保护目录树）。
+    anti-uniform != 0 或 flow-exit-gnn 或 sym-w）而 --run-dir 解析为 OUT_BASE
+    默认值时拒跑（防漏传 --run-dir 误写上轮受保护目录树）。
 
 训练循环零复制：直接 import 复用包内 Stage1Step/Stage2Step/_KLAnnealCallback/
 _run_stage1/_run_stage2（unfreeze-decoder 分支除外——包内冻结逻辑只有
@@ -110,6 +114,7 @@ from latent_flow.training.trainer import (  # noqa: E402
     PrintingCallback,
 )
 from flow_exit_gnn import FlowVelocityNetExitGNN  # noqa: E402  (变体子类，同目录)
+from flow_exit_gnn_symw import SymWAdam  # noqa: E402  (变体 optimizer，同目录)
 
 # --- mild 契约常量（.trellis/spec/data/mild-depression.md） ---
 OBS_LEN = 1125
@@ -186,6 +191,16 @@ def parse_args(argv=None):
                         "v≡0；A_eff 与入口共享，梯度双路累计）；仅 --stage 2 且 "
                         "mexhat/dog 流有效（与 --dense-fallback 互斥）；属新口径"
                         "特征，须显式 --run-dir（口径守卫）")
+    # --- stage-2 W 强制对称化（10-25-latent-flow-exit-gnn-symw；默认关 = 原行为） ---
+    p.add_argument("--sym-w", action="store_true",
+                   help="Stage-2 每步 optimizer step 后强制对称化 W <- "
+                        "(W+W^T)/2（SymWAdam 逐步投影；10-25-"
+                        "latent-flow-exit-gnn-symw 新增）；目标 graph_mixer.W"
+                        "（exit-gnn 共享 A_eff 下恰一个）；仅 --stage 2 + "
+                        "mexhat/dog 流；须与 --unfreeze-decoder 同用（本地 "
+                        "runner 才能注入变体 optimizer）；与 --dense-fallback / "
+                        "gaussian kernel 互斥；属新口径特征，须显式 --run-dir；"
+                        "默认关 = 原行为")
     return p.parse_args(argv)
 
 
@@ -528,8 +543,28 @@ def _run_stage2_mild(model, train_loader, val_loader, args, save_path, vae_ckpt)
     if step.sparse_lambda > 0:
         print(f"  L1 sparsity regularizer: lambda={step.sparse_lambda} "
               f"(on A_eff off-diag)")
-    optimizer = torch.optim.Adam(
-        [p for p in model.parameters() if p.requires_grad], lr=args.lr)
+    if getattr(args, "sym_w", False):
+        # 10-25-latent-flow-exit-gnn-symw：每步投影 W ← (W+Wᵀ)/2（SymWAdam
+        # step 尾部原位投影，BaseTrainer 逐字复用）。起跑 fail-fast（prd R5①）：
+        # 投影目标存在（mexhat/dog 分支 LearnableMexHatMixer.W——dense 分支
+        # 无 graph_mixer 属性、gaussian 分支无 W，CLI 守卫应已拒跑，此处兜底）
+        # 且起跑已对称（stage2 flow 键重初始化 ⇒ W 零初始化对称起步）——投影
+        # 仅负责逐步维持，不负责起跑修复
+        mixer = getattr(model.flow, "graph_mixer", None)
+        assert mixer is not None and hasattr(mixer, "W"), (
+            "sym_w：model.flow.graph_mixer 无 W（须 mexhat/dog 流；dense/"
+            "gaussian 分支无投影目标——CLI 守卫应已拒跑，此处兜底）")
+        assert torch.equal(mixer.W, mixer.W.t()), (
+            "sym_w：起跑 W 必须已对称（stage2 flow 键重初始化 ⇒ W 零初始化"
+            "对称起步）；起跑即非对称属口径意外，fail-fast 拒跑")
+        optimizer = SymWAdam(
+            [p for p in model.parameters() if p.requires_grad], lr=args.lr,
+            sym_params=[mixer.W])
+        print("  forced W symmetrization: ON (SymWAdam per-step projection "
+              "W <- (W+W^T)/2)")
+    else:
+        optimizer = torch.optim.Adam(
+            [p for p in model.parameters() if p.requires_grad], lr=args.lr)
     trainer = BaseTrainer(
         model=model, criterion=None, device=next(model.parameters()).device,
         train_step=step, lr=args.lr, patience=args.patience,
@@ -598,10 +633,26 @@ def main() -> int:
         ("--flow-exit-gnn 须与 --unfreeze-decoder 同用：仅本地 runner "
          "_run_stage2_mild 的 VAE ckpt 白名单含 flow.exit_ 前缀；默认包内 "
          "_run_stage2 无该前缀，exit_* 键将按 non-flow mismatch 拒跑")
+    # W 强制对称化守卫（10-25-latent-flow-exit-gnn-symw）：投影目标唯一 =
+    # flow.graph_mixer.W（仅 mexhat/dog 分支 LearnableMexHatMixer 具备）⇒
+    # 仅 stage2 图流 + 本地 runner 路径有效
+    assert not (args.sym_w and args.stage != 2), \
+        "--sym-w 仅对 --stage 2 有意义（stage1 不训练流，无 W 可投影）"
+    assert not (args.dense_fallback and args.sym_w), \
+        ("--sym-w 与 --dense-fallback 互斥：dense 流无 graph_mixer，"
+         "不存在投影目标 W")
+    assert not (args.sym_w and args.graph_kernel == "gaussian"), (
+        f"--sym-w 与 gaussian kernel 互斥：gaussian 分支 GraphChannelMixer 无 "
+        f"可学习残差 W（投影目标不存在），got kernel={args.graph_kernel!r}")
+    assert not (args.sym_w and not args.unfreeze_decoder), \
+        ("--sym-w 须与 --unfreeze-decoder 同用：逐步投影须注入 SymWAdam 变体 "
+         "optimizer，仅本地 _run_stage2_mild 支持；包内 _run_stage2 的 "
+         "optimizer 不可注入")
     # 新口径特征而 run_dir 解析为 OUT_BASE 默认值 ⇒ 拒跑（防漏传 --run-dir
     # 误写上轮受保护目录树；旧口径 + 旧默认目录组合不受影响）
     new_caliber = (args.window_len != WINDOW or args.unfreeze_decoder
-                   or args.anti_uniform_lambda != 0.0 or args.flow_exit_gnn)
+                   or args.anti_uniform_lambda != 0.0 or args.flow_exit_gnn
+                   or args.sym_w)
     default_run_dir = OUT_BASE / f"run_fold{args.fold}"
     run_dir = Path(args.run_dir) if args.run_dir else default_run_dir
     if new_caliber:
@@ -610,7 +661,8 @@ def main() -> int:
                 f"新口径（window_len={args.window_len}, "
                 f"unfreeze_decoder={args.unfreeze_decoder}, "
                 f"anti_uniform_lambda={args.anti_uniform_lambda}, "
-                f"flow_exit_gnn={args.flow_exit_gnn}）不得使用 "
+                f"flow_exit_gnn={args.flow_exit_gnn}, "
+                f"sym_w={args.sym_w}）不得使用 "
                 f"OUT_BASE 默认目录 {default_run_dir}（上轮受保护目录树）——"
                 f"须显式传 --run-dir 指向本轮声明目录")
     (run_dir / "configs").mkdir(parents=True, exist_ok=True)
@@ -682,11 +734,13 @@ def main() -> int:
 
     # args 命名空间钉死（design §4：dataset="mild" 决定包内 history 落
     # logs/mild/；unfreeze_vae=False / sparse 0 / scheduler none 为旧库默认的
-    # 显式固定；anti_uniform_lambda 由 CLI 透传（10-24 起可非 0）——包内
-    # _run_stage2 与本地 _run_stage2_mild 均经 Stage2Step 读该值）
+    # 显式固定；anti_uniform_lambda 由 CLI 透传（10-24 起可非 0）；sym_w 由
+    # CLI 透传（10-25 起，本地 _run_stage2_mild 据此注入 SymWAdam）——包内
+    # _run_stage2 与本地 _run_stage2_mild 均经 Stage2Step 读 anti_uniform）
     train_args = argparse.Namespace(
         dataset="mild", unfreeze_vae=False,
         anti_uniform_lambda=args.anti_uniform_lambda, sparse_lambda=0.0,
+        sym_w=args.sym_w,
         lr_scheduler="none", lr_warmup_epochs=0,
         epochs=args.epochs, lr=args.lr, patience=args.patience, seed=args.seed,
     )
@@ -726,6 +780,7 @@ def main() -> int:
             "unfreeze_decoder": args.unfreeze_decoder,
             "frozen_modules": frozen_modules,
             "anti_uniform_lambda": args.anti_uniform_lambda,
+            "sym_w": args.sym_w,
             "trainable_params": stage2_trainable,
         }
 
@@ -777,8 +832,10 @@ def main() -> int:
                   "forecast_len": args.forecast_len,
                   "flow_variant": ("dense" if args.dense_fallback else
                                    f"graph-{args.graph_kernel}") +
-                                  ("-exit-gnn" if args.flow_exit_gnn else ""),
+                                  ("-exit-gnn" if args.flow_exit_gnn else "") +
+                                  ("-symw" if args.sym_w else ""),
                   "flow_exit_gnn": args.flow_exit_gnn,
+                  "sym_w": args.sym_w,
                   "beta_kl_final": args.beta_kl, "use_fc_decoder": False},
         "stage2": stage2_cfg,
         "geometry": {"path": str(MILD_GEOMETRY_PATH),
