@@ -681,3 +681,29 @@ v4a-fmt 基座上把 5 个 LayerNorm 位换 adaLN（emb(t)→逐 site SiLU→Lin
 ### Next Steps
 
 - symw 三折波形判读 + θ 候选判断 + fold3/4 是否补跑留用户（progress 待拍板⑩）；与并行 EC 任务（10-25-symw-ec-unbiased）联动判读。
+
+## Session 25: symw EC_pert × GC-EC 对比可视化（任务 10-25-symw-ec-viz）
+
+**Date**: 2026-10-25
+**Task**: .trellis/tasks/10-25-symw-ec-viz（study2，轻量 PRD-only；色标策略 AskUserQuestion 未应答按最佳判断：秩归一 + abs 补充，处置透明入 consent）
+
+### Summary
+
+- 用户三项规格（个体 8×2 并排同 cmap 同色标 / 组均值并排 / 标注+路径说明+模式总结）；实测量级差 ~13× ⇒ 主图秩归一同尺度（offdiag 百分位秩、对角掩蔽、共享 [0,1] viridis colorbar、ρ 角注）+ 组级 abs 补充版（各自 P99.5 上限，scales NOT shared）。
+- 新脚本 viz_symw_ec_pairs.py（纯 CPU、GPU 禁占——并行会话训练中；ρ 注记与矩阵重算对拍断言 8/8）；10 组图（8 个体 + 2 组级）PNG300dpi+PDF。
+- 四门 QA：validate 17/0；alignment 10/10（1.5pt）；collision 首轮 10 FIX（hatch 掩蔽 PDF 几何根因）→ 栅格纹理修复后 10/10；visual-judge 10/10 pass。
+- 沉淀 spec visualization.md：量级悬殊跨方法热力图色标契约 + hatch 掩蔽 collision 不合规注记。
+
+### Git Commits
+
+| commit | 说明 |
+|---|---|
+| （本次） | feat(viz): symw EC×GC 对比热力图 10 组交付（秩归一同尺度 + abs 补充；四门 QA 全过） |
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 无（描述性可视化；上游 EC 结论待拍板项不变）。

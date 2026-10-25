@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/research/visualization.md", "reason": "房内可视化契约（配色/导出/QA 约定）"}
+{"file": ".trellis/spec/research/path-isolation.md", "reason": "改动仅新脚本+新 outputs 树；旧输出树/refs 只读；GPU 禁占（并行训练在跑）"}
+{"file": ".trellis/spec/research/perturb-ec-pipeline.md", "reason": "行=源列=靶方向约定（两面板同约定）；EC×GC 描述性隔离"}
+{"file": ".trellis/spec/research/reproducibility.md", "reason": "图产物复现凭据（脚本+数据路径+backend 默认在档）"}

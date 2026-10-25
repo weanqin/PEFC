@@ -1,0 +1,3 @@
+{"file": ".trellis/spec/research/visualization.md", "reason": "核查：配色/导出/QA 契约符合"}
+{"file": ".trellis/spec/research/path-isolation.md", "reason": "核查：改动仅本任务声明路径、旧树只读、GPU 零占用"}
+{"file": ".trellis/spec/research/evaluation-calibers.md", "reason": "核查：单 seed/描述性标注在图与 README"}
