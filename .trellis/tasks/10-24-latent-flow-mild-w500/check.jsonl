@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/research/surrogate-brain-qualification.md", "reason": "核对训练顺序门禁与产物资格边界"}
+{"file": ".trellis/spec/research/evaluation-calibers.md", "reason": "核对抽查口径与禁读条款落实"}
+{"file": ".trellis/spec/research/path-isolation.md", "reason": "核对产物路径隔离与上轮目录零触碰"}
+{"file": ".trellis/spec/data/mild-depression.md", "reason": "核对数据契约遵守与口径变更登记义务"}
+{"file": ".trellis/spec/research/reproducibility.md", "reason": "核对复现凭据完整"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "代码质量门核对"}

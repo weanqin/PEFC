@@ -1,0 +1,8 @@
+{"file": ".trellis/spec/research/surrogate-brain-qualification.md", "reason": "study1 强制规范：代理脑训练任务门禁（fold0 单 seed 前置验证纪律、产物不继承资格）"}
+{"file": ".trellis/spec/data/mild-depression.md", "reason": "数据契约：40例/30trial/1500点连续/manifest SHA256/E序假设/归一化口径"}
+{"file": ".trellis/spec/research/evaluation-calibers.md", "reason": "质量抽查口径：coverage/medoid 双口径定义与确定性采样禁读条款"}
+{"file": ".trellis/spec/research/path-isolation.md", "reason": "变体目录与输出路径隔离规则"}
+{"file": ".trellis/spec/research/data-pipeline.md", "reason": "数据加载与预处理管线规范"}
+{"file": ".trellis/spec/research/visualization.md", "reason": "visualizer 契约（v2.1 渲染口径）"}
+{"file": ".trellis/spec/research/reproducibility.md", "reason": "复现性凭据要求（config/seed/hash 落盘）"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Python 变体层编码质量门"}
