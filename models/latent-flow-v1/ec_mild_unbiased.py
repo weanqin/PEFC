@@ -32,6 +32,15 @@ configs norm_stats 登记值，缺键拒跑）；f12 ckpt 文件名 fold{k}_ 前
 f12 分支（task/best-val/variant/caveat）+ hparams.fold 显式化；σ*/τ/conn 计算路径
 逐行零改动，fold0 旧调用面行为不变（旗标关等价对拍兜底）。
 
+10-27-ec-histblock-noise 增量：--noise-mode {iid,hist-block} 历史段噪声构造变体
+（默认 iid = 旧调用面零变化）。hist-block = 通道/被试全共享（被试循环外一次构造
+(30,15)→repeat_interleave(25)→(30,375)，各被试切片同一存储、provider 忽略 source）+
+连续 25 点一组共 15 组、组内复制组间独立；--hist-len/--hist-group-size/
+--hist-share-channels/--hist-share-subjects 可配置（默认 375/25/共享/共享，共享关 =
+按源/被试键控退化）；ξ 种子 = seed+9375；不落盘噪声数组（用户拍板 2026-10-27），
+跨任务复现 = hparams 种子+配方确定性重建；σ*/τ/conn 与 forecast/measure 路径零改动
+（HistBlockProbeSite 仅重写 set_source 的 ξ 来源，CRN 继承保持）。
+
 τ 分位口径含对角自响应（flatten 全 128×128，与 unbiased 先例一致；评审 A 注明防
 与 offdiag-only 口径误比）。
 
@@ -78,6 +87,7 @@ from latent_flow.scripts._connectivity_driver import (  # noqa: E402
 from latent_flow.training.seeding import set_seed  # noqa: E402
 from train_mild_depress import (  # noqa: E402
     MANIFEST_DEFAULT,
+    TRIALS,
     _sha256_file,
     build_model_mild,
     compute_mild_train_norm,
@@ -155,11 +165,34 @@ def parse_args(argv=None):
                         "默认关 = w500 基座，旧调用面不变）")
     p.add_argument("--task-label", type=str, default="",
                    help="非空时：main payload 新增顶层 task 字段；summary/gccorr "
-                        "替换 task 串任务名段（保留 Run 注记）。默认空 = 现行为")
+                   "替换 task 串任务名段（保留 Run 注记）。默认空 = 现行为")
+    p.add_argument("--noise-mode", choices=["iid", "hist-block"], default="iid",
+                   help="历史段噪声构造：iid = 原实现（逐点 i.i.d.，seed+source 逐源"
+                        "播种）；hist-block = 分组共享变体（10-27-ec-histblock-noise）。"
+                        "默认 iid = 旧行为逐字不变")
+    p.add_argument("--hist-len", type=int, default=W500_OBS,
+                   help="hist-block 历史段长度（须 == obs_len；默认 375）")
+    p.add_argument("--hist-group-size", type=int, default=25,
+                   help="hist-block 每组采样点数（须整除 hist-len；375/25=15 组，"
+                        "组内复制、组间独立）")
+    p.add_argument("--hist-share-channels",
+                   action=argparse.BooleanOptionalAction, default=True,
+                   help="hist-block 通道共享（--no- 关闭 = 按源键控播种）；默认共享")
+    p.add_argument("--hist-share-subjects",
+                   action=argparse.BooleanOptionalAction, default=True,
+                   help="hist-block 被试共享（--no- 关闭 = 按被试键控播种）；默认共享")
     return p.parse_args(argv)
 
 
 def _caliber_asserts(a) -> None:
+    if a.noise_mode == "hist-block":
+        # hist-block 口径断言（10-27-ec-histblock-noise）：噪声须恰好覆盖历史段且
+        # 整除分组；iid 模式忽略全部 hist 旗标（旧调用面零变化）
+        assert a.hist_len == a.obs_len, \
+            f"--hist-len must equal obs_len({a.obs_len}), got {a.hist_len}"
+        assert a.hist_len % a.hist_group_size == 0, \
+            (f"--hist-group-size must divide --hist-len: "
+             f"{a.hist_len} % {a.hist_group_size} != 0")
     assert (a.window_len, a.obs_len, a.forecast_len) == (W500_WINDOW, W500_OBS, W500_FC), \
         (f"口径钉死 {W500_WINDOW}/{W500_OBS}/{W500_FC}（w500 ckpt 训练口径），"
          f"got {a.window_len}/{a.obs_len}/{a.forecast_len}")
@@ -220,6 +253,52 @@ def _norm_sha(mean: np.ndarray, std: np.ndarray) -> str:
 
 
 # =============================================================================
+# hist-block 历史段分组共享噪声（10-27-ec-histblock-noise；默认 noise-mode=iid 零使用）
+# =============================================================================
+
+_HIST_XI_SEED_OFFSET = 9375   # = 375*25；与 seed+source∈[42,169]、seed*10000+sid 流正交
+
+
+def build_hist_block_xi(n_trials: int, hist_len: int, group_size: int, *,
+                        seed: int, device, source_key=None, subject_key=None):
+    """历史段分组噪声 ξ：(n_trials, G) i.i.d. N(0,1) → 组内复制 → (n_trials, hist_len)。
+
+    每组独立采样一次、组内 group_size 个**连续**采样点复制同一值（repeat_interleave
+    非 repeat，保证连续分组而非跨组交错）；trial 维（行）独立（用户拍板 2026-10-27，
+    保留 trial 级随机性）。source_key/subject_key 非 None 时卷入种子（=
+    --no-hist-share-channels / --no-hist-share-subjects 退化路径，两键正交可叠加）。
+    独立 torch.Generator：不受全局 RNG 状态/调用顺序影响。跨任务复现 = 种子+配方
+    确定性重建（前提：同 seed / 同 (n_trials, G) 形状 / 同设备类型 / 同 torch 版本）。
+    """
+    assert hist_len % group_size == 0, (hist_len, group_size)
+    n_groups = hist_len // group_size
+    s = int(seed) + _HIST_XI_SEED_OFFSET
+    if source_key is not None:
+        s += 1009 * (int(source_key) + 1)
+    if subject_key is not None:
+        s += 100003 * (int(subject_key) + 1)
+    gen = torch.Generator(device=device).manual_seed(s)
+    base = torch.randn(n_trials, n_groups, device=device, generator=gen)  # (N, G)
+    return base.repeat_interleave(group_size, dim=1)                     # (N, hist_len)
+
+
+class HistBlockProbeSite(SignalProbeSite):
+    """ξ 注入式探针（hist-block）：唯一差异 = set_source 不按 seed+source 重抽，
+    改取注入构造；forecast / measure / CRN（同源跨 σ 同 ξ）全部继承零改动。"""
+
+    def __init__(self, *, xi_provider, **kw):
+        super().__init__(**kw)
+        self._xi_provider = xi_provider
+
+    def set_source(self, source: int) -> None:
+        self._source = source
+        xi = self._xi_provider(source)   # 通道共享 ⇒ provider 忽略 source
+        expected = (self.N, self.x_obs.shape[1])
+        assert tuple(xi.shape) == expected, f"xi 形状 {tuple(xi.shape)} != {expected}"
+        self._xi = xi
+
+
+# =============================================================================
 # main 模式：两阶段 global-τ EC（GPU）
 # =============================================================================
 
@@ -261,9 +340,22 @@ def run_main(a) -> None:
 
     from train_mild_depress import MildTrialDataset  # 延迟导入（同 quality_check_mild）
     grid = log_grid(a.sigma_min, a.sigma_max, a.n_grid)
+    noise_note = ("" if a.noise_mode == "iid" else
+                  f" | noise={a.noise_mode}(g={a.hist_group_size}x"
+                  f"{a.hist_len // a.hist_group_size}, share_ch={a.hist_share_channels}, "
+                  f"share_subj={a.hist_share_subjects}, xi_seed=seed"
+                  f"+{_HIST_XI_SEED_OFFSET})")
     print(f"[main] paradigm: global-tau UNBIASED (mu=0, sigma*xi) | q={a.q} "
           f"sigma_ref={a.sigma_ref} grid=log[{a.sigma_min},{a.sigma_max}]x{a.n_grid} | "
-          f"subjects={sids} | device={device}", flush=True)
+          f"subjects={sids} | device={device}{noise_note}", flush=True)
+
+    # hist-block 全共享全局构造（10-27-ec-histblock-noise）：被试循环外只生成一次，
+    # 各被试切片同一存储（跨被试逐位一致）；provider 忽略 source（跨 128 源同一份）
+    XI_HIST_GLOBAL = None
+    if a.noise_mode == "hist-block" and a.hist_share_channels and a.hist_share_subjects:
+        n_max = a.n_trials if a.n_trials > 0 else TRIALS
+        XI_HIST_GLOBAL = build_hist_block_xi(n_max, a.hist_len, a.hist_group_size,
+                                             seed=a.seed, device=device)
 
     t_all = time.time()
     for i, sid in enumerate(sids):
@@ -283,12 +375,34 @@ def run_main(a) -> None:
         n_src = a.sources if a.sources > 0 else C
         assert n_src <= C
 
-        site = SignalProbeSite(
+        site_common = dict(
             model=model, x_obs_subject=x_obs,
             n_steps=a.n_steps, use_proj=False, batch_size=a.batch_size,
             seed=a.seed, n_grid=a.n_grid,
             sigma_min=a.sigma_min, sigma_max=a.sigma_max,
             use_biased_noise=False)
+        if a.noise_mode == "hist-block":
+            # hist-block ξ 注入（10-27-ec-histblock-noise）：通道共享 ⇒ provider
+            # 忽略 source；全共享 = 循环外 XI_HIST_GLOBAL 的切片（同存储零复制）
+            if a.hist_share_channels:
+                xi_subj = (XI_HIST_GLOBAL[:N] if a.hist_share_subjects else
+                           build_hist_block_xi(N, a.hist_len, a.hist_group_size,
+                                               seed=a.seed, device=device,
+                                               subject_key=subj_idx))
+
+                def xi_provider(src, _xi=xi_subj):
+                    return _xi
+            else:
+                # 退化：按源键控重生成（可叠加被试键），仍为分组结构
+                _subj_key = None if a.hist_share_subjects else subj_idx
+
+                def xi_provider(src):
+                    return build_hist_block_xi(
+                        N, a.hist_len, a.hist_group_size, seed=a.seed,
+                        device=device, source_key=src, subject_key=_subj_key)
+            site = HistBlockProbeSite(xi_provider=xi_provider, **site_common)
+        else:
+            site = SignalProbeSite(**site_common)
         assert site._mu_bias is None, "μ_bias 未关闭"
 
         enabled = device.type == "cuda"
@@ -447,8 +561,18 @@ def run_main(a) -> None:
             "sign_matrix": sign_matrix.tolist(),
             "signed_connectivity_matrix": (sign_matrix * conn).tolist(),
             "mean_diff_matrix": mean_diff.tolist(),
-            "noise_model": ("unbiased_gaussian_mu0 (sigma*xi additive on z-scored "
-                            "x_obs (375), before model; same xi across sigma per source)"),
+            "noise_model": (
+                (f"unbiased_gaussian_mu0_hist_block (sigma*xi additive on z-scored "
+                 f"x_obs ({a.hist_len}), before model; xi block-shared: "
+                 f"{a.hist_group_size}-sample groups x{a.hist_len // a.hist_group_size}, "
+                 f"share_channels={a.hist_share_channels}, share_subjects="
+                 f"{a.hist_share_subjects}, same xi across sigma; reconstruction = "
+                 f"randn(n_trials, {a.hist_len // a.hist_group_size}, generator seed="
+                 f"{a.seed}+{_HIST_XI_SEED_OFFSET}).repeat_interleave("
+                 f"{a.hist_group_size}, dim=1) on same device/torch build)")
+                if a.noise_mode == "hist-block" else
+                ("unbiased_gaussian_mu0 (sigma*xi additive on z-scored "
+                 "x_obs (375), before model; same xi across sigma per source)")),
             "grid": "log_spaced",
             "hparams": {"q": float(a.q), "sigma_ref": float(a.sigma_ref),
                         "sigma_min": float(a.sigma_min), "sigma_max": float(a.sigma_max),
@@ -459,7 +583,18 @@ def run_main(a) -> None:
                         "symw": bool(a.symw),
                         # f12 显式化（10-25-symw-ec-f12）：折身份进 hparams；
                         # 旗标关/fold0 先例 payload 键面不变
-                        **({"fold": int(a.fold)} if symw_f12 else {})},
+                        **({"fold": int(a.fold)} if symw_f12 else {}),
+                        # hist-block 配方显式化（10-27-ec-histblock-noise）：跨任务
+                        # 复现 = 种子+配方确定性重建（拍板①不落盘数组）；iid 模式
+                        # 键面不变（旗标关先例）
+                        **({"noise_mode": "hist-block",
+                            "hist_len": int(a.hist_len),
+                            "hist_group_size": int(a.hist_group_size),
+                            "hist_n_groups": int(a.hist_len // a.hist_group_size),
+                            "hist_share_channels": bool(a.hist_share_channels),
+                            "hist_share_subjects": bool(a.hist_share_subjects),
+                            "hist_xi_seed_offset": int(_HIST_XI_SEED_OFFSET)}
+                           if a.noise_mode == "hist-block" else {})},
             "diagnostics": {
                 "n_at_sigma_min": n_min, "n_at_sigma_max": n_max,
                 "pct_at_sigma_min": n_min / v.size * 100,

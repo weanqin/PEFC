@@ -73,3 +73,24 @@
 2. **四元组 RNG 契约的成本（实现层）**：逐 (sid,w,a,k) 构造 PCG64 流（每例 ~29.8 万流 + 16.1 亿高斯 CPU 物化）≈ 预算 ×1.36（GPU 空转等喂）。优化选项：**D 预取重叠**（生产者线程预生成下一源通道的噪声，流与值零变化，可直接用）；**A 向量化派生 / B torch GPU 生成 / C (源×c臂) 并批**（均改变噪声数值或批形 ⇒ 与既有 run 非逐位可比，**须走口径变更纪律**）。
 3. **env_snapshot 时序**：必须在 thostar 装载**之后**捕获（thostar 按 cfg 设 `cudnn_deterministic`；装载前快照得到进程缺省 False 伪象——实测 manifest 记 False 而执行态 True，勘误随档）。
 4. **chunk_bk=1024 内部分块**：sample() 的 Euler 前向按 1024 行分块 ⇒ 调用批再大不省前向时间；`B·K≤8192` 上限限的是 eps/η/x0 预物化显存（~780 MB 峰值），不是吞吐参数。
+
+## 8. mild 线无偏 EC 噪声构造变体契约（hist-block，任务 10-27-ec-histblock-noise 2026-10-27 沉淀）
+
+适用 `models/latent-flow-v1/ec_mild_unbiased.py` 系（global-τ 无偏口径）。可复用纪律：
+
+1. **噪声变体开关 = 默认逐位等价 + 公式不变量对拍**：新噪声构造一律旗标化
+   （`--noise-mode {iid,<variant>}` 默认 iid）；等价对拍锚点选 `sigma_matrix` /
+   `raw_response_matrix` / `mse_curve(npz)` / `tau_global`，**不选 conn**（公式平移
+   会污染锚点）；iid 分支 payload 键面不变（hist 键仅在变体分支注入）。
+2. **共享/分组噪声的实现模式 = provider 注入**：子类只重写 `set_source` 的 ξ 来源
+   （`HistBlockProbeSite(xi_provider=...)`），forecast/measure/CRN 全继承——扰动范式
+   替换不改 engine/measure 路径（bisect_sigma「新 ProbeSite 不是新 engine」契约的
+   线内体现）。全共享构造在被试循环外生成一次、各被试**切片同一存储**（强于种子
+   共享：结构性一致，无形状漂移风险）。
+3. **新随机流种子偏移须正交并登记**：hist-block ξ = `seed+9375`（=375×25），与
+   `seed+source∈[42,169]`、`seed*10000+sid` 无碰撞；偏移值随 payload `hparams` 落档
+   （`hist_xi_seed_offset`）。独立 `torch.Generator`（不受全局 RNG/调用顺序影响）。
+4. **不落盘噪声数组时的跨任务复现四前提**（用户拍板不落盘 ⇒ 配方重建是唯一通道）：
+   同 seed / 同 `(n_trials, n_groups)` 形状（CUDA 流按形状生成，`randn(20,G)[:k] ≠
+   `randn(k,G)` 无保证）/ 同设备类型（CPU↔CUDA 流不同）/ 同 torch 版本（RNG 实现
+   无跨版本契约）。四前提写入 payload `noise_model` 重建配方串，跨任务对拍前逐项核对。

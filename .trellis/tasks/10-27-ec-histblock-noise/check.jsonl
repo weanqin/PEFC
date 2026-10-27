@@ -1,0 +1,2 @@
+{"file": ".trellis/spec/research/evaluation-calibers.md", "reason": "口径纪律：AC1 对拍锚点选择（公式不变量）、payload 键面先例"}
+{"file": ".trellis/spec/research/reproducibility.md", "reason": "检查确定性断言（torch.equal/构造性等价）与 seeded sanity 门槛"}

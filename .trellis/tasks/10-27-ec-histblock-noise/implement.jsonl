@@ -1,0 +1,3 @@
+{"file": ".trellis/spec/research/perturb-ec-pipeline.md", "reason": "study2 路由必读：扰动→EC 流程契约（CRN/口径/比较接口），hist-block 为噪声构造扩展须对齐"}
+{"file": ".trellis/spec/research/reproducibility.md", "reason": "seed/确定性契约：ξ 构造的种子偏移正交性与确定性重建四前提"}
+{"file": ".trellis/spec/research/path-isolation.md", "reason": "变体目录隔离纪律：本任务改动面=ec_mild_unbiased.py 单文件+任务档"}
