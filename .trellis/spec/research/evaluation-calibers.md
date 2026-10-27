@@ -162,3 +162,18 @@
 - **跨折并置口径**：各折 θ 为不同代理脑实例 + test 被试互斥 ⇒ 并置为 DESCRIPTIVE（不作
   复现性判读）；跨折一致性结论须以"形态同型"（如 GC 相关符号结构/σ* 中位量级）而非数值
   重合来表述（先例：crossfold_summary_f12.py，fold0/1/2 三折对照）。
+
+## md-latent-flow 线 EC 对照配置固定（2026-10-27 登记，任务 10-27-md-latent-flow-config-fix）
+
+- **线默认 conn 公式 = v4**：−(ln σ*+0.5·ln2πe)+5/7——`ec_mild_unbiased.py` 主跑直出
+  （公式串随档落盘含 "5/7"）；房内 v1 −(ln σ*+ln2πe)+1 退役为历史口径。v4 = v1 + 常数
+  平移 ≈ +1.1332 ⇒ 秩相关读数不变；网格 [0.01,0.48] 上全正（min=+0.0293）⇒ abs≡raw。
+- **GC 对照 refs = v1 mild 档单参考**（1–45 Hz fixed8）；v2 1-125hz（aic4-25 档）对比项
+  经用户拍板注销（refs 物理文件已删，`refs/MANIFEST.md` 留注销注记）。在档 dual 时代产物
+  （outputs 内 gccorr_dual_summary.json 的 v2 块）为历史数据，**保留不重生成**。
+- **配置切换的兼容契约**：① 断言守卫按「时代两态」放宽——crossfold `asserts_passed
+  in (40, 32)`（40 = 双参考时代在档 / 32 = v1 单参考复跑），其余值仍拒（守卫目的不变）；
+  ② json 侧诊断按档 `connectivity_formula` 声明自适应取对照式（recompute rounding 诊断，
+  键 `json_f32_rounding_maxabs`；公式错配表现为 ~1.13 平移量级而非舍入量级，可即时识别）；
+  ③ 产物文件名 `gccorr_dual_summary.json` 为在档 schema 契约名，**不随配置改名**（下游
+  crossfold/viz 读取路径指向在档文件）。

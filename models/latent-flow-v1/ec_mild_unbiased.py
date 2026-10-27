@@ -4,7 +4,9 @@
 任务 10-24-mild-w500-ec-unbiased（design.md 契约实现）。口径钉死（用户 2026-10-24
 拍板，见 consent.md）：q=0.5 不做其他取值测试；主跑 fold0 test 8 例 × 30 trial
 全量；扰动 = σ·ξ（μ=0）逐点加在 z-score 后、入模前 x_obs(375) 源通道；σ_ref=0.3；
-网格 log[0.01,0.48]×24；conn = −(ln σ* + ln 2πe) + 1。
+网格 log[0.01,0.48]×24；conn = −(ln σ* + 0.5·ln 2πe) + 5/7（v4 交付公式，用户
+2026-10-27 拍板升为线默认；原房内 v1 −(ln σ*+ln2πe)+1 退役为历史口径——v4 = v1
++ 常数平移 ≈ +1.1332，网格上全正 min=+0.0293 ⇒ abs≡raw）。
 
 复用（零拷贝，包体零改动）：bisect_sigma.SignalProbeSite（use_biased_noise=False，
 OCLatentFlow 原生契约——确定性采样 ⇒ 基线唯一）/ log_grid / compute_global_tau /
@@ -100,6 +102,10 @@ DEFAULT_Q = 0.5            # 用户拍板钉死：不做其他取值测试
 SIGMA_MIN, SIGMA_MAX, DEFAULT_N_GRID = 0.01, 0.48, 24
 SIGMA_REF, SEED, N_STEPS, BATCH = 0.3, 42, 10, 32
 _LOG_2PIE = math.log(2.0 * math.pi * math.e)
+# conn v4 = −(ln σ* + 0.5·ln2πe) + 5/7（线默认，用户 2026-10-27 拍板；命名与
+# recompute_conn_v4.py 对齐；房内 v1 −(ln σ*+ln2πe)+1 退役为历史口径）
+HALF_LOG_2PIE = 0.5 * _LOG_2PIE
+V4_OFFSET = 5.0 / 7.0
 EPS_REMAP = 1e-4
 DEFAULT_CKPT = ("/root/npi/outputs/10-24-latent-flow-mild-w500/run_w500_fold0/"
                 "checkpoints/fold0_mild_flow_best_graph_mexhat.pt")
@@ -311,7 +317,7 @@ def run_main(a) -> None:
                 a.sigma_min, a.sigma_max).numpy()
 
         sigma_t = torch.from_numpy(sigma_matrix.copy())
-        conn = -(sigma_t.float().log() + _LOG_2PIE).numpy() + 1.0
+        conn = -(sigma_t.float().log() + HALF_LOG_2PIE).numpy() + V4_OFFSET
         sign_matrix = np.sign(mean_diff)
         v = sigma_matrix.flatten()
         n_min = int(np.sum(v <= a.sigma_min + 1e-6))
@@ -436,7 +442,7 @@ def run_main(a) -> None:
                                  "offdiag-only calibers)"),
             "sigma_matrix": sigma_matrix.tolist(),
             "connectivity_matrix": conn.tolist(),
-            "connectivity_formula": "-(log sigma* + log(2*pi*e)) + 1",
+            "connectivity_formula": "-(log sigma* + 0.5*log(2*pi*e)) + 5/7",
             "raw_response_matrix": response.tolist(),
             "sign_matrix": sign_matrix.tolist(),
             "signed_connectivity_matrix": (sign_matrix * conn).tolist(),
@@ -590,7 +596,7 @@ def run_summary(a) -> None:
     summary = {
         "task": f"{task_name} Run 002 (offline group summary)",
         "n_subjects": len(per),
-        "caliber": {"q": 0.5, "formula": "-(log sigma*+ln2pie)+1",
+        "caliber": {"q": 0.5, "formula": "-(log sigma*+0.5*ln2pie)+5/7",
                     "remap_check": "1/(sigma*+1e-4) Spearman-invariance asserted",
                     "tau_note": "tau quantile includes diagonal self-response "
                                 "(house precedent caliber)"},
@@ -684,7 +690,7 @@ def run_gccorr(a) -> None:
                   f"latent-flow {surrogate_name} surrogate; GC = mne-connectivity "
                   f"spectral gc, VAR order 8 fixed, 1-45 Hz faverage (refs mild40)",
         "protocol": "offdiag 16256 pairs; aligned = row=source vs ec; flipped = vs "
-                    "ec.T; entropy form -(log sigma*+ln2pie)+1 and inverse "
+                    "ec.T; entropy form v4 -(log sigma*+0.5*ln2pie)+5/7 and inverse "
                     "1/(sigma*+1e-4) (Spearman identical, Pearson differs)",
         "descriptive_only": ("描述性并置登记（先例协议），不构成代理脑资格判定；"
                              "EC=代理脑内部量 vs GC=观测数据量，实现口径隔离"),

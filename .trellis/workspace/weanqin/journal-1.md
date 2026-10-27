@@ -734,3 +734,30 @@ v4a-fmt 基座上把 5 个 LayerNorm 位换 adaLN（emb(t)→逐 site SiLU→Lin
 ### Next Steps
 
 - θ 候选判断待用户（progress 待拍板⑩已联动三折 EC 证据）。
+
+## Session 27: md-latent-flow 线 EC 对照配置固定（任务 10-27-md-latent-flow-config-fix）
+
+**Date**: 2026-10-27
+**Task**: .trellis/tasks/10-27-md-latent-flow-config-fix（study2 轻量；用户两项拍板 = refs 取消 v2 gc-ec 1-125hz 对比项 + 默认公式切 v4）
+
+### Summary
+
+- 配置固定两项：①GC 对照 refs 收为 v1 mild 档单参考——v2（aic4-25-f1-125，1–125 Hz AIC 4–25）对比项注销（物理文件用户已删），清理 recompute_conn_v4 REFS 字典 / crossfold_summary_f12 REFS_KEYS+汇总行 / viz_ec_pert REFS_DIRS+图 2 三联改二联 / refs/MANIFEST.md 注销注记，共 5 文件；②线默认 conn 公式 v1 −(ln σ*+ln2πe)+1 → v4 −(ln σ*+0.5·ln2πe)+5/7（ec_mild_unbiased 计算行 + payload/caliber/gccorr protocol/docstring 四串 + HALF_LOG_2PIE/V4_OFFSET 常量）。
+- 兼容连带三件：recompute 舍入诊断按档 connectivity_formula 声明自适应（旧档 v1/新档 v4，键改 json_f32_rounding_maxabs，错配显形为 ~1.13 平移量级）；crossfold asserts_passed 断言两态 in (40, 32)；产物文件名 gccorr_dual_summary.json 不随配置改名（在档 schema 契约）。
+- AC1–AC5 全过（trellis-check 子代理逐项 PASS，就地修 3 处「双 GC」措辞残留）；v4 性质只读复核：网格全正 min=+0.0293、abs≡raw、v4−v1 恒等 +1.133224、spearman(v4, 1/(σ*+1e-4))=1.000000000000；py_compile 4/4。
+- 未动：outputs 历史档（在档 dual json 的 v2 块保留）、.trellis/tasks 归档、viz_symw_ec_pairs（仅 v1 本就合规）、symmetry_diag_symw（v4 已是主读出）、ec-globaltau-v1（edra 档非 md 线）、两个遗留 in_progress 任务档位。
+- 沉淀 spec evaluation-calibers 增记：线配置固定事实 + 配置切换兼容契约（断言时代两态/诊断按档声明自适应/产物名不改）。
+
+### Git Commits
+
+| commit | 说明 |
+|---|---|
+| （本次） | chore(latent-flow): md-latent-flow 线配置固定（refs 注销 v2 gc-ec 1-125hz + conn 默认公式切 v4） |
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 后续 md-latent-flow EC 任务一律 v4 默认 + v1 单参考（recompute 断言计数新档 32/折）；θ 候选判断等待拍板⑩不变。

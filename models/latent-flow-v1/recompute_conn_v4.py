@@ -1,27 +1,26 @@
 #!/usr/bin/env python3
-"""recompute_conn_v4.py — conn v4 重映射 + 双 GC 对照（任务 10-24-exitgnn-ec-unbiased Run 003）.
+"""recompute_conn_v4.py — conn v4 重映射 + GC 对照（任务 10-24-exitgnn-ec-unbiased Run 003）.
 
 用户拍板交付公式（2026-10-24）：conn_v4 = −(ln σ* + 0.5·ln 2πe) + 5/7。
 
 数学事实（先例 w500 Run 007 在档，本脚本断言组封死口径漂移）：
   v4 = 房内 v1（−(ln σ*+ln2πe)+1）+ 常数 Δc，Δc = 0.5·ln2πe − 2/7 ≈ +1.1332
-  ⇒ raw 口径 Spearman/Pearson 对任意参考不变（同 σ* float64 路径断言 |Δ|<1e-9；
-  json 的 v1 为主跑 float32 舍入值，与 float64 重算存在 ~1e-13 Spearman 尾差
-  [舍入引入新并列，s5 实测]——精度伪影非口径漂移，舍入差随档登记）；
+  ⇒ raw 口径 Spearman/Pearson 对任意参考不变（同 σ* float64 路径断言 |Δ|<1e-9）；
+  json conn = 主跑 float32 舍入值（默认公式 2026-10-27 切 v4 前为 v1、之后为 v4，
+  按档 connectivity_formula 声明自适应取对照式），与 float64 重算存在 ~1e-13 量级
+  Spearman 尾差 [舍入引入新并列，s5 实测]——精度伪影非口径漂移，舍入差随档登记；
   零点 σ* = e^(5/7−0.5·ln2πe) = 0.4943 落在网格上界 0.48 之外 ⇒ conn 全正
   （min = conn(0.48) = +0.0293 > 0）⇒ **abs ≡ raw**（逐位断言）。
 
-双 GC 参考（用户拍板「全套默认流程+双GC对照，新加的GC对照在autodl-tmp/EC_GC_1_125」）：
+GC 参考（2026-10-27 线配置固定：v2 1-125hz 对比项经用户拍板取消，仅存 v1 单参考）：
   v1_1_45_fixed8  = refs mild40-trial500-zscore-fs250-fixed8-f1-45-favg（1–45 Hz 固定阶 8）
-  v2_1_125_aic4_25 = refs mild40-trial500-zscore-fs250-aic4-25-f1-125-favg（1–125 Hz
-                    AIC 逐被试选阶 4–25；Run 000 注册，caliber note：51–125 Hz 衰减
-                    −24 dB 以下，与 v1 逐被试 Pearson median=0.148）
 协议：offdiag 16256 对；aligned（行=源 vs refs ec）/ flipped（vs ec.T）×
 Spearman/Pearson；描述性登记不构成代理脑资格判定；与 w500 Run 007 先例并置为
 **跨代理脑描述性并置**（θ 不同，差异 = 代理脑差异 + 噪声，非复现性判读）。
 
-输入：ec_main/subject_*.json（Run 001，σ* + v1 conn + sign/元数据）。
-输出：recompute_v4/subject_*.json（重映射档）+ gccorr_dual_summary.json（双参考块）。
+输入：ec_main/subject_*.json（Run 001，σ* + conn[2026-10-27 起新档为 v4、旧档
+v1] + sign/元数据）。
+输出：recompute_v4/subject_*.json（重映射档）+ gccorr_dual_summary.json（参考块）。
 纯离线，无 GPU；元数据随档拷贝（先例 recompute_inv_conn_gc.py 同款）。
 
 Run:
@@ -48,18 +47,17 @@ from scipy import stats as sps  # noqa: E402
 
 DEFAULT_MAIN = "/root/npi/outputs/10-24-exitgnn-ec-unbiased/ec_main"
 DEFAULT_OUT = "/root/npi/outputs/10-24-exitgnn-ec-unbiased/recompute_v4"
+# 2026-10-27 线配置固定：v2_1_125_aic4_25（mild40 aic4-25-f1-125 档）对比项经
+# 用户拍板取消（refs 物理文件已删）；仅保留 v1 单参考
 REFS = {
     "v1_1_45_fixed8":
         "/root/npi/refs/granger_bivariate_spectral/"
         "mild40-trial500-zscore-fs250-fixed8-f1-45-favg",
-    "v2_1_125_aic4_25":
-        "/root/npi/refs/granger_bivariate_spectral/"
-        "mild40-trial500-zscore-fs250-aic4-25-f1-125-favg",
 }
 HALF_LOG_2PIE = 0.5 * math.log(2.0 * math.pi * math.e)
 V4_OFFSET = 5.0 / 7.0
 DEFAULT_TASK_LABEL = ("10-24-exitgnn-ec-unbiased Run 003 "
-                      "(v4 remap + dual descriptive EC x GC)")
+                      "(v4 remap + descriptive EC x GC)")
 DEFAULT_SURROGATE_NAME = "exit-gnn variant surrogate"
 
 
@@ -98,20 +96,21 @@ def main() -> int:
     stack_conn = {name: [] for name in REFS}
     stack_ec = {name: [] for name in REFS}
     n_checks = 0
-    v1_rounding_max = 0.0
+    json_rounding_max = 0.0
 
     t0 = time.time()
     for f in rows:
         d = json.load(open(f))
         sid = int(d["subject_file"][1:])
         sigma = np.array(d["sigma_matrix"], dtype=np.float64)
-        conn_v1 = np.array(d["connectivity_matrix"], dtype=np.float64)
+        conn_json = np.array(d["connectivity_matrix"], dtype=np.float64)
         sign = np.array(d["sign_matrix"], dtype=np.float64)
 
         # ---- v4 重映射 + 断言组（8/8 全过才进汇总）----
-        # 不变性断言须在同一条 float64 σ* 路径上做：json 的 v1 是主跑 float32 舍入值，
-        # 与 float64 重算 v4 相比存在 ~1e-13 量级 Spearman 尾差（舍入引入新并列，s5 实测
-        # 1−ρ=7.3e-13）——精度伪影非口径漂移；json v1 舍入差另作诊断登记。
+        # 不变性断言须在同一条 float64 σ* 路径上做：json conn 是主跑 float32 舍入值
+        # （默认公式 2026-10-27 切 v4 前为 v1、之后为 v4，按档公式声明自适应对照），
+        # 与 float64 重算相比存在 ~1e-13 量级 Spearman 尾差（舍入引入新并列，s5 实测
+        # 1−ρ=7.3e-13）——精度伪影非口径漂移；json 舍入差另作诊断登记。
         conn_v1_re = -(np.log(sigma) + 2.0 * HALF_LOG_2PIE) + 1.0  # 房内 v1 同 σ* 重算
         conn_v4 = -(np.log(sigma) + HALF_LOG_2PIE) + V4_OFFSET
         assert abs(sps.spearmanr(conn_v4[off], conn_v1_re[off]).statistic - 1.0) < 1e-9, \
@@ -120,8 +119,12 @@ def main() -> int:
             f"{d['subject_file']}: conn_v4 非全正 min={conn_v4.min()}"
         assert np.array_equal(np.abs(conn_v4), conn_v4), \
             f"{d['subject_file']}: abs != raw（全正前提下必逐位相等）"
-        v1_json_rounding = float(np.max(np.abs(conn_v1 - conn_v1_re)))
-        v1_rounding_max = max(v1_rounding_max, v1_json_rounding)
+        # json conn 公式版本自适应：新档 v4 / 旧档 v1，按 connectivity_formula 声明
+        # 取对照式（错配会表现为 ~1.13 平移量级而非舍入量级，可即时识别）
+        json_is_v4 = "5/7" in str(d.get("connectivity_formula", ""))
+        json_ref = conn_v4 if json_is_v4 else conn_v1_re
+        json_rounding = float(np.max(np.abs(conn_json - json_ref)))
+        json_rounding_max = max(json_rounding_max, json_rounding)
         n_checks += 3
 
         payload = dict(d)  # 元数据随档拷贝（hparams/surrogate/τ/diagnostics 原样）
@@ -140,7 +143,7 @@ def main() -> int:
         with open(out_dir / f.name, "w") as fh:
             json.dump(payload, fh, indent=2)
 
-        # ---- 双 GC 对照（协议对齐 gen_unbiased_gc_corr.py / Run 007 先例）----
+        # ---- GC 对照（协议对齐 gen_unbiased_gc_corr.py / Run 007 先例；单参考 v1）----
         for name, refs in refs_all.items():
             assert sid in refs, f"refs {name} 缺 s{sid}"
             ec = refs[sid]
@@ -181,10 +184,7 @@ def main() -> int:
         blocks[name] = {
             "refs_dir": REFS[name],
             "refs_caliber": ("mne-connectivity spectral gc, VAR order 8 fixed, "
-                             "1-45 Hz faverage" if name.startswith("v1") else
-                             "mne-connectivity spectral gc, AIC per-subject order "
-                             "4-25, 1-125 Hz faverage (band >50 Hz attenuated "
-                             "-24 dB; per-subject Pearson vs v1 median 0.148)"),
+                             "1-45 Hz faverage"),
             "per_subject": {str(k): v for k, v in per.items()},
             "group": {k: agg(per, k) for k in next(iter(per.values()))
                       if k.startswith(("spearman", "pearson"))},
@@ -207,7 +207,7 @@ def main() -> int:
             "invariance": ("raw Spearman/Pearson invariant vs v1 on the same float64 "
                            "sigma* path (asserted per subject per refs set, tol 1e-9); "
                            "abs==raw asserted bitwise"),
-            "v1_json_f32_rounding_maxabs": float(v1_rounding_max),
+            "json_f32_rounding_maxabs": float(json_rounding_max),
         },
         "protocol": ("offdiag 16256 pairs; aligned = row=source vs ec; flipped = vs "
                      "ec.T; Spearman/Pearson; abs and raw blocks identical by "

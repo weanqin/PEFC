@@ -12,8 +12,9 @@
 三折同口径（逐字，唯一实质差异 = 各折代理脑 ckpt 与 test 被试集）：无偏 μ=0
 高斯 σ·ξ 扰动、global-τ q=0.5@σ_ref=0.3、σ 网格 log[0.01,0.48]×24、seed 42、
 bf16 autocast、每折 test 8 例 × 30 trial 全量、τ 分位含对角；conn 交付公式
-v4 = −(ln σ*+0.5·ln2πe)+5/7（各折重映射/全正/abs≡raw 断言 8/8 + 双参考 Pearson
-平移不变 16/16，asserts_passed=40/折）。
+v4 = −(ln σ*+0.5·ln2πe)+5/7（各折重映射/全正/abs≡raw 断言 8/8 + 参考 Pearson
+平移不变；在档 dual 档为双参考时代产物 asserts 40/折，2026-10-27 线配置固定
+取消 v2 对比项后 v1 单参考复跑为 32/折，两态均受——见 load_fold 断言）。
 
 **判读边界（随档 caliber_note）**：三折各用不同 θ 实例（各折独立训练的 symw
 代理脑）+ 不同 test 被试集（5-fold manifest 互斥三分支）⇒ 跨折并置为
@@ -88,15 +89,18 @@ FOLDS = {
     },
 }
 
-REFS_KEYS = ("v1_1_45_fixed8", "v2_1_125_aic4_25")
+# 2026-10-27 线配置固定：v2_1_125_aic4_25 对比项取消（在档 dual json 的 v2 块
+# 不再汇总，refs 物理文件已删）
+REFS_KEYS = ("v1_1_45_fixed8",)
 
 CALIBER_NOTE = (
     "三折同口径逐字（唯一实质差异 = 各折代理脑 ckpt 与 test 被试集）：无偏 mu=0 "
     "高斯 sigma*xi 扰动（z-score 后、入模前 x_obs(375) 源通道）、global-tau "
     "q=0.5@sigma_ref=0.3、sigma 网格 log[0.01,0.48]x24、seed 42、bf16 autocast、"
     "每折 test 8 例 x 30 trial 全量、tau 分位含对角自响应；conn 交付 v4 = "
-    "-(ln sigma*+0.5*ln2pie)+5/7（各折断言 40/40：重映射单调/全正/abs==raw 8/8 + "
-    "双参考 Pearson 平移不变 16/16）。**跨折并置为 DESCRIPTIVE（描述性口径）**："
+    "-(ln sigma*+0.5*ln2pie)+5/7（断言组：重映射单调/全正/abs==raw 8/8 + 参考 "
+    "Pearson 平移不变；在档 dual 档 40/折、2026-10-27 取消 v2 对比项后单参考"
+    "复跑 32/折，两态均受）。**跨折并置为 DESCRIPTIVE（描述性口径）**："
     "各折 theta 为不同代理脑实例（独立训练）、test 被试集互斥（5-fold manifest "
     "三分支）⇒ 数字差异 = 代理脑实例差异 + 被试差异 + 噪声，不作复现性判读；"
     "单 seed（42）。conn_mean/std_offdiag 行 = 房内 v1 公式口径（summary 源档），"
@@ -129,7 +133,10 @@ def load_fold(k: int) -> dict:
     assert du["task"].startswith(reg["task_prefix"]), \
         f"fold{k} dual task 串不符: {du['task']}"
     assert gs["n_subjects"] == 8, f"fold{k} n_subjects != 8"
-    assert du["asserts_passed"] == 40, f"fold{k} dual asserts != 40"
+    # 断言计数两态：40 = 双参考时代在档档（v1+v2 各 8 例 Pearson 平移检查）；
+    # 32 = 2026-10-27 线配置固定（v2 对比项取消）后 v1 单参考复跑档；其余值 = 档身份异常仍拒
+    assert du["asserts_passed"] in (40, 32), \
+        f"fold{k} asserts {du['asserts_passed']} not in (40 dual-era, 32 v1-only)"
     remap = [p["spearman_remap_invariance"] for p in gs["per_subject"]]
     assert remap == ["PASS"] * 8, f"fold{k} 重映射不变性非 8/8 PASS"
     subjects = sorted(p["subject"] for p in gs["per_subject"])
@@ -182,7 +189,7 @@ def fold_block(k: int, loaded: dict) -> dict:
 
 
 def per_subject_gc_detail(loads: dict) -> dict:
-    """逐被试双 GC rho 明细：24 例（fold0/1/2 各 8）三折全景，含组别与折归属。"""
+    """逐被试 GC rho 明细（v1 单参考）：24 例（fold0/1/2 各 8）三折全景，含组别与折归属。"""
     out = {rk: {} for rk in REFS_KEYS}
     for k in sorted(loads):
         reg, gs, du = loads[k]["registry"], loads[k]["gs"], loads[k]["du"]
@@ -216,7 +223,8 @@ def main() -> int:
 
     summary = {
         "task": ("10-25-symw-ec-f12 Run 005 (cross-fold summary fold0/1/2, "
-                 "read-only aggregation of archived group summaries + dual GC)"),
+                 "read-only aggregation of archived group summaries + GC "
+                 "blocks [v1-only summarized since 2026-10-27 config fix])"),
         "caliber_note": CALIBER_NOTE,
         "descriptive_only": DESRIPTIVE_ONLY,
         "model_version": ("FlowVelocityNetExitGNN（K=2 共享 A_eff 消息传递 + "
@@ -229,13 +237,10 @@ def main() -> int:
             "v1_1_45_fixed8": ("mne-connectivity spectral gc, VAR order 8 fixed, "
                                "1-45 Hz faverage (refs mild40-trial500-zscore-"
                                "fs250-fixed8-f1-45-favg)"),
-            "v2_1_125_aic4_25": ("mne-connectivity spectral gc, AIC per-subject "
-                                 "order 4-25, 1-125 Hz faverage (band >50 Hz "
-                                 "attenuated -24 dB; per-subject Pearson vs v1 "
-                                 "median 0.148)"),
             "protocol": ("offdiag 16256 pairs; aligned = row=source vs ec; "
                          "flipped = vs ec.T; Spearman 主读数 + Pearson 照登；"
-                         "abs == raw（v4 全正，逐位断言）⇒ abs/raw 块逐位相同"),
+                         "abs == raw（v4 全正，逐位断言）⇒ abs/raw 块逐位相同；"
+                         "2026-10-27 线配置固定：v2 1-125hz 对比项已取消"),
         },
         "provenance": {
             FOLDS[k]["label"]: {
@@ -267,18 +272,15 @@ def main() -> int:
             f"{b['var_decomp_group_mean']['col_target_share']:.3f}/"
             f"{b['var_decomp_group_mean']['residual_edge_share']:.3f}")),
         ("stab rho", lambda b: f"{b['cross_subject_stability_mean_offdiag_spearman']:.3f}"),
-        ("v1 GC rho", lambda b: (
+        ("GC rho (v1)", lambda b: (
             f"{b['gc_dual']['v1_1_45_fixed8']['group_spearman_raw_aligned']['mean']:+.4f}"
             f"±{b['gc_dual']['v1_1_45_fixed8']['group_spearman_raw_aligned']['std']:.4f}")),
-        ("v2 GC rho", lambda b: (
-            f"{b['gc_dual']['v2_1_125_aic4_25']['group_spearman_raw_aligned']['mean']:+.4f}"
-            f"±{b['gc_dual']['v2_1_125_aic4_25']['group_spearman_raw_aligned']['std']:.4f}")),
     ]
     print(f"[crossfold] {'':16s} " + " | ".join(f"{c:>22s}" for c in cols))
     for name, fn in rows:
         print(f"[crossfold] {name:16s} " +
               " | ".join(f"{fn(blocks[c]):>22s}" for c in cols))
-    print(f"[crossfold] per-subject GC detail: 24 例 x 2 refs -> {out}", flush=True)
+    print(f"[crossfold] per-subject GC detail: 24 例 x 1 refs (v1) -> {out}", flush=True)
     return 0
 
 
