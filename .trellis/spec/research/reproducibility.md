@@ -21,6 +21,7 @@
 - **复现三要素齐全才算 Run 完结**：精确命令 + 环境快照 + resolved config（含 seed）。缺一即在 Run 块标注复现性缺口
 - **已知非确定性来源**（多卡同步顺序、原子浮点归约、cudnn benchmark、dataloader 多进程）——要么消除，要么在结论中声明其量级（如同配置重跑两次的指标差）
 - **非逐位确定 GPU 路径上的「旗标关兼容」判据（symw 任务 2026-10-25 实测确立）**：latent-flow mild 线 stage2 unfreeze-decoder 路径（bf16 AMP/cuDNN @4080S）同 seed 同代码重跑即非逐位——ckpt 全张量 max|Δ|≈1.4e-3、val loss 末位漂移 ~1e-4；「逐位等价」断言在该类路径上**不可证**（w500 在档的逐位等价先例不适用于此路径）。合规判据 = ①代码面：新增逻辑全部位于旗标为真的分支内（else 半支与原代码逐字一致）；②数值面：**三方对拍**（改动前 / 改动后旗标关 / 改动后旗标关重跑），接受条件 = |改动前−改动后| 与 |重跑−重跑| 同量级（改动前后差异不超出同代码重跑噪声）。对拍 run 须在 experiment.md 登记三方数值与 max|Δ|
+- **原始产物缺失时的复现存证模式（10-27-lf-globaltau-f0-unbiased-repro 确立）**：复现目标 Run 的逐被试产物已被清理时，"100% 复现"的可承诺口径 = 配置/代码路径/seed 100% 对齐 + **文档仅存锚点统计级并置**，四步走：①从旧库任务档（prd/implement）+ domain.md 钉死原始配置的非默认值（本次实测 n_grid=16 非脚本默认 24、无偏噪声早于 sign 字段存在——两处口径陷阱均靠读档规避）；②盘点锚点可复算性并如实登记缺口（本次 GC/TE 基线矩阵已删即标 NOT RECOMPUTABLE，不静默降级）；③recipe 侧证：多读出变体并置（raw/abs/flipped），与原始值吻合者即原始口径的证据（本次 raw aligned +0.301 vs 原始 +0.31 吻合、abs 变体 +0.004 不吻合 ⇒ 原始为 raw-vs-raw Spearman）；④同机同栈确定性自检（重跑逐位 np.array_equal）+ 跨栈 caveat 写入产物（同 seed 跨 torch/硬件统计级一致，逐位等同不承诺且原始产物已删不可验）。锚点并置表与 recipe 假设随 `anchors_summary.json` 落档
 
 ## 自检问题
 

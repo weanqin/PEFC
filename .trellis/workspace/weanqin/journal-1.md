@@ -816,3 +816,26 @@ v4a-fmt 基座上把 5 个 LayerNorm 位换 adaLN（emb(t)→逐 site SiLU→Lin
 
 - hist-block gccorr（GC 对照）待另令；三代理脑 hist-block 复扫/5-fold 扩展另议；
   判读 provisional 随 symw θ 拍板联动。
+
+## Session 28: 07-05 口径无偏 global-τ fold0 全量复现（任务 10-27-lf-globaltau-f0-unbiased-repro）
+
+**Date**: 2026-10-27
+**Task**: .trellis/tasks/10-27-lf-globaltau-f0-unbiased-repro（study1 轻量；用户拍板 = 立任务开跑 + 移植包无偏变体基座，consent「确认开始」）
+
+### Summary
+
+- 背景链（本会话前段只读检索定位）：用户先查旧库 5-fold EC_pert（signed biased ablation）→ relative_ablation 零均值 5×4 版 → 当前库复现任务（10-21-globaltau-f2-nosc，有偏 1 例）→ 本令 = 补 07-05 **无偏**口径 fold0 **10 例**全量复现。侦察钉死原始事实：ckpt `fold0_oc_latent_flow_flow_best_graph_mexhat.pt`（pre-SC 原版，07-04 PRD R6 点名）、无偏 ξ~N(0,1)、q=0.5/**n_grid=16**（非脚本默认 24——读档规避的口径陷阱①）、无 sign 字段（07-05 早于 07-23 符号提取——陷阱②）、原跑 subject_9 挂起 9/10 验证集；原始逐被试产物已被清理（results/oc_connectivity_global_tau_signal_q0.5 不在快照）⇒ "100%" 口径定为配置/代码路径/seed 全对齐 + 文档仅存锚点并置（用户两向拍板后 briefing + consent 落档）。
+- 实现：变体层单文件 `models/latent-flow-v1/ec_modma_globaltau_unbiased.py`（包体零改动；与移植版 runner 仅三差异 = 无偏 site + 07-05 键契约 + 无 +5/7 平移），口径断言钉死 fold/q/n_grid/n_trials/seed/ckpt 名；冒烟 16 源 0.57 min 验证 pre-SC ckpt 加载与 μ_bias=None 断言。
+- 主跑 10/10 例 45.1 min（4.51 min/例；subject_9 本机未复现挂起——原挂起环境性）；钳边 @min 0.79%/@max 49.8%（无偏 ~50/50 平衡型，对照有偏 f2-nosc 91.5% 近二元，μ_bias 底噪消除后 @σ_min 塌缩 <1% 与 mild 线先例同向）；确定性复跑 subject_0 τ/σ*/conn/resp 四数组逐位一致。
+- 锚点并置（原始 = domain.md §07-05 仅存聚合值）：**四项可算全吻合**——SC +0.3011±0.0147 vs +0.31、行方差 5.61% vs 5.7%、靶主效应 29.10% vs ~29%（domain 定性提及的对上了）、残差 65.29% vs 65.5%、vs A_eff 重建 +0.3238±0.0414 vs +0.36（原值落在本次被试分布 [0.269,0.385] 内）；GC/TE 锚点本机不可复算（fold0 逐被试基线矩阵已删仅存 PNG）如实注明；recipe 侧证：raw aligned 吻合而 abs 变体（+0.004）不吻合 ⇒ 原始口径 = raw-vs-raw Spearman。
+- AC1–AC5 程序化全过；沉淀 spec reproducibility.md 新条目「原始产物缺失时的复现存证模式」（四步：读档钉非默认值 / 锚点可复算性盘点 / recipe 侧证 / 同机确定性+跨栈 caveat）；研究记忆回填 context 路线行 + progress 看板/里程碑。边界：复现存证不构成代理脑资格。
+
+### Git Commits
+
+| commit | 说明 |
+|---|---|
+| （本次） | feat(latent-flow): 07-05 无偏 global-τ fold0 复现（10 例锚点全吻合 + 确定性逐位 + spec 复现模式沉淀） |
+
+### Status
+
+[OK] **Completed**
