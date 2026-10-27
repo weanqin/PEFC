@@ -839,3 +839,25 @@ v4a-fmt 基座上把 5 个 LayerNorm 位换 adaLN（emb(t)→逐 site SiLU→Lin
 ### Status
 
 [OK] **Completed**
+
+## Session 29: fold0 AIC GC 现算 ×10 + OC↔GC 锚点补全（任务 10-27-gc-fold0-aic-anchor）
+
+**Date**: 2026-10-27
+**Task**: .trellis/tasks/10-27-gc-fold0-aic-anchor（study1 轻量；consent = 用户在 OC↔GC 汇报后的「补全」指令，方案要素上轮已呈现）
+
+### Summary
+
+- 侦察定口径：旧库残留 `results/baseline_connectivity/gc/subject_0.json` 恰为 fold0 test[0]（AIC max8/1–125Hz/nf65/fs250/全长），即 07-05 时代基线口径且可做管线对拍；移植版 granger 主路径 `fixed_order=0` 落入逐对 AIC sweep（granger.py:98 哨兵）⇒ 零代码改动纯 CLI 复用（`--gc-fixed-order 0 --n-jobs 16`，BLAS=1/worker）。
+- **管线对拍完美**：subject_0 现算 vs 残留 **逐位一致**（np.array_equal、max|Δ|=0、n_samples/method_params 逐参同）——numpy GC 路径跨机器（旧 Windows 生成 vs 本机 Linux 再生）比特级可复现，再生值即原始口径值。
+- 全量 10 例 37.8 min；OC↔GC offdiag Spearman raw aligned **9 例验证集口径 +0.2923±0.0879 vs 原始 +0.29（差 0.002 精确吻合）**；10 例全量 +0.2668±0.1157（s9=原挂起例现算成功且全场最低 +0.037，描述性提示原跑挂起例缺失未抬高锚点）；abs +0.115/flipped≈aligned（GC 近对称无方向判别力）再次侧证 raw 口径。
+- 至此 07-05 复现**五项可算锚点全吻合**（SC 0.301/0.31、行 5.61%/5.7%、靶 29.10%/~29%、残差 65.29%/65.5%、GC 0.292/0.29），仅 TE（+0.28）无残留件且需现算 symbolic TE 保持缺口（另拍板）。AC1–AC4 全过；progress 看板/里程碑回填。边界：描述性并置不构成代理脑资格。
+
+### Git Commits
+
+| commit | 说明 |
+|---|---|
+| （本次） | feat(gc): fold0 AIC GC ×10 现算 + OC↔GC 锚点补全（subject_0 残留对拍逐位一致 + 9 例口径 +0.292 vs +0.29 精确吻合） |
+
+### Status
+
+[OK] **Completed**

@@ -1,0 +1,2 @@
+{"file": ".trellis/spec/research/reproducibility.md", "reason": "复现存证口径与确定性契约"}
+{"file": ".trellis/spec/research/experiment-log.md", "reason": "experiment.md 格式契约"}
