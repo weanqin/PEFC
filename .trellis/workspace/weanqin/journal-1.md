@@ -795,3 +795,24 @@ v4a-fmt 基座上把 5 个 LayerNorm 位换 adaLN（emb(t)→逐 site SiLU→Lin
 ### Next Steps
 
 - hist-block 全量 8 例主跑未跑（跑哪个代理脑/fold 待用户拍板）；iid 默认口径不受影响。
+
+---
+
+## 2026-10-27 · 任务 10-27-ec-histblock-symw-f0（hist-block 全量主跑 × symw fold0）
+
+### What Happened
+
+- 用户直接工作令（五要素严格保留）：hist-block 范式 × fold0 × 8 例 × 扰动归因 EC ×
+  代理脑「10-25-md-lf-anti0.2-gnnexit」。身份对拍 = run_symw_fold0（anti0.2+
+  gnnexit+sym_w，全库唯一匹配，简记未含 sym-W 随档注明）。
+- 首启漏 --ckpt 被 --symw 守卫拦截（防交叉闸按设计工作），补 ckpt 重启。
+- 主跑 8/8 例 52.5 min 全 P(resp>τ)=0.500 精确；summary + iid-symw 同代理脑同 v4
+  公式描述性并置（量化口径同型、conn +0.822 vs +0.756、靶主效应更主导 0.819）。
+- 教训：多 heredoc 复合命令在此环境会被截断（jsonl 空/prd 丢）——任务工件一律
+  Write 工具逐文件落盘；后台长跑命令勿接 tail 管道（缓冲致中途日志不可读），用
+  产物目录 + nvidia-smi 监控。
+
+### Next Steps
+
+- hist-block gccorr（GC 对照）待另令；三代理脑 hist-block 复扫/5-fold 扩展另议；
+  判读 provisional 随 symw θ 拍板联动。
