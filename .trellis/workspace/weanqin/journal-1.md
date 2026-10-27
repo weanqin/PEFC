@@ -761,3 +761,37 @@ v4a-fmt 基座上把 5 个 LayerNorm 位换 adaLN（emb(t)→逐 site SiLU→Lin
 ### Next Steps
 
 - 后续 md-latent-flow EC 任务一律 v4 默认 + v1 单参考（recompute 断言计数新档 32/折）；θ 候选判断等待拍板⑩不变。
+
+---
+
+## 2026-10-27 · 任务 10-27-ec-histblock-noise（hist-block 历史段分组共享噪声变体）
+
+### What Happened
+
+- 会话前半：只读侦察现有无偏噪声链路（SignalProbeSite.set_source seed+source 逐源播种 /
+  perturb_channel σ·ξ）→ 交付完整方案；中途三次 Stop 误拦（并行 config-fix 会话经
+  「唯一新鲜会话文件」回退误归本会话），诊断在案未越界；增强方案（ξ 数组落盘）经问询
+  被用户否决——拍板「保持原方案」（种子+配方确定性重建，四前提在档）。
+- 实施：立任务走全流程（路由 study2 / prd+design+implement / consent / start）；
+  会话身份经 TRELLIS_CONTEXT_ID=claude_session_b14d… 正确绑定（rollout 文件特征串
+  定位本会话 uuid，避免再误归）。ec_mild_unbiased.py +141/−6（5 旗标默认 iid /
+  build_hist_block_xi / HistBlockProbeSite provider 注入 / run_main 三接线 / payload
+  条件分支）；latent_flow 包体零改动。
+- 验证：改动前基线先行（iid 1例×8源）→ 改动后六锚点逐位 IDENTICAL（AC1）；构造检查
+  15/15（通道/被试共享、组内 25 点恒等、15 组独立 N=200k sanity 0.0078、键控退化、
+  口径断言负例）；GPU 冒烟 2 例 P(resp>τ)=0.500 保持、τ≠iid 证实变体生效。
+- 交付：fe17225（本任务 4 路径）+ c1768fa（遗留 7 路径补录，用户拍板一并入库）；
+  spec perturb-ec-pipeline §8 沉淀（噪声变体开关纪律/provider 注入模式/种子偏移正交/
+  不落盘四前提）；progress.md 速览同步。
+
+### Key Decisions / Lessons
+
+- provider 注入（子类只重写 set_source 的 ξ 来源）= 扰动范式扩展不动 engine/measure
+  的线内正解；全共享在被试循环外构造一次+切片同存储，强于种子共享（结构性一致）。
+- 并行会话碰撞的 Stop 误拦根因 = hook 三级身份链第③级「唯一新鲜会话文件」回退；
+  正解 = TRELLIS_CONTEXT_ID 显式绑定本会话真实键（rollout 文件名定位），非逃逸开关。
+- CJK old_string 经消息序列化可能出现不可见差异致 Edit 不命中——纯 ASCII 锚点策略可靠。
+
+### Next Steps
+
+- hist-block 全量 8 例主跑未跑（跑哪个代理脑/fold 待用户拍板）；iid 默认口径不受影响。
