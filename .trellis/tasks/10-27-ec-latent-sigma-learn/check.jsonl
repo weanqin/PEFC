@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/research/perturb-ec-pipeline.md", "reason": "对照 Study II 流程契约检查新脚本（含待新增变体节的语义一致性）"}
+{"file": ".trellis/spec/research/reproducibility.md", "reason": "检查种子登记/确定性锚点/payload 完整性"}
+{"file": ".trellis/spec/research/path-isolation.md", "reason": "检查产物路径隔离（outputs/10-27-ec-latent-sigma-learn/）"}
+{"file": ".trellis/spec/research/artifacts-management.md", "reason": "检查产物管理纪律（run 目录结构/原子写/不覆盖）"}
+{"file": ".trellis/tasks/10-27-ec-latent-sigma-learn/research/ec-latent-sigma-adaptation.md", "reason": "对照适配风险清单核验缓释落实（λ 梯子/ε 生成器/orientation/包体零改动）"}

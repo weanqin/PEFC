@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/research/perturb-ec-pipeline.md", "reason": "study2 扰动流程契约必读：CRN 确定性/σ 边界/v4 公式/§8 噪声变体先例（本任务新增潜空间可学 σ 变体节的目标文档）"}
+{"file": ".trellis/spec/data/mild-depression.md", "reason": "Mild Depression 数据契约（40 例/fold0/375-125 窗/z-score）"}
+{"file": ".trellis/spec/research/reproducibility.md", "reason": "种子登记与确定性重建纪律（四前提），payload 契约"}
+{"file": ".trellis/spec/research/path-isolation.md", "reason": "变体目录与 outputs 产物隔离规则"}
+{"file": ".trellis/research/environment.md", "reason": "环境契约：BLAS 守卫/4080S 32GB/outputs 根/数据落点"}
+{"file": ".trellis/tasks/10-27-ec-latent-sigma-learn/research/ec-latent-sigma-adaptation.md", "reason": "新路径适配研究：θ 装载链/数据接口/实测风险（λ=1 零判别硬门槛、显存/算力实测）/构造检查 10 项与冒烟 λ 梯子清单（S1-S5 依赖）"}
