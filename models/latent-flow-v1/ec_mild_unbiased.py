@@ -101,10 +101,14 @@ W500_WINDOW, W500_OBS, W500_FC = 500, 375, 125
 # norm mean/std SHA256 按 fold 键控（10-25-symw-ec-f12）：fold0 = w500/symw-fold0 在档
 # 钉死值；fold1/2 = f12 训练侧 configs/stage{1,2}_config.json norm_stats.mean_std_sha256
 # 登记（run_symw_fold{1,2} 两 stage 一致，2026-10-25 核）。缺 fold 键 = 拒跑。
+# f34 扩展（10-28-symw-ec-f34）：fold3/4 = 本任务训练侧同源登记（两 stage 一致，
+# 2026-10-28 核）。
 EXPECTED_NORM_SHA_BY_FOLD = {
     0: "d184e64772b368418b5d816680af8ed030b20e3ef76867f99ab6d354cac82758",
     1: "0f10b15350f69757d883beca19500342fc8279a71dc327252e495be08e1d3383",
     2: "a2c27a2d2577210c2696e0310b0bd1a792d8b2d530107b9bdf8d100446c3d102",
+    3: "71cf8d8ceca55f2ed74a3962043bfd8c0a8e98adb3569eae0e5173a629799f33",
+    4: "a79913eb43b930fe9829ce0e06014f47dfc65ace05a15d942050a59d07fe8540",
 }
 EXPECTED_MANIFEST_SHA = "47987909c04348e57d98e77e1668678a7885109336df90bd0a5a635f865d881b"
 
@@ -214,6 +218,14 @@ def _caliber_asserts(a) -> None:
             assert (a.fold in (1, 2)
                     and Path(a.ckpt).name.startswith(f"fold{a.fold}_")), \
                 (f"--symw f12 ckpt 须配 --fold {{1,2}} 且文件名以 fold{a.fold}_ "
+                 f"前缀开头（折-权重错配防护），got fold={a.fold}, "
+                 f"{Path(a.ckpt).name}")
+        elif "10-28-latent-flow-symw-f34" in a.ckpt:
+            # f34 扩展（10-28-symw-ec-f34）：另接受本任务 run_dir，同款 fold 前缀
+            # 折-权重错配防护（fold3/4；CLI 对拍与 W 对称断言见任务 experiment.md）。
+            assert (a.fold in (3, 4)
+                    and Path(a.ckpt).name.startswith(f"fold{a.fold}_")), \
+                (f"--symw f34 ckpt 须配 --fold {{3,4}} 且文件名以 fold{a.fold}_ "
                  f"前缀开头（折-权重错配防护），got fold={a.fold}, "
                  f"{Path(a.ckpt).name}")
         else:

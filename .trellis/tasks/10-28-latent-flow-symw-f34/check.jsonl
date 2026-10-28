@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/research/evaluation-calibers.md", "reason": "核查 v4 直出 + v1 单参考 + 产物名契约未违反"}
+{"file": ".trellis/spec/research/path-isolation.md", "reason": "核查零代码改动 + 写入面只限声明 outputs 与任务目录"}
+{"file": ".trellis/spec/research/experiment-log.md", "reason": "核查 Run 块完整（目的/配置/结果/结论无空块）"}
+{"file": ".trellis/spec/research/artifacts-management.md", "reason": "核查训练日志/结果/图件保留完整性（AC1-AC4 产物面）"}
+{"file": ".trellis/spec/research/surrogate-brain-qualification.md", "reason": "核查报告不越界（描述性并置 ≠ 资格判定）"}

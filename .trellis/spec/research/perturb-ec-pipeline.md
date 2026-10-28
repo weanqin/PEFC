@@ -94,3 +94,22 @@
    同 seed / 同 `(n_trials, n_groups)` 形状（CUDA 流按形状生成，`randn(20,G)[:k] ≠
    `randn(k,G)` 无保证）/ 同设备类型（CPU↔CUDA 流不同）/ 同 torch 版本（RNG 实现
    无跨版本契约）。四前提写入 payload `noise_model` 重建配方串，跨任务对拍前逐项核对。
+
+## 9. symw/mild 线跨折扩展配方（任务 10-28-latent-flow-symw-f34 2026-10-28 沉淀）
+
+新折（fold3/4 型）接入 `ec_mild_unbiased.py` 跑 EC 时的两道守卫扩展，缺一会被
+assert 拒跑（这是设计行为——出处/归一化双保险，勿绕过）：
+
+1. **symw ckpt 出处白名单**（`_caliber_asserts`）：按 f12/f34 先例为新任务 run_dir
+   增 `elif "<task-dir-tag>" in a.ckpt` 分支，断言 `fold ∈ {新折集}` +
+   `fold{k}_` 文件名前缀（防折-权重错配）；改动后必做负例回归（错折 × 错前缀
+   双拦截实测），旧分支行为不变。
+2. **norm SHA 注册表**（`EXPECTED_NORM_SHA_BY_FOLD`）：从训练侧
+   `configs/stage{1,2}_config.json` 的 `norm_stats.mean_std_sha256` 登记（两 stage
+   须逐字一致；登记值将在 EC 运行时被数据侧重算对拍——训练与 EC 归一化同源
+   由此闭环）。
+3. **包内 viz 折锚定坑**：`viz_ec_pert.py`（组均值锚点断言 +0.1934）与
+   `viz_symw_ec_pairs.py`（fold0 被试表 + 旧版 dual-summary 结构）深度绑定
+   fold0，非 fold0 复用前先验守卫；不可复用时走任务本地出图脚本（落本任务
+   outputs，同款三图契约 + 图面 ρ 与 gccorr json 漂移对拍断言 1e-9——
+   `outputs/10-28-symw-ec-f34/make_ec_viz_f34.py` 为模板）。

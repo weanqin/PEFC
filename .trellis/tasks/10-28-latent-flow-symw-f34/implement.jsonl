@@ -1,0 +1,8 @@
+{"file": ".trellis/spec/research/perturb-ec-pipeline.md", "reason": "扰动归因 EC 管线契约（口径/断言/产物面），S2 全流程依据"}
+{"file": ".trellis/spec/research/evaluation-calibers.md", "reason": "v4 公式线默认 + v1 GC 单参考契约（10-27 配置修复沉淀），gccorr 与 README 口径依据"}
+{"file": ".trellis/spec/data/mild-depression.md", "reason": "Mild 数据契约（40 例预切 trial/几何模板/归一化口径）"}
+{"file": ".trellis/spec/research/experiment-log.md", "reason": "experiment.md Run 块格式契约"}
+{"file": ".trellis/spec/research/path-isolation.md", "reason": "产物只落本任务声明目录（训练/EC 两 outputs 根）"}
+{"file": ".trellis/spec/research/visualization.md", "reason": "图件交付契约（viz_ec_pert nature-figure 契约先例）"}
+{"file": ".trellis/tasks/archive/2026-10/10-25-latent-flow-symw-f12/experiment.md", "reason": "训练镜像基准：stage1/stage2 命令、W 对称断言、质量抽查先例"}
+{"file": ".trellis/tasks/archive/2026-10/10-25-symw-ec-f12/experiment.md", "reason": "EC 镜像基准：main/summary 命令、nohup 断点续跑先例"}
