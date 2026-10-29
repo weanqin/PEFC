@@ -18,6 +18,7 @@
 | [data-pipeline.md](./data-pipeline.md) | dataloader 统一接口（全部预处理在 dataloader 内、模型侧零变换）与 5-fold 分层划分（MDD/HC 受试者级） |
 | [visualization.md](./visualization.md) | 全部产图经统一 visualizer，美学风格由 nature-figure 技能统一 |
 | [workflow-hard-gates.md](./workflow-hard-gates.md) | Trellis 规范硬门契约：无任务拦写码 / `task.py start` 前查 `consent.md` / Stop 收尾校验 / 研究记忆速览注入；改 hook 行为前先读（任务 `10-21-trellis-hard-gates` 建立，测试 harness 在该任务 `research/test-gates.py`） |
+| [result-dir-policy.md](./result-dir-policy.md) | `result/` 正式结果目录写入门：仅用户明确指令或 agent 询问获同意两种情形可写；中间结果一律落 `outputs/`，禁止混入；存入须随档登记可溯源（用户 2026-10-30 指令建立） |
 
 ## Pre-Development Checklist（写代码/跑实验前逐项确认）
 
@@ -31,6 +32,7 @@
 ## Quality Check（报告完成前逐项确认）
 
 - [ ] `experiment.md` 所有 Run 块四要素齐全（目的/配置/结果/结论），无空块
+- [ ] 本轮若向 `result/` 写入：许可情形（用户明确指令 / 询问获同意）与同意证据可查证（见 [result-dir-policy.md](./result-dir-policy.md)）；未写入则跳过
 - [ ] 产物全部落在本变体目录（`outputs/<variant>/` 等），无跨变体写入
 - [ ] 代码在声明的环境中可运行（附可复现命令）
 - [ ] `.trellis/research/progress.md`「当前状态」已同步；重要节点已追加里程碑

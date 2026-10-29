@@ -1,0 +1,334 @@
+{
+ "task": "10-28-symw-ec-f34-fold3 Run 002 (offline group summary)",
+ "n_subjects": 8,
+ "caliber": {
+  "q": 0.5,
+  "formula": "-(log sigma*+0.5*ln2pie)+5/7",
+  "remap_check": "1/(sigma*+1e-4) Spearman-invariance asserted",
+  "tau_note": "tau quantile includes diagonal self-response (house precedent caliber)"
+ },
+ "per_subject": [
+  {
+   "subject": "s9",
+   "group": "MDD",
+   "tau": 0.00013376041897572577,
+   "pct_interior": 64.05029296875,
+   "pct_at_min": 5.82275390625,
+   "pct_at_max": 30.126953125,
+   "p_response_above_tau": 0.5,
+   "sigma_median_offdiag": 0.3034328669309616,
+   "conn_mean_offdiag": 0.7757626350485082,
+   "conn_std_offdiag": 0.9646936328642679,
+   "dyn_ratio_q05": 1.5439821039801227,
+   "dyn_ratio_median": 2.867026127510428,
+   "nonmono_pair_frac": 0.9921875,
+   "var_decomp": {
+    "row_source_share": 0.040522785612465806,
+    "col_target_share": 0.8714464177708351,
+    "residual_edge_share": 0.08803079661669914
+   },
+   "spearman_remap_invariance": "PASS"
+  },
+  {
+   "subject": "s13",
+   "group": "MDD",
+   "tau": 0.00016046265955083072,
+   "pct_interior": 66.033935546875,
+   "pct_at_min": 6.903076171875,
+   "pct_at_max": 27.06298828125,
+   "p_response_above_tau": 0.5,
+   "sigma_median_offdiag": 0.30289681255817413,
+   "conn_mean_offdiag": 0.7438675885484737,
+   "conn_std_offdiag": 0.9624339128578066,
+   "dyn_ratio_q05": 1.7268029384583037,
+   "dyn_ratio_median": 3.280384309874738,
+   "nonmono_pair_frac": 0.9921875,
+   "var_decomp": {
+    "row_source_share": 0.04829194512960163,
+    "col_target_share": 0.8802728317293144,
+    "residual_edge_share": 0.07143522314108415
+   },
+   "spearman_remap_invariance": "PASS"
+  },
+  {
+   "subject": "s18",
+   "group": "MDD",
+   "tau": 0.00011442875256761909,
+   "pct_interior": 72.69287109375,
+   "pct_at_min": 0.787353515625,
+   "pct_at_max": 26.519775390625,
+   "p_response_above_tau": 0.5,
+   "sigma_median_offdiag": 0.300890177488327,
+   "conn_mean_offdiag": 0.5406720500373406,
+   "conn_std_offdiag": 0.46879721547698583,
+   "dyn_ratio_q05": 1.7385821270029747,
+   "dyn_ratio_median": 3.1497464108448936,
+   "nonmono_pair_frac": 0.9921875,
+   "var_decomp": {
+    "row_source_share": 0.19939065686938384,
+    "col_target_share": 0.4132406763764166,
+    "residual_edge_share": 0.38736866675419956
+   },
+   "spearman_remap_invariance": "PASS"
+  },
+  {
+   "subject": "s20",
+   "group": "MDD",
+   "tau": 0.00012971354590263218,
+   "pct_interior": 79.119873046875,
+   "pct_at_min": 1.556396484375,
+   "pct_at_max": 19.32373046875,
+   "p_response_above_tau": 0.5,
+   "sigma_median_offdiag": 0.3013502061367035,
+   "conn_mean_offdiag": 0.557103411976512,
+   "conn_std_offdiag": 0.5156067752664752,
+   "dyn_ratio_q05": 1.9823726174834329,
+   "dyn_ratio_median": 3.6371191779819894,
+   "nonmono_pair_frac": 0.9921875,
+   "var_decomp": {
+    "row_source_share": 0.1412317279294265,
+    "col_target_share": 0.5715836883822979,
+    "residual_edge_share": 0.28718458368827554
+   },
+   "spearman_remap_invariance": "PASS"
+  },
+  {
+   "subject": "s29",
+   "group": "HC",
+   "tau": 0.00011752643331419677,
+   "pct_interior": 73.2177734375,
+   "pct_at_min": 3.887939453125,
+   "pct_at_max": 22.894287109375,
+   "p_response_above_tau": 0.5,
+   "sigma_median_offdiag": 0.3014293611049652,
+   "conn_mean_offdiag": 0.647673201197245,
+   "conn_std_offdiag": 0.7565332396745833,
+   "dyn_ratio_q05": 1.738311712146415,
+   "dyn_ratio_median": 3.015188795210615,
+   "nonmono_pair_frac": 0.9921875,
+   "var_decomp": {
+    "row_source_share": 0.05903807310479132,
+    "col_target_share": 0.7877482676087637,
+    "residual_edge_share": 0.15321365928644504
+   },
+   "spearman_remap_invariance": "PASS"
+  },
+  {
+   "subject": "s33",
+   "group": "HC",
+   "tau": 0.00010971503797918558,
+   "pct_interior": 74.493408203125,
+   "pct_at_min": 3.082275390625,
+   "pct_at_max": 22.42431640625,
+   "p_response_above_tau": 0.5,
+   "sigma_median_offdiag": 0.30102182924747467,
+   "conn_mean_offdiag": 0.6356048829758203,
+   "conn_std_offdiag": 0.7082951973640157,
+   "dyn_ratio_q05": 1.8404256498545053,
+   "dyn_ratio_median": 3.39303065975567,
+   "nonmono_pair_frac": 0.9921875,
+   "var_decomp": {
+    "row_source_share": 0.06892006941551401,
+    "col_target_share": 0.7689835270223765,
+    "residual_edge_share": 0.16209640356210955
+   },
+   "spearman_remap_invariance": "PASS"
+  },
+  {
+   "subject": "s38",
+   "group": "HC",
+   "tau": 0.00013676140224561095,
+   "pct_interior": 70.477294921875,
+   "pct_at_min": 3.515625,
+   "pct_at_max": 26.007080078125,
+   "p_response_above_tau": 0.5,
+   "sigma_median_offdiag": 0.3004806190729141,
+   "conn_mean_offdiag": 0.7187714100463359,
+   "conn_std_offdiag": 0.8407313172349687,
+   "dyn_ratio_q05": 1.6946408352799491,
+   "dyn_ratio_median": 2.8245087692382898,
+   "nonmono_pair_frac": 0.9921875,
+   "var_decomp": {
+    "row_source_share": 0.031802533147500193,
+    "col_target_share": 0.8474234581944381,
+    "residual_edge_share": 0.12077400865806162
+   },
+   "spearman_remap_invariance": "PASS"
+  },
+  {
+   "subject": "s40",
+   "group": "HC",
+   "tau": 0.00011769194679800421,
+   "pct_interior": 76.0498046875,
+   "pct_at_min": 3.466796875,
+   "pct_at_max": 20.4833984375,
+   "p_response_above_tau": 0.5,
+   "sigma_median_offdiag": 0.3019796907901764,
+   "conn_mean_offdiag": 0.6212277943525082,
+   "conn_std_offdiag": 0.719472285082077,
+   "dyn_ratio_q05": 1.746300425217915,
+   "dyn_ratio_median": 3.0313396345958745,
+   "nonmono_pair_frac": 0.9921875,
+   "var_decomp": {
+    "row_source_share": 0.057522936450851575,
+    "col_target_share": 0.7760324113809544,
+    "residual_edge_share": 0.16644465216819404
+   },
+   "spearman_remap_invariance": "PASS"
+  }
+ ],
+ "group": {
+  "pct_interior": {
+   "mean": 72.01690673828125,
+   "std": 5.019700448798294,
+   "min": 64.05029296875,
+   "max": 79.119873046875
+  },
+  "pct_at_min": {
+   "mean": 3.627777099609375,
+   "std": 2.010965662665983,
+   "min": 0.787353515625,
+   "max": 6.903076171875
+  },
+  "pct_at_max": {
+   "mean": 24.355316162109375,
+   "std": 3.6689519081098503,
+   "min": 19.32373046875,
+   "max": 30.126953125
+  },
+  "p_response_above_tau": {
+   "mean": 0.5,
+   "std": 0.0,
+   "min": 0.5,
+   "max": 0.5
+  },
+  "dyn_ratio_median": {
+   "mean": 3.1497929856265623,
+   "std": 0.27558298774406376,
+   "min": 2.8245087692382898,
+   "max": 3.6371191779819894
+  },
+  "nonmono_pair_frac": {
+   "mean": 0.9921875,
+   "std": 0.0,
+   "min": 0.9921875,
+   "max": 0.9921875
+  },
+  "sigma_median_offdiag": {
+   "mean": 0.3016851954162121,
+   "std": 0.0010218946483275563,
+   "min": 0.3004806190729141,
+   "max": 0.3034328669309616
+  },
+  "conn_mean_offdiag": {
+   "mean": 0.655085371772843,
+   "std": 0.08516608417803427,
+   "min": 0.5406720500373406,
+   "max": 0.7757626350485082
+  },
+  "conn_std_offdiag": {
+   "mean": 0.7420704469776476,
+   "std": 0.1834898898533621,
+   "min": 0.46879721547698583,
+   "max": 0.9646936328642679
+  }
+ },
+ "var_decomp_group_mean": {
+  "row_source_share": 0.08084009095744187,
+  "col_target_share": 0.7395914098081746,
+  "residual_edge_share": 0.1795684992343836
+ },
+ "cross_subject_stability": {
+  "mean_offdiag_spearman": 0.450755247048625,
+  "min": 0.1932942127126051,
+  "max": 0.7387672370539426,
+  "matrix": [
+   [
+    1.0,
+    0.7387672370539426,
+    0.5779707573385975,
+    0.425454617950326,
+    0.41649923849998766,
+    0.4914376544176661,
+    0.3460876641101172,
+    0.4733054280477436
+   ],
+   [
+    0.7387672370539426,
+    1.0,
+    0.5226814972934019,
+    0.45876534347639597,
+    0.402648512014287,
+    0.4913804917891517,
+    0.1932942127126051,
+    0.48364670196810394
+   ],
+   [
+    0.5779707573385975,
+    0.5226814972934019,
+    1.0,
+    0.42053311341696165,
+    0.4088617183086017,
+    0.3944709210406326,
+    0.28015981279059454,
+    0.43921370363306766
+   ],
+   [
+    0.425454617950326,
+    0.45876534347639597,
+    0.42053311341696165,
+    1.0,
+    0.5715505069829677,
+    0.34476233113307436,
+    0.3536519433013391,
+    0.6080391979615655
+   ],
+   [
+    0.41649923849998766,
+    0.402648512014287,
+    0.4088617183086017,
+    0.5715505069829677,
+    1.0,
+    0.3580964730472816,
+    0.42334155872179685,
+    0.6306842307287742
+   ],
+   [
+    0.4914376544176661,
+    0.4913804917891517,
+    0.3944709210406326,
+    0.34476233113307436,
+    0.3580964730472816,
+    1.0,
+    0.3995537345737994,
+    0.5465698427542227
+   ],
+   [
+    0.3460876641101172,
+    0.1932942127126051,
+    0.28015981279059454,
+    0.3536519433013391,
+    0.42334155872179685,
+    0.3995537345737994,
+    1.0,
+    0.41971847229449555
+   ],
+   [
+    0.4733054280477436,
+    0.48364670196810394,
+    0.43921370363306766,
+    0.6080391979615655,
+    0.6306842307287742,
+    0.5465698427542227,
+    0.41971847229449555,
+    1.0
+   ]
+  ]
+ },
+ "reading_notes": [
+  "row_source_share 高 = σ* 主要编码源全局破坏性（07-04 教训口径），残差份额才是 a->b 边特异信号",
+  "P(response>tau) 区分 τ 位置性钳边（P 偏离 0.5 大）vs 响应动态范围不足（dyn_ratio 低）",
+  "EC 结论继承 symw 代理脑 A_eff 无向（方向性构造受限）+ λ/sym-W 二因素 caveat（provisional）"
+ ],
+ "generated": "2026-10-28T16:38:25"
+}

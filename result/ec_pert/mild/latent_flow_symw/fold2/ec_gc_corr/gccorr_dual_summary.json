@@ -1,0 +1,273 @@
+{
+ "task": "10-25-symw-ec-f12-fold2",
+ "naming": "EC_pert = v4 formula -(ln sigma*+0.5*ln2pie)+5/7 on unbiased mu=0 global_tau sigma* (q=0.5@sigma_ref=0.3), latent-flow mild sym-w f12 fold2 surrogate (SymWAdam W←(W+Wᵀ)/2, λ0.2; best 0.8433@E113 fold2) (provisional, see surrogate_caveat in subject jsons); abs == raw (all positive, bitwise asserted)",
+ "formula_facts": {
+  "constant_shift_vs_v1": 1.133224247490387,
+  "zero_point_sigma": 0.4942801491871655,
+  "invariance": "raw Spearman/Pearson invariant vs v1 on the same float64 sigma* path (asserted per subject per refs set, tol 1e-9); abs==raw asserted bitwise",
+  "v1_json_f32_rounding_maxabs": 2.6307180078788406e-07
+ },
+ "protocol": "offdiag 16256 pairs; aligned = row=source vs ec; flipped = vs ec.T; Spearman/Pearson; abs and raw blocks identical by construction (kept for protocol shape)",
+ "descriptive_only": "描述性并置登记（先例协议），不构成代理脑资格判定；EC=代理脑内部量 vs GC=观测数据量，实现口径隔离",
+ "juxtaposition_note": "v1 块与 w500 Run 007 先例（+0.1674±0.1661）的并置为跨代理脑描述性并置（θ 不同：w500 基座 vs exit-gnn 变体），数字差异 = 代理脑差异 + 噪声，不作复现性判读",
+ "asserts_passed": 40,
+ "refs_blocks": {
+  "v1_1_45_fixed8": {
+   "refs_dir": "/root/npi/refs/granger_bivariate_spectral/mild40-trial500-zscore-fs250-fixed8-f1-45-favg",
+   "refs_caliber": "mne-connectivity spectral gc, VAR order 8 fixed, 1-45 Hz faverage",
+   "per_subject": {
+    "3": {
+     "subject": "s3",
+     "group": "MDD",
+     "spearman_abs_aligned": 0.1849429603951642,
+     "pearson_abs_aligned": 0.1842733950700617,
+     "spearman_raw_aligned": 0.1849429603951642,
+     "pearson_raw_aligned": 0.1842733950700617,
+     "spearman_abs_flipped": 0.08047347290733302,
+     "spearman_raw_flipped": 0.08047347290733302
+    },
+    "6": {
+     "subject": "s6",
+     "group": "MDD",
+     "spearman_abs_aligned": -0.012783906292584486,
+     "pearson_abs_aligned": -0.026510277682614134,
+     "spearman_raw_aligned": -0.012783906292584486,
+     "pearson_raw_aligned": -0.026510277682614134,
+     "spearman_abs_flipped": 0.06435827040466909,
+     "spearman_raw_flipped": 0.06435827040466909
+    },
+    "8": {
+     "subject": "s8",
+     "group": "MDD",
+     "spearman_abs_aligned": 0.3100076185429498,
+     "pearson_abs_aligned": 0.21126840556114437,
+     "spearman_raw_aligned": 0.3100076185429498,
+     "pearson_raw_aligned": 0.21126840556114437,
+     "spearman_abs_flipped": -0.059730143789077206,
+     "spearman_raw_flipped": -0.059730143789077206
+    },
+    "11": {
+     "subject": "s11",
+     "group": "MDD",
+     "spearman_abs_aligned": 0.28598955276876964,
+     "pearson_abs_aligned": 0.29163479919451,
+     "spearman_raw_aligned": 0.28598955276876964,
+     "pearson_raw_aligned": 0.29163479919451,
+     "spearman_abs_flipped": 0.01645241818496482,
+     "spearman_raw_flipped": 0.01645241818496482
+    },
+    "23": {
+     "subject": "s23",
+     "group": "HC",
+     "spearman_abs_aligned": 0.23005408927476786,
+     "pearson_abs_aligned": 0.281257428094156,
+     "spearman_raw_aligned": 0.23005408927476786,
+     "pearson_raw_aligned": 0.281257428094156,
+     "spearman_abs_flipped": 0.037742646501977624,
+     "spearman_raw_flipped": 0.037742646501977624
+    },
+    "26": {
+     "subject": "s26",
+     "group": "HC",
+     "spearman_abs_aligned": -0.007939179813872438,
+     "pearson_abs_aligned": 0.05996164593637911,
+     "spearman_raw_aligned": -0.007939179813872438,
+     "pearson_raw_aligned": 0.05996164593637911,
+     "spearman_abs_flipped": 0.11796781815044871,
+     "spearman_raw_flipped": 0.11796781815044871
+    },
+    "28": {
+     "subject": "s28",
+     "group": "HC",
+     "spearman_abs_aligned": 0.2719762368334909,
+     "pearson_abs_aligned": 0.28721715245113894,
+     "spearman_raw_aligned": 0.2719762368334909,
+     "pearson_raw_aligned": 0.28721715245113894,
+     "spearman_abs_flipped": 0.13816661906380331,
+     "spearman_raw_flipped": 0.13816661906380331
+    },
+    "31": {
+     "subject": "s31",
+     "group": "HC",
+     "spearman_abs_aligned": 0.1437381341835542,
+     "pearson_abs_aligned": 0.1942817597284941,
+     "spearman_raw_aligned": 0.1437381341835542,
+     "pearson_raw_aligned": 0.1942817597284941,
+     "spearman_abs_flipped": 0.009354674307521935,
+     "spearman_raw_flipped": 0.009354674307521935
+    }
+   },
+   "group": {
+    "spearman_abs_aligned": {
+     "mean": 0.17574818823652993,
+     "std": 0.12693210139329897,
+     "min": -0.012783906292584486,
+     "max": 0.3100076185429498
+    },
+    "pearson_abs_aligned": {
+     "mean": 0.18542303854415876,
+     "std": 0.11478631272705828,
+     "min": -0.026510277682614134,
+     "max": 0.29163479919451
+    },
+    "spearman_raw_aligned": {
+     "mean": 0.17574818823652993,
+     "std": 0.12693210139329897,
+     "min": -0.012783906292584486,
+     "max": 0.3100076185429498
+    },
+    "pearson_raw_aligned": {
+     "mean": 0.18542303854415876,
+     "std": 0.11478631272705828,
+     "min": -0.026510277682614134,
+     "max": 0.29163479919451
+    },
+    "spearman_abs_flipped": {
+     "mean": 0.050598221966455165,
+     "std": 0.06380028712674281,
+     "min": -0.059730143789077206,
+     "max": 0.13816661906380331
+    },
+    "spearman_raw_flipped": {
+     "mean": 0.050598221966455165,
+     "std": 0.06380028712674281,
+     "min": -0.059730143789077206,
+     "max": 0.13816661906380331
+    }
+   },
+   "group_mean": {
+    "spearman_raw_aligned": 0.26750984472351874,
+    "pearson_raw_aligned": 0.24937846743061254
+   }
+  },
+  "v2_1_125_aic4_25": {
+   "refs_dir": "/root/npi/refs/granger_bivariate_spectral/mild40-trial500-zscore-fs250-aic4-25-f1-125-favg",
+   "refs_caliber": "mne-connectivity spectral gc, AIC per-subject order 4-25, 1-125 Hz faverage (band >50 Hz attenuated -24 dB; per-subject Pearson vs v1 median 0.148)",
+   "per_subject": {
+    "3": {
+     "subject": "s3",
+     "group": "MDD",
+     "spearman_abs_aligned": -0.05664919210252131,
+     "pearson_abs_aligned": 0.003980995025790482,
+     "spearman_raw_aligned": -0.05664919210252131,
+     "pearson_raw_aligned": 0.003980995025790482,
+     "spearman_abs_flipped": -0.036526728347304756,
+     "spearman_raw_flipped": -0.036526728347304756
+    },
+    "6": {
+     "subject": "s6",
+     "group": "MDD",
+     "spearman_abs_aligned": 0.19319642985018923,
+     "pearson_abs_aligned": 0.05419143308673776,
+     "spearman_raw_aligned": 0.19319642985018923,
+     "pearson_raw_aligned": 0.05419143308673776,
+     "spearman_abs_flipped": -0.48956140817317595,
+     "spearman_raw_flipped": -0.48956140817317595
+    },
+    "8": {
+     "subject": "s8",
+     "group": "MDD",
+     "spearman_abs_aligned": 0.12272041445105525,
+     "pearson_abs_aligned": 0.05128334211617123,
+     "spearman_raw_aligned": 0.12272041445105525,
+     "pearson_raw_aligned": 0.05128334211617123,
+     "spearman_abs_flipped": 0.02121731820611081,
+     "spearman_raw_flipped": 0.02121731820611081
+    },
+    "11": {
+     "subject": "s11",
+     "group": "MDD",
+     "spearman_abs_aligned": 0.09664297151785928,
+     "pearson_abs_aligned": -0.0018459021649408769,
+     "spearman_raw_aligned": 0.09664297151785928,
+     "pearson_raw_aligned": -0.0018459021649408769,
+     "spearman_abs_flipped": -0.25711313148892684,
+     "spearman_raw_flipped": -0.25711313148892684
+    },
+    "23": {
+     "subject": "s23",
+     "group": "HC",
+     "spearman_abs_aligned": -0.03855161163395182,
+     "pearson_abs_aligned": -0.0121540513592599,
+     "spearman_raw_aligned": -0.03855161163395182,
+     "pearson_raw_aligned": -0.0121540513592599,
+     "spearman_abs_flipped": 0.016567224033104,
+     "spearman_raw_flipped": 0.016567224033104
+    },
+    "26": {
+     "subject": "s26",
+     "group": "HC",
+     "spearman_abs_aligned": -0.18634199212348038,
+     "pearson_abs_aligned": -0.12106257003500681,
+     "spearman_raw_aligned": -0.18634199212348038,
+     "pearson_raw_aligned": -0.12106257003500681,
+     "spearman_abs_flipped": 0.016297358076884004,
+     "spearman_raw_flipped": 0.016297358076884004
+    },
+    "28": {
+     "subject": "s28",
+     "group": "HC",
+     "spearman_abs_aligned": 0.0976200892399165,
+     "pearson_abs_aligned": 0.050998590326419596,
+     "spearman_raw_aligned": 0.0976200892399165,
+     "pearson_raw_aligned": 0.050998590326419596,
+     "spearman_abs_flipped": -0.2170363723684234,
+     "spearman_raw_flipped": -0.2170363723684234
+    },
+    "31": {
+     "subject": "s31",
+     "group": "HC",
+     "spearman_abs_aligned": -0.15236476211171188,
+     "pearson_abs_aligned": -0.1691636895566678,
+     "spearman_raw_aligned": -0.15236476211171188,
+     "pearson_raw_aligned": -0.1691636895566678,
+     "spearman_abs_flipped": 0.012493004739509907,
+     "spearman_raw_flipped": 0.012493004739509907
+    }
+   },
+   "group": {
+    "spearman_abs_aligned": {
+     "mean": 0.009534043385919358,
+     "std": 0.13792401583997582,
+     "min": -0.18634199212348038,
+     "max": 0.19319642985018923
+    },
+    "pearson_abs_aligned": {
+     "mean": -0.01797148157009454,
+     "std": 0.08368583425427138,
+     "min": -0.1691636895566678,
+     "max": 0.05419143308673776
+    },
+    "spearman_raw_aligned": {
+     "mean": 0.009534043385919358,
+     "std": 0.13792401583997582,
+     "min": -0.18634199212348038,
+     "max": 0.19319642985018923
+    },
+    "pearson_raw_aligned": {
+     "mean": -0.01797148157009454,
+     "std": 0.08368583425427138,
+     "min": -0.1691636895566678,
+     "max": 0.05419143308673776
+    },
+    "spearman_abs_flipped": {
+     "mean": -0.11670784191527778,
+     "std": 0.1876155214439155,
+     "min": -0.48956140817317595,
+     "max": 0.02121731820611081
+    },
+    "spearman_raw_flipped": {
+     "mean": -0.11670784191527778,
+     "std": 0.1876155214439155,
+     "min": -0.48956140817317595,
+     "max": 0.02121731820611081
+    }
+   },
+   "group_mean": {
+    "spearman_raw_aligned": 0.028788605921158148,
+    "pearson_raw_aligned": -0.026209326785754966
+   }
+  }
+ },
+ "generated": "2026-10-25T21:51:57"
+}

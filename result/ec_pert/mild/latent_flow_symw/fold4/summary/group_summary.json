@@ -1,0 +1,334 @@
+{
+ "task": "10-28-symw-ec-f34-fold4 Run 002 (offline group summary)",
+ "n_subjects": 8,
+ "caliber": {
+  "q": 0.5,
+  "formula": "-(log sigma*+0.5*ln2pie)+5/7",
+  "remap_check": "1/(sigma*+1e-4) Spearman-invariance asserted",
+  "tau_note": "tau quantile includes diagonal self-response (house precedent caliber)"
+ },
+ "per_subject": [
+  {
+   "subject": "s4",
+   "group": "MDD",
+   "tau": 2.651094473549165e-05,
+   "pct_interior": 51.611328125,
+   "pct_at_min": 17.010498046875,
+   "pct_at_max": 31.378173828125,
+   "p_response_above_tau": 0.5,
+   "sigma_median_offdiag": 0.30508482456207275,
+   "conn_mean_offdiag": 1.1389315259884896,
+   "conn_std_offdiag": 1.4188237190250141,
+   "dyn_ratio_q05": 1.174212537051707,
+   "dyn_ratio_median": 1.6923923735759716,
+   "nonmono_pair_frac": 0.9921875,
+   "var_decomp": {
+    "row_source_share": 0.014209347376954286,
+    "col_target_share": 0.9391092154081041,
+    "residual_edge_share": 0.04668143721494172
+   },
+   "spearman_remap_invariance": "PASS"
+  },
+  {
+   "subject": "s15",
+   "group": "MDD",
+   "tau": 2.669942841748707e-05,
+   "pct_interior": 61.767578125,
+   "pct_at_min": 11.651611328125,
+   "pct_at_max": 26.580810546875,
+   "p_response_above_tau": 0.5,
+   "sigma_median_offdiag": 0.30127519369125366,
+   "conn_mean_offdiag": 0.9271415874552656,
+   "conn_std_offdiag": 1.201055397238132,
+   "dyn_ratio_q05": 1.229514502548441,
+   "dyn_ratio_median": 1.8469383665934545,
+   "nonmono_pair_frac": 0.9921875,
+   "var_decomp": {
+    "row_source_share": 0.022167316056503183,
+    "col_target_share": 0.9199086203639564,
+    "residual_edge_share": 0.057924063579540434
+   },
+   "spearman_remap_invariance": "PASS"
+  },
+  {
+   "subject": "s16",
+   "group": "MDD",
+   "tau": 3.8594662328250706e-05,
+   "pct_interior": 70.361328125,
+   "pct_at_min": 3.67431640625,
+   "pct_at_max": 25.96435546875,
+   "p_response_above_tau": 0.5,
+   "sigma_median_offdiag": 0.30336037278175354,
+   "conn_mean_offdiag": 0.6818970070059198,
+   "conn_std_offdiag": 0.7903826816159241,
+   "dyn_ratio_q05": 1.4960132783817455,
+   "dyn_ratio_median": 2.734542208862949,
+   "nonmono_pair_frac": 0.9921875,
+   "var_decomp": {
+    "row_source_share": 0.07739205944915142,
+    "col_target_share": 0.8097075512837115,
+    "residual_edge_share": 0.11290038926713702
+   },
+   "spearman_remap_invariance": "PASS"
+  },
+  {
+   "subject": "s19",
+   "group": "MDD",
+   "tau": 2.9757848096778616e-05,
+   "pct_interior": 66.30859375,
+   "pct_at_min": 5.37109375,
+   "pct_at_max": 28.3203125,
+   "p_response_above_tau": 0.5,
+   "sigma_median_offdiag": 0.30409400165081024,
+   "conn_mean_offdiag": 0.7941886081587611,
+   "conn_std_offdiag": 0.9821513446736829,
+   "dyn_ratio_q05": 1.229520466241143,
+   "dyn_ratio_median": 1.9396781335836626,
+   "nonmono_pair_frac": 0.9921875,
+   "var_decomp": {
+    "row_source_share": 0.0466227295348936,
+    "col_target_share": 0.8552942714750738,
+    "residual_edge_share": 0.09808299899003269
+   },
+   "spearman_remap_invariance": "PASS"
+  },
+  {
+   "subject": "s24",
+   "group": "HC",
+   "tau": 2.9175917006796226e-05,
+   "pct_interior": 58.990478515625,
+   "pct_at_min": 10.870361328125,
+   "pct_at_max": 30.13916015625,
+   "p_response_above_tau": 0.5,
+   "sigma_median_offdiag": 0.30101218819618225,
+   "conn_mean_offdiag": 0.9262916839490901,
+   "conn_std_offdiag": 1.1871029685892314,
+   "dyn_ratio_q05": 1.2260907531811354,
+   "dyn_ratio_median": 1.8690870934966992,
+   "nonmono_pair_frac": 0.9921875,
+   "var_decomp": {
+    "row_source_share": 0.022090176475575766,
+    "col_target_share": 0.9231423830867898,
+    "residual_edge_share": 0.05476744043763448
+   },
+   "spearman_remap_invariance": "PASS"
+  },
+  {
+   "subject": "s35",
+   "group": "HC",
+   "tau": 3.534388088155538e-05,
+   "pct_interior": 28.765869140625,
+   "pct_at_min": 31.31103515625,
+   "pct_at_max": 39.923095703125,
+   "p_response_above_tau": 0.5,
+   "sigma_median_offdiag": 0.2958162873983383,
+   "conn_mean_offdiag": 1.535222588202322,
+   "conn_std_offdiag": 1.716580942501177,
+   "dyn_ratio_q05": 1.0707972926767562,
+   "dyn_ratio_median": 1.3968561472073935,
+   "nonmono_pair_frac": 0.99224853515625,
+   "var_decomp": {
+    "row_source_share": 0.0021794194139946976,
+    "col_target_share": 0.9659997132693116,
+    "residual_edge_share": 0.031820867316693896
+   },
+   "spearman_remap_invariance": "PASS"
+  },
+  {
+   "subject": "s36",
+   "group": "HC",
+   "tau": 3.626602119766176e-05,
+   "pct_interior": 67.8955078125,
+   "pct_at_min": 6.09130859375,
+   "pct_at_max": 26.01318359375,
+   "p_response_above_tau": 0.5,
+   "sigma_median_offdiag": 0.3032657951116562,
+   "conn_mean_offdiag": 0.7865362515541043,
+   "conn_std_offdiag": 0.9664027884204912,
+   "dyn_ratio_q05": 1.3678747569406167,
+   "dyn_ratio_median": 2.2626652390083897,
+   "nonmono_pair_frac": 0.9921875,
+   "var_decomp": {
+    "row_source_share": 0.034357750246436156,
+    "col_target_share": 0.8863123496668941,
+    "residual_edge_share": 0.07932990008666972
+   },
+   "spearman_remap_invariance": "PASS"
+  },
+  {
+   "subject": "s39",
+   "group": "HC",
+   "tau": 3.287701110821217e-05,
+   "pct_interior": 61.346435546875,
+   "pct_at_min": 9.72900390625,
+   "pct_at_max": 28.924560546875,
+   "p_response_above_tau": 0.5,
+   "sigma_median_offdiag": 0.3022596091032028,
+   "conn_mean_offdiag": 0.8600581704609566,
+   "conn_std_offdiag": 1.1269387650565397,
+   "dyn_ratio_q05": 1.2677211336069625,
+   "dyn_ratio_median": 2.111972178597586,
+   "nonmono_pair_frac": 0.9921875,
+   "var_decomp": {
+    "row_source_share": 0.03345480198537025,
+    "col_target_share": 0.9135172987537147,
+    "residual_edge_share": 0.05302789926091495
+   },
+   "spearman_remap_invariance": "PASS"
+  }
+ ],
+ "group": {
+  "pct_interior": {
+   "mean": 58.380889892578125,
+   "std": 13.311753560660582,
+   "min": 28.765869140625,
+   "max": 70.361328125
+  },
+  "pct_at_min": {
+   "mean": 11.963653564453125,
+   "std": 8.886084803451965,
+   "min": 3.67431640625,
+   "max": 31.31103515625
+  },
+  "pct_at_max": {
+   "mean": 29.65545654296875,
+   "std": 4.587043615349607,
+   "min": 25.96435546875,
+   "max": 39.923095703125
+  },
+  "p_response_above_tau": {
+   "mean": 0.5,
+   "std": 0.0,
+   "min": 0.5,
+   "max": 0.5
+  },
+  "dyn_ratio_median": {
+   "mean": 1.9817664676157631,
+   "std": 0.4001844394084762,
+   "min": 1.3968561472073935,
+   "max": 2.734542208862949
+  },
+  "nonmono_pair_frac": {
+   "mean": 0.9921951293945312,
+   "std": 2.1579186437577746e-05,
+   "min": 0.9921875,
+   "max": 0.99224853515625
+  },
+  "sigma_median_offdiag": {
+   "mean": 0.3020210340619087,
+   "std": 0.0028574992108406443,
+   "min": 0.2958162873983383,
+   "max": 0.30508482456207275
+  },
+  "conn_mean_offdiag": {
+   "mean": 0.9562834278468637,
+   "std": 0.26989830710347357,
+   "min": 0.6818970070059198,
+   "max": 1.535222588202322
+  },
+  "conn_std_offdiag": {
+   "mean": 1.173679825890024,
+   "std": 0.2889674006283356,
+   "min": 0.7903826816159241,
+   "max": 1.716580942501177
+  }
+ },
+ "var_decomp_group_mean": {
+  "row_source_share": 0.03155920006735992,
+  "col_target_share": 0.9016239254134445,
+  "residual_edge_share": 0.06681687451919562
+ },
+ "cross_subject_stability": {
+  "mean_offdiag_spearman": 0.5911588237439839,
+  "min": 0.10417225443268711,
+  "max": 0.77250072306752,
+  "matrix": [
+   [
+    1.0,
+    0.77250072306752,
+    0.6980914592549474,
+    0.6355713878466294,
+    0.7407993767082726,
+    0.2840444227677597,
+    0.6580222308574226,
+    0.6756222913497973
+   ],
+   [
+    0.77250072306752,
+    1.0,
+    0.6819245464700034,
+    0.6862643410782712,
+    0.7051468922941928,
+    0.2392167097129289,
+    0.6862778446415383,
+    0.7267411404503415
+   ],
+   [
+    0.6980914592549474,
+    0.6819245464700034,
+    1.0,
+    0.6956854914819509,
+    0.7149901533597658,
+    0.30169272174946343,
+    0.7214593155443526,
+    0.642438311182209
+   ],
+   [
+    0.6355713878466294,
+    0.6862643410782712,
+    0.6956854914819509,
+    1.0,
+    0.648507187535485,
+    0.33653640205049745,
+    0.737698894662681,
+    0.6606145930186589
+   ],
+   [
+    0.7407993767082726,
+    0.7051468922941928,
+    0.7149901533597658,
+    0.648507187535485,
+    1.0,
+    0.4470904329678288,
+    0.7067124592580677,
+    0.5655095650499431
+   ],
+   [
+    0.2840444227677597,
+    0.2392167097129289,
+    0.30169272174946343,
+    0.33653640205049745,
+    0.4470904329678288,
+    1.0,
+    0.44376023834190387,
+    0.10417225443268711
+   ],
+   [
+    0.6580222308574226,
+    0.6862778446415383,
+    0.7214593155443526,
+    0.737698894662681,
+    0.7067124592580677,
+    0.44376023834190387,
+    1.0,
+    0.635355677696428
+   ],
+   [
+    0.6756222913497973,
+    0.7267411404503415,
+    0.642438311182209,
+    0.6606145930186589,
+    0.5655095650499431,
+    0.10417225443268711,
+    0.635355677696428,
+    1.0
+   ]
+  ]
+ },
+ "reading_notes": [
+  "row_source_share 高 = σ* 主要编码源全局破坏性（07-04 教训口径），残差份额才是 a->b 边特异信号",
+  "P(response>tau) 区分 τ 位置性钳边（P 偏离 0.5 大）vs 响应动态范围不足（dyn_ratio 低）",
+  "EC 结论继承 symw 代理脑 A_eff 无向（方向性构造受限）+ λ/sym-W 二因素 caveat（provisional）"
+ ],
+ "generated": "2026-10-28T17:30:38"
+}

@@ -1,0 +1,52 @@
+{
+ "result/loss_data/mild/latent_flow_symw/fold0/stage1_history.json": {
+  "sha256": "67617a690016d53f8a6aa7448696efdcccb420bfd3b9fa23c036e574622cadf3",
+  "size": 48995,
+  "source": "outputs/10-24-latent-flow-mild-w500/run_w500_fold0/logs/stage1_history.json"
+ },
+ "result/loss_data/mild/latent_flow_symw/fold0/stage2_history.json": {
+  "sha256": "05dccbdfd41e19e8b9008ede95648758ad7669eab73b218d84029df8232e22e7",
+  "size": 72534,
+  "source": "outputs/10-25-latent-flow-exit-gnn-symw/run_symw_fold0/logs/stage2_history.json"
+ },
+ "result/loss_data/mild/latent_flow_symw/fold1/stage1_history.json": {
+  "sha256": "1739aadf3477bc7277a03bbe3566487daed5b86f5ca65276da53a6a149c55787",
+  "size": 48975,
+  "source": "outputs/10-25-latent-flow-symw-f12/run_symw_fold1/logs/stage1_history.json"
+ },
+ "result/loss_data/mild/latent_flow_symw/fold1/stage2_history.json": {
+  "sha256": "b2bb6894afb1b23e7e572650621c6152660d2cb45bd03ab04008c7478612fd3b",
+  "size": 70655,
+  "source": "outputs/10-25-latent-flow-symw-f12/run_symw_fold1/logs/stage2_history.json"
+ },
+ "result/loss_data/mild/latent_flow_symw/fold2/stage1_history.json": {
+  "sha256": "4c4724494268b08d5489d06335abf4fc6fab782794718a725f251b3491ecd407",
+  "size": 44466,
+  "source": "outputs/10-25-latent-flow-symw-f12/run_symw_fold2/logs/stage1_history.json"
+ },
+ "result/loss_data/mild/latent_flow_symw/fold2/stage2_history.json": {
+  "sha256": "77723b0b8cff2c0d57e1df9ad05e08d4aae3ff40a62d1e16e7d7135e1864ae46",
+  "size": 69166,
+  "source": "outputs/10-25-latent-flow-symw-f12/run_symw_fold2/logs/stage2_history.json"
+ },
+ "result/loss_data/mild/latent_flow_symw/fold3/stage1_history.json": {
+  "sha256": "da01fb7b4a589a899a2892ad757b327ef1a171a053c727423fba621a89669c60",
+  "size": 51261,
+  "source": "outputs/10-28-latent-flow-symw-f34/run_symw_fold3/logs/stage1_history.json"
+ },
+ "result/loss_data/mild/latent_flow_symw/fold3/stage2_history.json": {
+  "sha256": "b2b879844de0cde8c374ef6c41a1f66e516eac4dcb3088e078bc8e67c71de50d",
+  "size": 69226,
+  "source": "outputs/10-28-latent-flow-symw-f34/run_symw_fold3/logs/stage2_history.json"
+ },
+ "result/loss_data/mild/latent_flow_symw/fold4/stage1_history.json": {
+  "sha256": "0bf8bb23c0ea4f13ca8e9ac7c8afb3b98859d7478938dbfd678f73ffac085a5a",
+  "size": 51819,
+  "source": "outputs/10-28-latent-flow-symw-f34/run_symw_fold4/logs/stage1_history.json"
+ },
+ "result/loss_data/mild/latent_flow_symw/fold4/stage2_history.json": {
+  "sha256": "292dd9d4f637aa78cd3164178df1ec35899310440c0f57be385ebcb7eebcd249",
+  "size": 72549,
+  "source": "outputs/10-28-latent-flow-symw-f34/run_symw_fold4/logs/stage2_history.json"
+ }
+}

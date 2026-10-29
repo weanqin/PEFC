@@ -1,0 +1,187 @@
+{
+ "task": "10-28-symw-ec-f34-fold3 Run 003 (descriptive EC x GC)",
+ "naming": "EC_pert = unbiased mu=0 global_tau (q=0.5@sigma_ref=0.3) on latent-flow mild exit-gnn sym-w variant surrogate; GC = mne-connectivity spectral gc, VAR order 8 fixed, 1-45 Hz faverage (refs mild40)",
+ "protocol": "offdiag 16256 pairs; aligned = row=source vs ec; flipped = vs ec.T; entropy form v4 -(log sigma*+0.5*ln2pie)+5/7 and inverse 1/(sigma*+1e-4) (Spearman identical, Pearson differs)",
+ "descriptive_only": "描述性并置登记（先例协议），不构成代理脑资格判定；EC=代理脑内部量 vs GC=观测数据量，实现口径隔离",
+ "per_subject": [
+  {
+   "subject": "s9",
+   "group": "MDD",
+   "spearman_abs_aligned_entropy": 0.3180117497553603,
+   "pearson_abs_aligned_entropy": 0.23441078001444535,
+   "spearman_raw_aligned_entropy": 0.3180117497553603,
+   "spearman_abs_flipped_entropy": 0.21566021805864954,
+   "spearman_raw_flipped_entropy": 0.21566021805864954,
+   "spearman_abs_aligned_inv": 0.3180117497553603,
+   "pearson_abs_aligned_inv": 0.14139214768415703,
+   "spearman_raw_aligned_inv": 0.3180117497553603,
+   "spearman_abs_flipped_inv": 0.21566021805864954,
+   "spearman_raw_flipped_inv": 0.21566021805864954
+  },
+  {
+   "subject": "s13",
+   "group": "MDD",
+   "spearman_abs_aligned_entropy": 0.3526199391449873,
+   "pearson_abs_aligned_entropy": 0.27407760727549496,
+   "spearman_raw_aligned_entropy": 0.3526199391449873,
+   "spearman_abs_flipped_entropy": -0.0007547385018123149,
+   "spearman_raw_flipped_entropy": -0.0007547385018123149,
+   "spearman_abs_aligned_inv": 0.35261994407999286,
+   "pearson_abs_aligned_inv": 0.14354138424431923,
+   "spearman_raw_aligned_inv": 0.35261994407999286,
+   "spearman_abs_flipped_inv": -0.000754726776871797,
+   "spearman_raw_flipped_inv": -0.000754726776871797
+  },
+  {
+   "subject": "s18",
+   "group": "MDD",
+   "spearman_abs_aligned_entropy": 0.09228865436673374,
+   "pearson_abs_aligned_entropy": 0.20564308352087216,
+   "spearman_raw_aligned_entropy": 0.09228865436673374,
+   "spearman_abs_flipped_entropy": 0.1425843712195736,
+   "spearman_raw_flipped_entropy": 0.1425843712195736,
+   "spearman_abs_aligned_inv": 0.09228866607740241,
+   "pearson_abs_aligned_inv": 0.22403416823471123,
+   "spearman_raw_aligned_inv": 0.09228866607740241,
+   "spearman_abs_flipped_inv": 0.14258436028296617,
+   "spearman_raw_flipped_inv": 0.14258436028296617
+  },
+  {
+   "subject": "s20",
+   "group": "MDD",
+   "spearman_abs_aligned_entropy": 0.1016070889677783,
+   "pearson_abs_aligned_entropy": 0.07826410248095214,
+   "spearman_raw_aligned_entropy": 0.1016070889677783,
+   "spearman_abs_flipped_entropy": 0.17702116643014373,
+   "spearman_raw_flipped_entropy": 0.17702116643014373,
+   "spearman_abs_aligned_inv": 0.10160708850921049,
+   "pearson_abs_aligned_inv": -0.04006059657464411,
+   "spearman_raw_aligned_inv": 0.10160708850921049,
+   "spearman_abs_flipped_inv": 0.17702116673270737,
+   "spearman_raw_flipped_inv": 0.17702116673270737
+  },
+  {
+   "subject": "s29",
+   "group": "HC",
+   "spearman_abs_aligned_entropy": 0.15101359688017765,
+   "pearson_abs_aligned_entropy": 0.1287173502039227,
+   "spearman_raw_aligned_entropy": 0.15101359688017765,
+   "spearman_abs_flipped_entropy": 0.08827578621689777,
+   "spearman_raw_flipped_entropy": 0.08827578621689777,
+   "spearman_abs_aligned_inv": 0.15101360625833338,
+   "pearson_abs_aligned_inv": 0.030008037334854132,
+   "spearman_raw_aligned_inv": 0.15101360625833338,
+   "spearman_abs_flipped_inv": 0.08827579421218007,
+   "spearman_raw_flipped_inv": 0.08827579421218007
+  },
+  {
+   "subject": "s33",
+   "group": "HC",
+   "spearman_abs_aligned_entropy": 0.22715544239667065,
+   "pearson_abs_aligned_entropy": 0.23378242381430545,
+   "spearman_raw_aligned_entropy": 0.22715544239667065,
+   "spearman_abs_flipped_entropy": -0.1819591065627878,
+   "spearman_raw_flipped_entropy": -0.1819591065627878,
+   "spearman_abs_aligned_inv": 0.22715544966090284,
+   "pearson_abs_aligned_inv": 0.08337991505656127,
+   "spearman_raw_aligned_inv": 0.22715544966090284,
+   "spearman_abs_flipped_inv": -0.18195909081400222,
+   "spearman_raw_flipped_inv": -0.18195909081400222
+  },
+  {
+   "subject": "s38",
+   "group": "HC",
+   "spearman_abs_aligned_entropy": 0.13192422339001775,
+   "pearson_abs_aligned_entropy": 0.14476539308322717,
+   "spearman_raw_aligned_entropy": 0.13192422339001775,
+   "spearman_abs_flipped_entropy": 0.10567641793382365,
+   "spearman_raw_flipped_entropy": 0.10567641793382365,
+   "spearman_abs_aligned_inv": 0.13192422339001775,
+   "pearson_abs_aligned_inv": 0.0916877206285844,
+   "spearman_raw_aligned_inv": 0.13192422339001775,
+   "spearman_abs_flipped_inv": 0.10567641793382365,
+   "spearman_raw_flipped_inv": 0.10567641793382365
+  },
+  {
+   "subject": "s40",
+   "group": "HC",
+   "spearman_abs_aligned_entropy": 0.32439832018759807,
+   "pearson_abs_aligned_entropy": 0.20498426329398947,
+   "spearman_raw_aligned_entropy": 0.32439832018759807,
+   "spearman_abs_flipped_entropy": 0.013501868951279625,
+   "spearman_raw_flipped_entropy": 0.013501868951279625,
+   "spearman_abs_aligned_inv": 0.3243982958183804,
+   "pearson_abs_aligned_inv": 0.07385487956133586,
+   "spearman_raw_aligned_inv": 0.3243982958183804,
+   "spearman_abs_flipped_inv": 0.013501885563263661,
+   "spearman_raw_flipped_inv": 0.013501885563263661
+  }
+ ],
+ "group": {
+  "spearman_abs_aligned_entropy": {
+   "mean": 0.21237737688616548,
+   "std": 0.10725354561220982,
+   "min": 0.09228865436673374,
+   "max": 0.3526199391449873
+  },
+  "pearson_abs_aligned_entropy": {
+   "mean": 0.18808062546090115,
+   "std": 0.06512040266699821,
+   "min": 0.07826410248095214,
+   "max": 0.27407760727549496
+  },
+  "spearman_raw_aligned_entropy": {
+   "mean": 0.21237737688616548,
+   "std": 0.10725354561220982,
+   "min": 0.09228865436673374,
+   "max": 0.3526199391449873
+  },
+  "spearman_abs_flipped_entropy": {
+   "mean": 0.07000074796822098,
+   "std": 0.1260540669149768,
+   "min": -0.1819591065627878,
+   "max": 0.21566021805864954
+  },
+  "spearman_raw_flipped_entropy": {
+   "mean": 0.07000074796822098,
+   "std": 0.1260540669149768,
+   "min": -0.1819591065627878,
+   "max": 0.21566021805864954
+  },
+  "spearman_abs_aligned_inv": {
+   "mean": 0.21237737794370004,
+   "std": 0.1072535404689687,
+   "min": 0.09228866607740241,
+   "max": 0.35261994407999286
+  },
+  "pearson_abs_aligned_inv": {
+   "mean": 0.09347970702123487,
+   "std": 0.07946091334059956,
+   "min": -0.04006059657464411,
+   "max": 0.22403416823471123
+  },
+  "spearman_raw_aligned_inv": {
+   "mean": 0.21237737794370004,
+   "std": 0.1072535404689687,
+   "min": 0.09228866607740241,
+   "max": 0.35261994407999286
+  },
+  "spearman_abs_flipped_inv": {
+   "mean": 0.07000075314908956,
+   "std": 0.12605405971676406,
+   "min": -0.18195909081400222,
+   "max": 0.21566021805864954
+  },
+  "spearman_raw_flipped_inv": {
+   "mean": 0.07000075314908956,
+   "std": 0.12605405971676406,
+   "min": -0.18195909081400222,
+   "max": 0.21566021805864954
+  }
+ },
+ "group_mean": {
+  "spearman_abs_aligned": 0.3503180130592746,
+  "pearson_abs_aligned": 0.3417785687059157
+ },
+ "generated": "2026-10-28T16:38:29"
+}
