@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/research/surrogate-brain-qualification.md", "reason": "验收对照：指标 1 v2.1 口径合规与通过标准陈述纪律（Q2 与 Q1 不混写）"}
+{"file": ".trellis/spec/research/evaluation-calibers.md", "reason": "统计汇报纪律与 Run 块口径登记完整性"}
+{"file": ".trellis/spec/research/reproducibility.md", "reason": "确定性复跑（AC5）与 seed/SHA 凭据核查"}
+{"file": ".trellis/spec/research/artifacts-management.md", "reason": "产物落位与 outputs 组织核查"}
+{"file": ".trellis/spec/research/result-dir-policy.md", "reason": "Quality Check 挂钩项：本轮是否向 result/ 写入（本任务应只读）"}

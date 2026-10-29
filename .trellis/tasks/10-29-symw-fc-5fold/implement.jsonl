@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/research/surrogate-brain-qualification.md", "reason": "本任务主规范：指标 1 FC 一致性 v2.1 口径定义与通过标准（组平均 r≥0.95 / t 检验辅助），study1 路由必读"}
+{"file": ".trellis/spec/research/evaluation-calibers.md", "reason": "指标三要素登记与统计汇报纪律、口径变更纪律（镜像 v2.1 不改口径）"}
+{"file": ".trellis/spec/data/mild-depression.md", "reason": "数据契约：w500 前缀窗口径（obs375/fc125）、manifest 只读复用、被试 id 解析坑、逐通道归一化"}
+{"file": ".trellis/spec/research/reproducibility.md", "reason": "seed/确定性/复现三要素纪律（AC5 确定性复跑、SHA 凭据随档）"}
+{"file": ".trellis/spec/research/artifacts-management.md", "reason": "outputs/<任务>/ 产物组织与落盘纪律"}
+{"file": ".trellis/spec/research/result-dir-policy.md", "reason": "result/ 只读不写边界（ckpt 输入取 result 注册件）"}
