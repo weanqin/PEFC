@@ -26,3 +26,14 @@
 - subject 映射：sid = EEG_ALL index + 1（前 20 MDD → sid 1–20，后 20 HC → sid 21–40）；四锚点（m_1/m_20/h_1/h_20）与 `models/latent-flow-v1/splits/mild_5fold_seed42.json` 文件 **bitwise 相等**已验（记录在 meta.json）。
 - 用途与边界：latent-flow mild-w500 代理脑 EC_pert 的观测参考（对照协议对齐 unbiased 先例：|EC|/raw × aligned/flipped × Spearman/Pearson，描述性登记不构成代理脑资格判定）；与 latent_flow 原库 GC 两档**实现不同、口径隔离**，不做跨实现/跨数据集对比交付；GC 依赖 Cz 参考（Trongnetrpunya et al. 2016）等局限随源 README 在档。
 - **2026-10-27 注销**：`mild40-trial500-zscore-fs250-aic4-25-f1-125-favg/`（aic4-25 v2 档，1–125 Hz AIC 逐被试选阶 4–25）经用户拍板从 md-latent-flow 线对比配置中取消（v2 gc-ec 1-125hz 对比项移除），目录文件已删除；v1 档与 edra 两档不受影响。在档任务产物（outputs 内 dual GC 汇总）中的 v2 块为历史数据，保留不动。
+
+## 旧库 baseline 三方法（MODMA 5 折；用户 2026-10-30 供 zip 注册）
+
+| 子目录 | 数据 | 关键参数 | 来源 | 归档日 |
+|---|---|---|---|---|
+| `granger_bivariate_spectral/modma5fold-cont-zscore-fs250-aic8-f1-125-nf65/` | MODMA resting 53 例 cohort 的 5 折 test 子集（每折 10 例；fold2-4 test 实为 11 例、缺各折第 11 例），fs250 全长连续，逐通道 z-score | AIC 逐对选阶（max 8）、n_freq 65、1–125 Hz 全频段梯形积分（Geweke 1982 / Dhamala 2008） | 用户 zip `/root/autodl-tmp/modma-gc-ec.zip`（旧库原版矩阵，2026-07-18/07-23 生成；fold0/subject_0 三方逐位验证：zip = 旧库残留 = 10-27 现算；注册任务 10-29-modma-baseline-refs） | 2026-10-30 |
+| `gpdc_pairwise_bivariate/modma5fold-cont-zscore-fs250-aic8-f1-125-nf65/` | 同上 cohort（fold0-1 各 10 例、**fold2-4 各 11 例**——三方法中覆盖最全） | gpdc 成对双变量、AIC max 8、n_freq 65、1–125 Hz、直接偏化 Ā=I−A(f)（Baccala & Sameshima 2001; Baccala et al. 2007） | 同上 zip（包级溯源） | 2026-10-30 |
+| `symbolic_transfer_entropy/modma5fold-cont-zscore-fs250-fullband-m3tau1/` | 同 gc 档覆盖（每折 10 例） | 符号化 TE：Bandt-Pompe 置换符号化 m=3/τ=1、alphabet 6、lag 1 符号步、log2 bits（Schreiber 2000; Bandt & Pompe 2002） | 同上 zip（包级溯源） | 2026-10-30 |
+
+- 内容：各档 `fold{0..4}/subject_N.json`（**保留原文件名**；`connectivity_matrix` 128×128，**[a,b]=a→b 行=源/列=靶**，逐档 `method_params`/`subject_file`/`n_samples` 随 json）+ `register_refs.py`/`register.log`（可重放注册溯源）+ `SHA256SUMS`（153 文件全验通过）+ `meta.json`（逐折被试映射 + 口径 + 溯源链）。
+- 用途与边界：MODMA 线代理脑 EC 的观测基线对照（07-05 锚点线 OC↔GC/OC↔TE 同族口径扩展至 5 折）；与 edra/mild 各档**数据集隔离**，不做跨数据集对比交付；fold0 gc 与 `outputs/10-27-gc-fold0-aic-anchor` 现算逐位等价（已验证），后续对照任取其一，不重复注册；gpd/te 两档为通用基线参考，代理脑对照协议沿用 |EC|/raw × aligned/flipped × Spearman/Pearson 描述性登记先例。

@@ -1,0 +1,104 @@
+{
+ "registered_by": "10-29-modma-baseline-refs（用户 2026-10-30 指令）",
+ "generated": "2026-10-29T22:31:13",
+ "method": "granger_bivariate_spectral",
+ "method_params": {
+  "method": "granger_bivariate_spectral",
+  "order_select": "aic",
+  "max_order": 8,
+  "n_freq": 65,
+  "freq_band": "full",
+  "fmin_hz": 1.0,
+  "fmax_hz": 125.0,
+  "fs": 250.0,
+  "integral": "trapezoidal",
+  "reference": "Geweke 1982; Dhamala 2008"
+ },
+ "source": {
+  "zip": "/root/autodl-tmp/modma-gc-ec.zip（用户下载的旧库原版矩阵）",
+  "extracted_root": "/root/autodl-tmp/modma-gc-ec",
+  "original_generation": "旧库 outputs/baseline_connectivity_fold{0..4}（2026-07-18/07-23）",
+  "identity_evidence": "gc fold0/subject_0 三方逐位一致：zip = 旧库唯一残留 results/baseline_connectivity/gc/subject_0.json = 10-27-gc-fold0-aic-anchor 现算（np.array_equal 验证）"
+ },
+ "direction_convention": "connectivity_matrix[a,b] = a→b（行=源/列=靶），128×128",
+ "folds": {
+  "fold0": {
+   "n": 10,
+   "files": {
+    "subject_0.json": "02010013EOG.set_59_.mat",
+    "subject_1.json": "02010025EOG.set_67_.mat",
+    "subject_2.json": "02010002EOG.set_60_.mat",
+    "subject_3.json": "02010028EOG.set_49_.mat",
+    "subject_4.json": "02030007EOG.set_68_.mat",
+    "subject_5.json": "02020023EOG.set_67_.mat",
+    "subject_6.json": "02020020EOG.set_57_.mat",
+    "subject_7.json": "02020026EOG.set_87_.mat",
+    "subject_8.json": "02030011EOG.set_84_.mat",
+    "subject_9.json": "02020018EOG.set_98_.mat"
+   }
+  },
+  "fold1": {
+   "n": 10,
+   "files": {
+    "subject_0.json": "02010018EOG.set_85_.mat",
+    "subject_1.json": "02010015EOG.set_96_.mat",
+    "subject_2.json": "02010021EOG.set_91_.mat",
+    "subject_3.json": "02010004EOG.set_73_.mat",
+    "subject_4.json": "02010034EOG.set_72_.mat",
+    "subject_5.json": "02030005EOG.set_78_.mat",
+    "subject_6.json": "02020012EOG.set_76_.mat",
+    "subject_7.json": "02020015EOG.set_96_.mat",
+    "subject_8.json": "02020013EOG.set_92_.mat",
+    "subject_9.json": "02020027EOG.set_64_.mat"
+   }
+  },
+  "fold2": {
+   "n": 10,
+   "files": {
+    "subject_0.json": "02010010EOG.set_61_.mat",
+    "subject_1.json": "02010005EOG.set_78_.mat",
+    "subject_2.json": "02010019EOG.set_65_.mat",
+    "subject_3.json": "02010024EOG.set_71_.mat",
+    "subject_4.json": "02010006EOG.set_66_.mat",
+    "subject_5.json": "02020021EOG.set_85_.mat",
+    "subject_6.json": "02030019EOG.set_64_.mat",
+    "subject_7.json": "02020019EOG.set_74_.mat",
+    "subject_8.json": "02030014EOG.set_60_.mat",
+    "subject_9.json": "02020016EOG.set_43_.mat"
+   }
+  },
+  "fold3": {
+   "n": 10,
+   "files": {
+    "subject_0.json": "02010008EOG.set_88_.mat",
+    "subject_1.json": "02010035EOG.set_89_.mat",
+    "subject_2.json": "02010026EOG.set_67_.mat",
+    "subject_3.json": "02010033EOG.set_51_.mat",
+    "subject_4.json": "02010036EOG.set_65_.mat",
+    "subject_5.json": "02030020EOG.set_91_.mat",
+    "subject_6.json": "02030006EOG.set_76_.mat",
+    "subject_7.json": "02030008EOG.set_96_.mat",
+    "subject_8.json": "02030002EOG.set_86_.mat",
+    "subject_9.json": "02030003EOG.set_91_.mat"
+   }
+  },
+  "fold4": {
+   "n": 10,
+   "files": {
+    "subject_0.json": "02010012EOG.set_89_.mat",
+    "subject_1.json": "02010016EOG.set_74_.mat",
+    "subject_2.json": "02010023EOG.set_85_.mat",
+    "subject_3.json": "02010030EOG.set_71_.mat",
+    "subject_4.json": "02010011EOG.set_54_.mat",
+    "subject_5.json": "02030004EOG.set_92_.mat",
+    "subject_6.json": "02030017EOG.set_48_.mat",
+    "subject_7.json": "02030021EOG.set_60_.mat",
+    "subject_8.json": "02030009EOG.set_81_.mat",
+    "subject_9.json": "02030018EOG.set_51_.mat"
+   }
+  }
+ },
+ "n_files": 50,
+ "checksum_file": "SHA256SUMS",
+ "notes": "MODMA resting 53 例 cohort 的 5 折 test 子集；每折 10 例（cohort 划分下 fold2-4 test 实为 11 例，旧库当年每折只算 10 例——缺例为各折 test 的第 11 例，跨方法可能不同，以各档 meta 的 folds 映射为准）。fs250 全长连续、逐通道 z-score（驱动默认口径）。"
+}
