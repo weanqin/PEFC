@@ -861,3 +861,8 @@ v4a-fmt 基座上把 5 个 LayerNorm 位换 adaLN（emb(t)→逐 site SiLU→Lin
 ### Status
 
 [OK] **Completed**
+
+## 2026-10-29/30 会话 — 任务 10-29-symw-fc-5fold（symw 五折 test FC 一致性）
+- 用户令：symw（mild-latent-flow-symw-anti0.2-gnn-exit）五折 test 集 gen-fc vs real-fc Pearson 一致性，镜像 gpfm-mamba-f0/main-01 fc_metric 口径；拍板 ckpt 取 result/ 注册件 + 轻量任务
+- 交付：fc_metric_mild_symw.py（fold/summary/determinism 三模式 + 四重守卫）；五折组 r 0.95636/0.77146/0.69556/0.86072/0.96251（均值 0.84932）、合并 40 例 r_s 0.8133±0.1095（p=6.1e-36）⇒ 指标 1 部分达标（2/5 折过 0.95 线）；AC1–AC6 全过，已归档
+- 过程事实：①fold2 ckpt SHA 守卫拦到我誊录笔误一字（守卫有效、注册表无恙）；②共享 GPU 并发（另一会话训练中）下推理前向不可逐位复现，cuBLASLt 核漂移，确定性双开关无效 → 正式口径 CPU 单线程逐位一致（spec/reproducibility + environment 已沉淀）；③z↔原始域 FC 数学等价实证 ~1e-15（float32 管线 ~2e-9）
