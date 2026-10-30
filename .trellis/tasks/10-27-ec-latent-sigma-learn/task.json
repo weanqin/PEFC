@@ -2,7 +2,7 @@
   "id": "ec-latent-sigma-learn",
   "name": "ec-latent-sigma-learn",
   "title": "EC 潜空间可学σ扰动（NoiseLayer·SGD·20epoch）首实现",
-  "description": "潜空间扰动 EC 新路径首实现：stage-2 入口 NoiseLayer（1 靶通道不加噪 + 127 通道逐通道可学 σ_i×iid 高斯）、单步构造（非 Euler10）、loss=λ(1−pearson(fc_pert,fc_origin))−H(σ) 修复型目标（λ 默认 1、pearson scope=target 用户拍板）、SGD×20epoch、σ*→v4 公式 EC；交付脚本+构造检查+GPU 冒烟，全量主跑另立",
+  "description": "潜空间扰动 EC 新路径首实现：stage-2 入口 NoiseLayer（1 靶通道不加噪 + 127 通道逐通道可学 σ_i×iid 高斯）、单步构造（非 Euler10）、loss=λ·MAE(fc_pert,fc_origin)/MAE(fc_pert_σref,fc_origin)−H(σ) 修复型目标（保真项=靶 fc 段逐点 MAE 比值、σ_ref=0.01 归一化、2026-10-28 拍板；λ 默认 0.1、pearson 1−P 为 CLI 备选）、SGD×20epoch、σ*→v4 公式 EC；交付脚本+构造检查+GPU 冒烟，全量主跑另立",
   "status": "planning",
   "dev_type": null,
   "scope": "study2",

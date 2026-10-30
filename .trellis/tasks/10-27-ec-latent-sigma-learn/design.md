@@ -9,12 +9,12 @@
 |---|---|---|
 | 扰动位置 | 信号空间 x_obs 源通道（z-score 后入模前） | 潜空间 z_obs（stage-2 入口、GNN 之前） |
 | 搜索策略 | log 网格 [0.01,0.48]×24 + global-τ σ* 判定 | 127 通道 σ_i 联合梯度优化（SGD×20epoch） |
-| 响应度量 | 靶通道 MSE 类响应 + τ 阈值 | 靶通道 fc 段 pearson 保真（无硬阈值，λ 软化） |
+| 响应度量 | 靶通道 MSE 类响应 + τ 阈值 | 靶通道 fc 段 **MAE 比值保真**（σ_ref=0.01 归一化；pearson 1−P 为 CLI 备选） |
 | 采样口径 | Euler-10（sample） | 单步构造（forward_stage2 口径，:1111-1121） |
 | σ 语义 | 逐源隔离（每次只扰 1 源） | **联合边际**（127 源同时在场的逐通道边际影响） |
-| EC 映射 | v4 = −(ln σ*+0.5·ln2πe)+5/7 | **同式直出**（σ* 边界域同 [0.01,0.48] ⇒ 数值域同型；**并置 = 描述性**：EC 值仅同 run 内序数意义，跨 λ 比较=ln λ 平移混淆、跨管线数值不可直比） |
+| EC 映射 | v4 = −(ln σ*+0.5·ln2πe)+5/7 | **同式直出**（σ* 边界域同 [0.01,0.48] ⇒ 数值域同型；**并置 = 描述性**：EC 值仅同 run 内序数意义，跨 λ 比较=ln λ 平移混淆（MAE 口径线性区精确：EC=ln(λ/σ_ref)+const）、跨 σ_ref/跨 loss 口径/跨管线数值均不可直比） |
 
-继承契约：σ 盒边界/init、v4 公式、种子登记与确定性重建（四前提）、interior 率诊断、路径隔离。新立契约：修复型 loss 语义（§2）、CRN = t 固定（§3.3）、潜空间 σ 标度注记（σ 相对 z_obs 逐通道 std 的含义，随 payload 登记 z-std 诊断；不引入 σ_ref 重标度，保持与现管线 σ 数值域直接可比）。
+继承契约：σ 盒边界/init、v4 公式、种子登记与确定性重建（四前提）、interior 率诊断、路径隔离。新立契约：修复型 loss 语义（§2，MAE 比值默认）、分母探针契约（§2.5/R3.5）、CRN = t 固定（§3.3）、潜空间 σ 标度注记（σ 相对 z_obs 逐通道 std 的含义，随 payload 登记 z-std 诊断；σ 盒不按 z-std 重标定，保持与现管线 σ 数值域直接可比——§2.5 的 σ_ref 是 loss 侧归一化探针，非 σ 盒重标度）。
 
 ## 2. 目标函数良构化（本设计的核心裁决）
 
@@ -26,7 +26,7 @@
 - 最大化 P−H：两项同推 σ↓ ⇒ 全通道钉死初值 σ_min，一步不动；
 - 内部驻点要求 ∂P/∂σ_i = +1/(127σ_i) > 0，左边 ≤ 0 右边 > 0，无解。
 
-### 2.2 修复型目标（用户拍板 λ 默认 1）
+### 2.2 修复型目标——pearson 口径（CLI 备选；2026-10-28 前曾为默认，本节 λ 拍板与可行窗仅适用 pearson 口径）
 
 **最小化 L = λ·(1 − P) − H** ⟺ 最大化 λP + H：
 
@@ -43,7 +43,27 @@ h(σ_i) = ½ln(2πeσ_i²) = ½ln(2πe) + ln σ_i；H = (1/127)·Σ_{i≠靶} h(
 
 ### 2.4 λ ↔ τ 对应与标定留白
 
-λ↑ ≡ τ↓（更不容忍输出变化）⇒ 整体 σ*↓。λ=1 为起步档（用户拍板）；每 epoch 输出 interior 率（现管线口径），λ 重标定属主跑前拍板项，本任务只暴露诊断不搜索。
+λ↑ ≡ τ↓（更不容忍输出变化）⇒ 整体 σ*↓（MAE 口径闭式 σ*≈σ_ref/λ，见 §2.5）。λ CLI 默认 0.1（MAE 口径设计中档；pearson 备选口径建议 100–300）；每 epoch 输出 interior 率（现管线口径），λ 重标定属主跑前拍板项，本任务只暴露诊断不搜索。
+
+### 2.5 保真项 MAE 比值——默认口径（2026-10-28 用户拍板，采纳可行性咨询建议 1）
+
+**动机**：§8-b 实测 pearson 口径 λ=1 零判别、可行窗须 λ≈100–300 硬补偿（保真梯度二次型 ∝σ 随 σ→0 消失，熵梯度 1/(127σ) 不消）。MAE 比值把保真项从 σ 二次换到一次，梯度不随 σ 消失，λ 回到 O(0.1) 自然档、loss 条件数正常化。
+
+**L_f = MAE(pert,origin)/MAE(pert_σref,origin)，σ_ref=0.01（=盒下界）**。线性响应推导（e ≡ fc_pert−fc_origin ≈ Σ_i J_iσ_iε_i ⇒ e~N(0,‖Jσ‖₂²)，J_i=靶读出对通道 i 敏感度）：
+
+```
+MAE = E|e| = √(2/π)·‖Jσ‖₂ ；探针全体 σ=σ_ref ⇒ MAE_ref = √(2/π)·σ_ref·‖J‖₂
+⇒ L_f = ‖Jσ‖₂/(σ_ref·‖J‖₂)          ← √(2/π) 与个体增益 ‖J‖ 全消：无量纲 + 跨被试增益白化
+∂L_f/∂σ_i = J_i²σ_i/(σ_ref‖J‖₂‖Jσ‖₂)  （均匀情形 = 1/(127σ_ref) ≈ 0.787，与 σ 无关）
+```
+
+**闭式平衡点**（与 ∂H/∂σ_i=1/(127σ_i) 联立）：均匀解 **σ* = σ_ref/λ**（λ∈[0.02,1] 张满全盒；λ=0.1 ⇒ σ*≈0.1 盒中部）；逐通道 σ_i*/σ_j* ≈ J_j/J_i（与 pearson 口径同向保序：影响强 ⇒ σ* 小 ⇒ EC 大）。λ=1 ⇒ σ*≈0.01 全钉下界零判别（pearson 钉上界的镜像，梯子对照证据格）。
+
+**量级/条件数/凸性**：L_f∈[1,48]（盒内均匀）；λL_f 与 −H∈[−0.69,3.19] 在 λ≈0.1 同量级（对照 pearson 需 100× 补偿）；‖Jσ‖₂ 凸 + (−ln σ_i) 凸 ⇒ 线性区 loss 凸、唯一内部极小；均匀保真梯度 0.787 恒定 vs 熵 1/(127σ)∈[0.016,0.787] ⇒ 恒梯度在 σ* 附近振荡 ~lr·grad 带（缓释：末 5 epoch σ 均值读数 + box 投影，§8-n）。
+
+**语义变化（显式登记，AC5）**：①MAE 不中心化 ⇒ 靶通道均值漂移 δ̄ 计为破坏（pearson 对仿射不变、无感）；②联合边际耦合经 ‖Jσ‖₂（与 §8-h 同族 caveat）；③跨 loss 口径 EC 不可直比；④均匀线性区 EC = ln(λ/σ_ref)+const ⇒ 跨 λ=ln λ 平移（精确）、跨 σ_ref 同理不可直比；⑤σ_ref 与 λ 线性区冗余（仅 λ/σ_ref 有效）⇒ σ_ref 固定 0.01 不作搜索维。
+
+**数值风险与缓释（→§8-m/⑬）**：σ_ref=0.01 离 fp32 消减噪声底一个量级（0.001 时低敏感被试分母相对误差可达 ~15%）；分母护栏 max(MAE_ref, 1e-6·mean|fc0|)；双种子一致性 >5% ⇒ 噪声底 flag；探针逐（被试,靶）一次 no_grad 缓存（§3.3 第四级缓存）。大 σ 区间响应饱和 ⇒ 线性近似失效 ⇒ 闭式 σ* 上偏，冒烟 interior 率诊断兜底。
 
 ## 3. 架构接缝
 
@@ -57,7 +77,7 @@ h(σ_i) = ½ln(2πeσ_i²) = ½ln(2πe) + ln σ_i；H = (1/127)·Σ_{i≠靶} h(
 
 ### 3.3 CRN 与缓存（潜空间口径的新契约）
 
-单步构造唯一随机源 = t（z_fc_target=enc(x_fc) 确定性、无 x0 项——与标准 FM 采样不同，本构造是 z_obs→z_fc_target 线段上的单步）。**t 逐样本由 generator(seed) 抽一次并全程固定** ⇒ fc_origin 确定性可全程缓存；origin/pert 同 t ⇒ CRN 配对，pearson 差异纯归噪声 ε 与 σ。ε 逐步现抽（梯度随机性来源；逐位复现依赖同 seed/形状/设备/torch 版本四前提，与现管线契约同型）。缓存三级：z_obs/z_fc_target/skips（编码级，全程一次）、t（全程一次）、fc_origin（全程一次）；每 step 只跑一条 fc_pert 前向+反向。
+单步构造唯一随机源 = t（z_fc_target=enc(x_fc) 确定性、无 x0 项——与标准 FM 采样不同，本构造是 z_obs→z_fc_target 线段上的单步）。**t 逐样本由 generator(seed) 抽一次并全程固定** ⇒ fc_origin 确定性可全程缓存；origin/pert 同 t ⇒ CRN 配对，pearson 差异纯归噪声 ε 与 σ。ε 逐步现抽（梯度随机性来源；逐位复现依赖同 seed/形状/设备/torch 版本四前提，与现管线契约同型）。缓存四级：z_obs/z_fc_target/skips（编码级，全程一次）、t（全程一次）、fc_origin（全程一次）、**MAE_ref（逐（被试,靶）一次：σ_ref=0.01 全通道探针 no_grad 前向，同 t CRN + 独立 ε Generator 偏移登记，标量缓存不进计算图；双种子偏差 >5% ⇒ 噪声底 flag——§2.5/R3.5；成本 ≈ 单 step 前向，可忽略）**；每 step 只跑一条 fc_pert 前向+反向。
 
 ### 3.4 数据口径与装载链（research 适配已核实，GPU 探针实测随档）
 
@@ -91,6 +111,7 @@ class NoiseLayer(nn.Module):
 → 被试级缓存: encode x_p→mu_p(skips), x_f→mu_f；t~U(0,1) 独立 generator 抽一次；origin 单步+decode→fc0 缓存(no_grad+detach)；z-std 诊断
 → for target_ch in range(128):
     noise = NoiseLayer(target_ch)（σ init 0.01）
+    MAE_ref 探针: noise.σ 置 0.01 向量、no_grad 单前向（同 t、独立 ε 偏移）⇒ 标量缓存 + 双种子偏差检查（>5% ⇒ 噪声底 flag）
     for epoch in range(20):
         for chunk in trials(分块):
             ε ~ 独立 generator（fresh 逐步现抽；fixed 则首抽复用）
@@ -101,28 +122,29 @@ class NoiseLayer(nn.Module):
                             skips=sk.view(B,C,-1,-1).repeat_interleave(n_mc,dim=0).flatten(0,1))
             # skips 原形状 (B·C,ch,T')：naive repeat_interleave 会打乱 (b,c) 配对且无形状报错（review B MAJOR）——
             # 必须经 view(B,C,·,·) 维度感知 repeat；构造检查⑪锚点断言兜底
-            P = pearson_fc(fc_p[:,:,[t_ch]], rep(fc0)[:,:,[t_ch]])    # scope=target；pearson_fc 返回 P 本身（≠_pearson_corr_fc 的 1−P 口径）
+            L_f = mae_fc(fc_p[:,:,[t_ch]], rep(fc0)[:,:,[t_ch]]) / MAE_ref   # 逐点 MAE、scope=target、逐样本时间维 batch 平均（--fidelity mae 默认）
+            P = pearson_fc(fc_p[:,:,[t_ch]], rep(fc0)[:,:,[t_ch]])          # 仅描述性行（跨口径并置诊断，不入 loss；pearson_fc 返回 P 本身）
             H = noise.entropy()                                   # 127 通道（排除靶）
-            loss = lam*(1-P) - H
+            loss = lam*L_f - H                                    # --fidelity pearson 备选: lam*(1-P) - H
             opt.zero_grad(set_to_none=True); loss.backward(); opt.step(); noise.project()
-        诊断: σ 分位/@lo/@hi/interior 率、|∂P/∂σ| 分位 vs 1/(127σ) 对照行、P/H、|σ−σ_prev|、逐靶 |∂P/∂σ| q0=0 掩码（结构性零梯度通道诊断，随 payload）→ 轨迹 jsonl
+        诊断: σ 分位/@lo/@hi/interior 率、|∂L_f/∂σ| 分位 vs 1/(127σ) 对照行、L_f/H/P 描述性行、|σ−σ_prev|、末 5 epoch σ 均值、逐靶 |∂L_f/∂σ| q0=0 掩码（结构性零梯度通道诊断，随 payload）→ 轨迹 jsonl
 → σ*→EC_v4 = −(ln σ*+0.5·ln 2πe)+5/7（σ*∈[0.01,0.48] ⇒ EC∈[+0.0293, 3.9005]；靶位 NaN）
 → 落盘: EC 矩阵（行=源）+ payload {seed, ε 配方(seed+偏移/策略), t seed, lam, lr, epochs, n_mc,
    batch, sigma_bounds, targets, scope, θ ckpt+SHA, fold, subjects, norm SHA, orientation,
-   z-std 诊断, method="single-step latent SGD pearson-entropy", 复现四前提串}
+   z-std 诊断, fidelity, sigma_ref, mae_ref(+双种子偏差/护栏 flag), method="single-step latent SGD mae-ratio-entropy σ_ref=0.01", 复现四前提串}
 ```
 
-pearson_fc：逐 (样本,通道) 时间维 pearson 再平均（仿 `_pearson_corr_fc`，eps=1e-8 分母护栏）；`--pearson-scope {target,full}` 默认 target。NaN 守卫：fc 读出 `nan_to_num`（sample() 先例）+ loss/P/H 有限性断言 + 注入 NaN 拒跑路径（构造检查⑨）。autocast bf16 为 CLI 可选项（默认关；实测 bf16 梯度与 fp32 一致至 3–4 位，σ·ε 构造全程 fp32，仅 flow/decoder 进 autocast）。
+mae_fc：逐 (样本,通道) 时间维 MAE 再 batch 平均（与 _pearson_corr_fc 同聚合口径）；分母护栏 max(MAE_ref, 1e-6·mean|fc0|)。pearson_fc（--fidelity pearson 备选路径）：逐 (样本,通道) 时间维 pearson 再平均（仿 `_pearson_corr_fc`，eps=1e-8 分母护栏）；`--pearson-scope {target,full}` 默认 target（仅备选口径生效）。NaN 守卫：fc 读出 `nan_to_num`（sample() 先例）+ loss/L_f/P/H 有限性断言 + 注入 NaN 拒跑路径（构造检查⑨）。autocast bf16 为 CLI 可选项（默认关；实测 bf16 梯度与 fp32 一致至 3–4 位，σ·ε 构造全程 fp32，仅 flow/decoder 进 autocast）。
 
 ## 6. 代码布局与 CLI
 
-单文件 `models/latent-flow-v1/ec_latent_sigma_learn.py`（变体层新增；BLAS 守卫 + `sys.path.insert(VARIANT_DIR)` 头部，仿 ec_mild_unbiased.py:56-74；**latent_flow/ 包体零改动成立**——research §3.1 判定，所需接口全部现成公开）。CLI：`--mode {construct,smoke,main}`、`--ckpt`（默认 run_symw_fold0）、`--symw`（默认开 + run_dir 段守卫）、`--fold`、`--subjects`、`--n-trials`、`--target-channel`（单靶干跑；缺省 = 全 128 循环）、`--lam`（默认 1 = 用户起步档拍板；冒烟必跑 λ 梯子，见 §8-b）、`--lr`（默认 0.5，research 可行窗内；5e-3 为对照档）、`--epochs 20`、`--n-mc 2`、`--batch-size 30`、`--pearson-scope {target,full}`、`--eps {fresh,fixed}`、`--bf16`（默认关）、`--seed 42`、`--out-dir`。输出落 `outputs/10-27-ec-latent-sigma-learn/<run_id>/`（原子写）。
+单文件 `models/latent-flow-v1/ec_latent_sigma_learn.py`（变体层新增；BLAS 守卫 + `sys.path.insert(VARIANT_DIR)` 头部，仿 ec_mild_unbiased.py:56-74；**latent_flow/ 包体零改动成立**——research §3.1 判定，所需接口全部现成公开）。CLI：`--mode {construct,smoke,main}`、`--ckpt`（默认 run_symw_fold0）、`--symw`（默认开 + run_dir 段守卫）、`--fold`、`--subjects`、`--n-trials`、`--target-channel`（单靶干跑；缺省 = 全 128 循环）、`--fidelity {mae,pearson}`（默认 mae，2026-10-28 拍板 §2.5）、`--sigma-ref`（默认 0.01，fidelity=mae 生效，R3.5 契约）、`--lam`（默认 0.1 = MAE 口径设计中档 σ*≈0.1；冒烟必跑 λ 梯子，见 §8-b；pearson 备选时建议 100–300）、`--lr`（默认 0.5；5e-3 为对照档）、`--epochs 20`、`--n-mc 2`、`--batch-size 30`、`--pearson-scope {target,full}`（默认 target）、`--eps {fresh,fixed}`、`--bf16`（默认关）、`--seed 42`、`--out-dir`。输出落 `outputs/10-27-ec-latent-sigma-learn/<run_id>/`（原子写）。
 
 ## 7. 并行/效率设计（首版范围；实测数字来自 research §0-C）
 
 - 向量化：ε 单 kernel 全张量 + σ 广播 view(1,C,1,1)，无逐通道 Python 循环（前提性优化）。
 - n_mc 份独立 ε `repeat_interleave` 折进 batch 维（每 step 梯度 SNR ∝ √n_mc）。
-- 被试级三级缓存（编码/t/fc_origin 全程一次；128 靶共享）⇒ 每靶仅 20 epoch × 单步前向+反向。
+- 被试级四级缓存（编码/t/fc_origin 全程一次，128 靶共享；MAE_ref 逐靶一次 no_grad 探针 ≈ 单 step 前向成本）⇒ 每靶仅 20 epoch × 单步前向+反向。
 - 实测基准：fp32 batch 60（n_mc=2×30trial）fwd+bwd ≈0.25 s/step、峰值 17.9 GiB（32GB 卡内安全）；**batch 120（n_mc=4×30）fp32 OOM** ⇒ n_mc=4 须 trial 分块；bf16 仅省 12%（15.8 GiB，激活主导）不省时。量级：20ep/靶 ≈5 s ⇒ 128 靶 ≈10.7 min/例；8 例 ≈1.4 h、40 例 ≈7.2 h（对照 hist-block 主跑 6.5 min/例 ⇒ 总成本 ≈1.7×）。
 - 后续扩展（不在首版）：多靶批打包（σ 参数升 (T,128)、样本副本 ×T、按副本 gather 掩码）、逐通道解码（ConvDecoder 逐通道独立 ⇒ 靶读出只解码靶通道，decoder 计算理论 128×↓；批形非逐位可比属口径变更须拍板）、DDP/按靶分片。
 
@@ -131,7 +153,7 @@ pearson_fc：逐 (样本,通道) 时间维 pearson 再平均（仿 `_pearson_cor
 | # | 风险 | 实测/判断 | 缓释 |
 |---|---|---|---|
 | a | 潜空间 z std 与 σ 盒匹配 | **已实测解除**：z_obs 逐通道 std 0.553–0.720（中位 0.607），σ_max=0.48≈0.66–0.87×std 同量级；真正问题是盒内 P 响应极平（σ=0.48 时 127 通道联合加噪下靶 P 仍 0.985–0.990） | 盒维持不动；z-std 诊断入 payload |
-| b | **λ=1 动态（硬门槛，最高优先）** | **已实测（决定性）**：\|∂P/∂σ_i\|（σ=0.48 处 median 3e-4）比熵梯度 1/(127σ) 小 σ→0 端 ~4 个量级、σ_max 端 ~2 个量级（0.0164/3e-4≈55×）⇒ 平衡点 ≫ 盒（max 梯度 3.6e-3 ⇒ σ*≈2.2>0.48） ⇒ λ=1 任何 lr 下零判别（lr=5e-3 → σ 全体均匀 0.042 与熵 ODE 解析解吻合；lr=0.5 → 127/127 全钉上界）。可行窗 **λ≈100–300 × lr≈0.5–1.0**（λ=300/lr=0.5：interior 116/127、σ q0–q100=0.059–0.480） | ①λ 默认仍 1（用户起步档拍板），但**冒烟强制跑 λ 梯子 {1,100,300}×lr{5e-3,0.5,1.0} 出 interior 对照表**，λ/lr 终值主跑前拍板（§10）；②epoch 诊断含 \|∂P/∂σ\| 分位 vs 1/(127σ) 对照行（探针 B 模板）；③λ 换档与 §2.3 的 1024 点计数缩放注记联动登记 |
+| b | **λ 动态（硬门槛，最高优先）** | **双口径**。pearson（CLI 备选，已实测 research §0-B/E）：\|∂P/∂σ_i\|（σ=0.48 处 median 3e-4）比熵梯度 1/(127σ) 小 σ→0 端 ~4 个量级、σ_max 端 ~2 个量级 ⇒ 平衡点 ≫ 盒 ⇒ λ=1 零判别（钉上界/均匀抬升），可行窗 λ≈100–300×lr≈0.5–1.0（λ=300/lr=0.5：interior 116/127、σ q0–q100=0.059–0.480）。**MAE 比值（默认，解析推导+冒烟待证）**：均匀保真梯度 1/(127σ_ref)≈0.787 恒定 vs 熵 1/(127σ)∈[0.016,0.787] ⇒ λ=1 全程压制 ⇒ **全钉下界零判别**（pearson 钉上界的镜像）；闭式 σ*≈σ_ref/λ ⇒ 可行 λ∈[0.02,1]、中档 0.1（σ*≈0.1） | ①λ 默认 0.1（MAE 中档），**冒烟强制跑 λ 梯子 {0.05,0.1,0.2,1.0}×lr{5e-3,0.5} 出 interior 对照表**（λ=1 预期钉下界=对照证据格），λ/lr 终值主跑前拍板（§10）；②epoch 诊断含 \|∂L_f/∂σ\| 分位 vs 1/(127σ) 对照行（探针 B 模板）；③λ 换档与 §2.3 的 1024 点计数缩放注记联动登记；④MAE 口径梯度量级为解析先验（§2.5），冒烟首 epoch 诊断实测核验 |
 | c | 穿堂梯度被 no_grad/detach 误断（且不可走 model.sample——@no_grad 装饰） | 判断 | 构造检查⑦：backward 后非靶 σ.grad 有限非零、全冻结参数 grad=None；fc_origin 独立 no_grad+detach（autocast 不禁 grad 的 OOM 先例随档） |
 | d | 显存 | **已实测**：n_mc=2×30trial fp32 峰值 17.9 GiB ✓；n_mc=4×30 OOM | 默认 n_mc=2；n_mc=4 走 trial 分块 |
 | e | 算力 | **已实测**：0.25 s/step ⇒ 8 例≈1.4 h / 40 例≈7.2 h | 冒烟计时外推入 experiment.md；规模拍板 |
@@ -142,6 +164,8 @@ pearson_fc：逐 (样本,通道) 时间维 pearson 再平均（仿 `_pearson_cor
 | j | ε RNG 配方（全局流弱复现） | 判断 | 独立 Generator（seed+正交偏移登记，§3.4）；payload 如实登记配方+四前提 |
 | k | decoder 净/扰动 z_obs 语义 | **已实测**：ConvDecoder 逐通道独立 ⇒ 靶读出两者逐位等价（语义分叉仅字面） | 沿 §3.2 干净侧拍板；构造检查⑩ 固化等价断言；与信号空间管线（encoder 重跑 skips 亦变）差异 caveat 登记 |
 | l | fresh-ε 轨迹方差（探针用固定 ε） | 判断（期望动态不变） | box 投影兜底触界；逐 epoch \|σ−σ_prev\| 诊断；--eps fixed 备选 |
+| m | **分母数值**（fp32 相近数消减/下溢、低敏感被试噪声底） | 判断（解析：σ_ref=0.001 时低敏感例分母相对误差可达 ~15%；0.01 降一个量级） | σ_ref=0.01 已拍板（R2.4b）；护栏 max(MAE_ref, 1e-6·mean\|fc0\|)；双种子一致性 <5% 检查超标 ⇒ 噪声底 flag（构造检查⑬）；σ_ref 提档属主跑前拍板 |
+| n | 恒定梯度 ⇒ σ* 附近振荡（~lr·grad 带，不随 σ→σ* 消失） | 判断（MAE 一次型梯度特性，§2.5） | 末 5 epoch σ 均值读数；逐 epoch \|σ−σ_prev\| 诊断；box 投影兜底；必要时末段 lr 衰减（不入首版） |
 
 ## 9. 兼容性与回滚
 
@@ -149,7 +173,7 @@ pearson_fc：逐 (样本,通道) 时间维 pearson 再平均（仿 `_pearson_cor
 
 ## 10. 主跑前须用户拍板（本任务只暴露不决策；research §3.6 实测数据支撑）
 
-1. **λ 与 lr（最高优先）**：λ=1 实测不可用（零判别常行）；建议从冒烟 λ 梯子 {1,100,300}×lr{5e-3,0.5,1.0} 对照表选定（探针 E：λ=300/lr=0.5 interior 116/127、lr=1.0 interior 94 动态范围最大）。λ 换档与 §2.3 逐点计数缩放注记联动登记。
+1. **λ 与 lr（最高优先）**：MAE 口径闭式先验 σ*≈σ_ref/λ（λ=0.05/0.1/0.2/1.0 ⇒ σ*≈0.2/0.1/0.05/钉下界）；从冒烟 λ 梯子 {0.05,0.1,0.2,1.0}×lr{5e-3,0.5} interior 对照表选定；λ=1 预期全钉下界零判别（对照证据格）。pearson 备选口径沿用 λ∈100–300×lr∈0.5–1.0（research 探针 E：λ=300/lr=0.5 interior 116/127）。λ 换档与 §2.3 逐点计数缩放注记联动登记。σ_ref=0.01 已拍板（R2.4b），仅当噪声底 flag 频发再议提档。
 2. θ 默认确认：建议 run_symw_fold0（现役 hist-block 主跑同源）；w500 备选。
 3. ε 策略：fresh（默认，design 拍板）vs fixed（CRN 光滑）。
 4. n_mc/batch：n_mc=2×batch30（17.9 GiB）默认；n_mc=4 须分块。

@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/research/surrogate-brain-qualification.md", "reason": "study1 代理脑合格性检验（FC 指标 1 v2.1 口径与通过标准）"}
+{"file": ".trellis/spec/research/evaluation-calibers.md", "reason": "M1-M4 指标定义先行与口径纪律"}
+{"file": ".trellis/spec/research/reproducibility.md", "reason": "seed/确定性/登记三要素；共享 GPU 逐位复现边界"}
+{"file": ".trellis/spec/research/path-isolation.md", "reason": "变体目录与 outputs 隔离规则"}
+{"file": ".trellis/spec/research/data-pipeline.md", "reason": "dataloader 统一接口与 5-fold 分层划分口径"}

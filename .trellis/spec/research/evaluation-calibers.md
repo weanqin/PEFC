@@ -177,3 +177,30 @@
   键 `json_f32_rounding_maxabs`；公式错配表现为 ~1.13 平移量级而非舍入量级，可即时识别）；
   ③ 产物文件名 `gccorr_dual_summary.json` 为在档 schema 契约名，**不随配置改名**（下游
   crossfold/viz 读取路径指向在档文件）。
+
+## 消融实验执行契约：γ 置零硬移除 + argv 重建对拍 + 矩阵对照距离偏相关（2026-10-30 登记，任务 10-30-symw-ablation-mw）
+
+- **γ 置零 = 硬移除（消融口径）**：对 `A_eff = γ_M·M + γ_W·W` 类「缩放 buffer × 分量」结构，
+  把固定 buffer γ 置 0 即硬移除该分量——∂A/∂分量 ∝ γ = 0（精确浮点零）⇒ Adam（无 weight
+  decay）更新量精确为零 ⇒ 参数逐位冻结于初值，无需显式 freeze 代码。训后守卫必须**逐位级**：
+  W `int(|W|.sum())==0`、`log_sigma == 构造初值`（<1e-12，注意用构造同精度路径 float32 现算
+  期望值，float64 重算会差 ~1e-8 误伤）、`max|A_eff| == 0.0` 精确（双零臂）。正则项退化要预
+  登记：A_eff≡0 时 anti-uniform = 1/(1+1e-6) 常数（梯度零、argmin 不变但 loss 跨臂不可直比）
+  ⇒ 主口径报剔除正则项的 datafit。先例：`ablation_guards.py`（10-30）。
+- **对拍跑的 argv 必须从基线 cli 逐键重建（防 argparse 默认值陷阱）**：`train_mild_depress.py`
+  默认 epochs 50/batch 32/patience 10/window 1500 与 w500 基线（150/64/30/500）不同——手写
+  「其余旗标全默认」模板会静默跑错口径。契约：驱动脚本读基线 `stage2_config.json.cli` 逐键
+  生成 argv（bool True→flag、None→skip、相对路径 resolve 绝对化），**每次 subprocess 启动前**
+  `parse_args(argv)` 结果与基线 cli 对拍（diff 键 ⊆ 声明白名单，如 {run_dir, 消融键}），
+  不等即拒跑——对拍在跑前不是批后，否则浪费整批 GPU。先例：`run_ablation_mw.py`（10-30）。
+- **exit-gnn ckpt 装载陷阱**：`OCLatentFlow.load_checkpoint` 的 `_build_from_variant` 不识别
+  exit-gnn 变体，v1 路径 strict=False 会**静默丢弃 `flow.exit_*` 键**（装载"成功"但出口模块
+  是随机初始化的旧架构）。契约：exit-gnn ckpt 一律走 `build_model_mild(_model_args(
+  flow_exit_gnn=True))` + `viz_mild.load_flow_ckpt`（strict=True；quality/fc/guards 先例），
+  禁用 `OCLatentFlow.load_checkpoint` 直载。
+- **模型内部矩阵 × 观测参考的 raw 相关必报距离偏相关**：凡比较对象含几何派生矩阵（距离核
+  M / 任何 pairwise_d 单调函数），raw Spearman/Pearson 与 GC/FC 参考的共变由共同距离梯度
+  中介（Run 008/009 教训的矩阵版；实测 A_eff↔GC raw +0.50 → 距离偏相关后 ≈0，W 单独学到的
+  结构 ≈0）。契约：秩变换后对通道对 3D 距离（ckpt 内 pairwise_d offdiag）OLS 残差化再报
+  Spearman（`spearman_partial_*` 字段），距离核主导的臂以 partial 为主判读口径。先例：
+  `aeff_gc_corr.py`（10-30）。

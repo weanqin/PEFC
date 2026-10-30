@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/research/surrogate-brain-qualification.md", "reason": "AC4 M3 口径核对依据"}
+{"file": ".trellis/spec/research/evaluation-calibers.md", "reason": "指标口径与统计汇报检查依据"}
+{"file": ".trellis/spec/research/experiment-log.md", "reason": "experiment.md Run 块四要素检查依据"}
+{"file": ".trellis/spec/research/result-dir-policy.md", "reason": "result/ 写入门核查（本任务不写 result）"}
+{"file": ".trellis/spec/research/artifacts-management.md", "reason": "outputs 组织与 ckpt 管理纪律"}
