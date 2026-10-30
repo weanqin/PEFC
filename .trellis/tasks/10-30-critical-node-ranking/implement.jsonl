@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/research/perturb-ec-pipeline.md", "reason": "study2 路由必读：CRN 确定性契约（§1）与 latent-flow 扰动口径（§8）"}
+{"file": ".trellis/spec/research/reproducibility.md", "reason": "seed/确定性/登记三要素；共享 GPU 逐位复现边界与 CPU 单线程正式口径先例"}
+{"file": ".trellis/spec/research/evaluation-calibers.md", "reason": "指标定义先行与口径变更纪律（影响度量/稳健性指标随档登记）"}
+{"file": ".trellis/spec/research/path-isolation.md", "reason": "产物仅落 outputs/10-30-critical-node-ranking/；result/ 注册件只读"}
+{"file": ".trellis/spec/data/mild-depression.md", "reason": "mild 数据契约（40 例/128ch/250Hz/z-score）"}
+{"file": ".trellis/spec/research/experiment-log.md", "reason": "experiment.md Run 块四要素纪律"}

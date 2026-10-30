@@ -866,3 +866,9 @@ v4a-fmt 基座上把 5 个 LayerNorm 位换 adaLN（emb(t)→逐 site SiLU→Lin
 - 用户令：symw（mild-latent-flow-symw-anti0.2-gnn-exit）五折 test 集 gen-fc vs real-fc Pearson 一致性，镜像 gpfm-mamba-f0/main-01 fc_metric 口径；拍板 ckpt 取 result/ 注册件 + 轻量任务
 - 交付：fc_metric_mild_symw.py（fold/summary/determinism 三模式 + 四重守卫）；五折组 r 0.95636/0.77146/0.69556/0.86072/0.96251（均值 0.84932）、合并 40 例 r_s 0.8133±0.1095（p=6.1e-36）⇒ 指标 1 部分达标（2/5 折过 0.95 线）；AC1–AC6 全过，已归档
 - 过程事实：①fold2 ckpt SHA 守卫拦到我誊录笔误一字（守卫有效、注册表无恙）；②共享 GPU 并发（另一会话训练中）下推理前向不可逐位复现，cuBLASLt 核漂移，确定性双开关无效 → 正式口径 CPU 单线程逐位一致（spec/reproducibility + environment 已沉淀）；③z↔原始域 FC 数学等价实证 ~1e-15（float32 管线 ~2e-9）
+
+## 2026-10-30 会话 — 任务 10-30-critical-node-ranking（Study II 关键节点排序实验）
+- 用户令：Study 2 新实验——σ∈{0.3,0.5,0.7} 注入源通道历史段 → 其余 127 通道未来段 MSE 求和 = 全局影响 → 128 通道排序 → 三 σ 稳健性；拍板双线五折全量 + 仅 outputs；「确认开始」过 1.4.3 门
+- 交付：critical_node_ranking.py + outputs/10-30-critical-node-ranking/（93 json + robustness×2 + top 名单×2 + 图×8 + REPORT.md 四段）+ spec perturb-ec-pipeline §10；AC1–AC6 过（AC4 修 2 个 Kendall 单元格/折标/比值后过）
+- 结论：关键节点排序稳健（逐被试 ρ 0.867–0.980、组 ≥0.982、top-K 4–11× 机会、头部锁定 modma 107/56/38 / mild 88）；比例性诊断（比值 2.61/1.99 ≪5.44、斜率 1.46/1.44 ≪2）排除 σ² 平凡解释
+- 过程事实：①双 mandate 评审修正 autocast 包裹（σ=0 断言前提）与 σ² 退化判读入档；②首启 run/logs 缺目录致重定向失败（重启即净）；③summary imp_all 堆叠轴向 bug——[:, j] 取到被试矩阵而非 σ 档，主判读口径无恙、修复后独立复算逐位一致；④CRN 三档配对 + σ=0 恒等断言 93/93 是零成本确定性检查点，可作后续扰动类任务标配

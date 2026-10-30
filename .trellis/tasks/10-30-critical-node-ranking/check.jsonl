@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/research/perturb-ec-pipeline.md", "reason": "CRN/确定性契约落实检查（σ=0 恒等断言、同源跨 σ ξ 复用）"}
+{"file": ".trellis/spec/research/reproducibility.md", "reason": "复跑/冒烟对拍与登记检查"}
+{"file": ".trellis/spec/research/evaluation-calibers.md", "reason": "稳健性指标（Spearman/Kendall/top-K）口径与汇报一致性检查"}
+{"file": ".trellis/spec/research/result-dir-policy.md", "reason": "result/ 零写入核查（本轮不注册）"}
+{"file": ".trellis/spec/research/experiment-log.md", "reason": "Run 块无空块检查"}
+{"file": ".trellis/spec/research/path-isolation.md", "reason": "产物树与只读面检查"}
